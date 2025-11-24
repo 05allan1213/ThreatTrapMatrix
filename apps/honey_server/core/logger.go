@@ -59,8 +59,12 @@ func (MyLog) Format(entry *logrus.Entry) ([]byte, error) {
 		funcVal := entry.Caller.Function
 		fileVal := fmt.Sprintf("%s:%d", path.Base(entry.Caller.File), entry.Caller.Line)
 
-		// 自定义日志输出格式：应用名 + 时间 + 彩色级别 + 文件位置 + 函数名 + 日志内容
-		fmt.Fprintf(b, "%s [%s] \x1b[%dm[%s]\x1b[0m %s %s %s\n", entry.Data["appName"], timestamp, levelColor, entry.Level, fileVal, funcVal, entry.Message)
+		// 自定义日志输出格式：应用名、时间戳、日志级别、调用信息、日志内容
+		appName := entry.Data["appName"]
+		if appName == nil {
+			appName = global.Config.Logger.AppName
+		}
+		fmt.Fprintf(b, "%s [%s] \x1b[%dm[%s]\x1b[0m %s %s %s\n", appName, timestamp, levelColor, entry.Level, fileVal, funcVal, entry.Message)
 	}
 
 	return b.Bytes(), nil
@@ -187,4 +191,12 @@ func GetLogger() *logrus.Entry {
 	logger.SetReportCaller(true)
 	// 添加应用名字段并返回日志实例
 	return logger.WithField("appName", l.AppName)
+}
+
+// SetLogDefault 设置默认日志配置
+func SetLogDefault() {
+	l := global.Config.Logger
+	logrus.SetFormatter(&MyLog{})
+	logrus.SetReportCaller(true)
+	logrus.WithField("appName", l.AppName)
 }

@@ -10,6 +10,7 @@ type Config struct {
 	DB     DB     `yaml:"db"`     // 数据库配置信息
 	Logger Logger `yaml:"logger"` // 日志配置信息
 	Redis  Redis  `yaml:"redis"`  // redis配置信息
+	System System `yaml:"system"` // 系统配置信息
 }
 
 // DB 数据库连接配置结构体
@@ -47,4 +48,10 @@ type Redis struct {
 	Addr     string // Redis地址
 	Password string // Redis密码
 	DB       int    // Redis数据库索引
+}
+
+// System 系统配置结构体
+type System struct {
+	WebAddr string `json:"webAddr"` // Web服务监听地址
+	Mode    string `json:"mode"`    // 运行模式 [debug|release|test]
 }
