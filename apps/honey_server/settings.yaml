@@ -12,3 +12,8 @@ logger: # 日志器
   format: text # 日志格式
   appName: honey_server # 应用名称
   level: info # 日志级别
+
+redis: # Redis
+  addr: 82.157.155.26:6379 # Redis地址
+  password: # Redis密码
+  db: 1 # Redis数据库索引

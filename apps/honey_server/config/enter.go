@@ -9,6 +9,7 @@ import "fmt"
 type Config struct {
 	DB     DB     `yaml:"db"`     // 数据库配置信息
 	Logger Logger `yaml:"logger"` // 日志配置信息
+	Redis  Redis  `yaml:"redis"`  // redis配置信息
 }
 
 // DB 数据库连接配置结构体
@@ -39,4 +40,11 @@ type Logger struct {
 	Format  string `yaml:"format"`  // 日志格式 [json|text]
 	Level   string `yaml:"level"`   // 日志级别
 	AppName string `yaml:"appName"` // 应用名称
+}
+
+// Redis 配置结构体
+type Redis struct {
+	Addr     string // Redis地址
+	Password string // Redis密码
+	DB       int    // Redis数据库索引
 }
