@@ -1,0 +1,204 @@
+# ==========================
+# Go语言核心编译产物
+# ==========================
+*.exe
+*.dll
+*.so
+*.dylib
+*.out
+*.app
+
+*.o
+*.a
+*.lib
+*.obj
+*.pdb
+
+_testmain.go
+*.test
+*.prof
+*.trace
+*.log
+
+# ==========================
+# Go模块和依赖管理
+# ==========================
+/vendor/
+
+$GOMODCACHE/
+/go/pkg/
+/pkg/
+/bin/
+/src/
+
+$GOCACHE/
+.cache/
+build/
+dist/
+
+go.work.sum
+
+# ==========================
+# 测试和性能分析
+# ==========================
+*.cov
+coverage.out
+coverage.html
+coverage.xml
+profile.out
+trace.out
+*.bench
+
+# ==========================
+# IDE和编辑器配置
+# ==========================
+.cursor/
+*.cursor-workspace
+.cursorstate.json
+
+.idea/
+*.iml
+out/
+run/
+temp/
+
+.vscode/
+*.code-workspace
+.history/
+
+# Vim
+*.swp
+*.swo
+.*.sw?
+*.un~
+Session.vim
+.netrwhist
+autoload/
+plugged/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Sublime / Atom
+*.sublime-*
+.atom/
+
+# ==========================
+# 系统和环境文件
+# ==========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==========================
+# 环境配置和敏感信息
+# ==========================
+.env
+.env.*
+config/local.yaml
+config/local.json
+config/secrets.yaml
+config/secrets.json
+
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+
+# ==========================
+# 容器和部署
+# ==========================
+.dockerignore
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+
+*.kubeconfig
+kubeconfig.yaml
+
+# ==========================
+# 文档和生成内容
+# ==========================
+/docs/_build/
+/docs/.vuepress/dist/
+/site/
+/public/
+
+swagger.json
+swagger.yaml
+docs/swagger/
+
+*.pb.go
+*.pb.gw.go
+*.grpc.pb.go
+mocks/
+generated/
+
+# ==========================
+# 日志和监控
+# ==========================
+logs/
+*.log.*
+log/
+*.dump
+metrics/
+.prometheus/
+
+# ==========================
+# 调试与开发工具
+# ==========================
+__debug_bin
+debug/
+
+tmp/
+.air/
+
+*.bak
+*.tmp
+*.temp
+
+# ==========================
+# Git
+# ==========================
+.gitattributes
+.gitignore.local
