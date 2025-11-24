@@ -1,0 +1,49 @@
+package middleware
+
+// File: honey_server/middleware/auth_middleware.go
+// Description: 中间件模块，提供JWT认证和角色权限校验中间件
+
+import (
+	"ThreatTrapMatrix/apps/honey_server/utils/jwts"
+
+	"github.com/gin-gonic/gin"
+)
+
+// AuthMiddleware JWT认证中间件，验证请求头中的Token有效性
+func AuthMiddleware(c *gin.Context) {
+	// 从请求头获取token
+	token := c.GetHeader("token")
+	// 解析并验证token
+	_, err := jwts.ParseToken(token)
+	if err != nil {
+		// 认证失败，返回错误响应并终止请求链
+		c.JSON(200, gin.H{"code": 7, "msg": "认证失败", "data": gin.H{}})
+		c.Abort()
+		return
+	}
+	// 认证通过，继续处理请求
+	c.Next()
+}
+
+// AdminMiddleware 管理员角色校验中间件，在JWT认证基础上验证用户角色
+func AdminMiddleware(c *gin.Context) {
+	// 从请求头获取token
+	token := c.GetHeader("token")
+	// 解析并验证token
+	claims, err := jwts.ParseToken(token)
+	if err != nil {
+		// 认证失败，返回错误响应并终止请求链
+		c.JSON(200, gin.H{"code": 7, "msg": "认证失败", "data": gin.H{}})
+		c.Abort()
+		return
+	}
+	// 校验用户角色是否为管理员（角色标识1）
+	if claims.Role != 1 {
+		// 角色认证失败，返回错误响应并终止请求链
+		c.JSON(200, gin.H{"code": 7, "msg": "角色认证失败", "data": gin.H{}})
+		c.Abort()
+		return
+	}
+	// 角色校验通过，继续处理请求
+	c.Next()
+}

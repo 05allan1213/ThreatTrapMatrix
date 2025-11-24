@@ -5,6 +5,7 @@ package routers
 
 import (
 	"ThreatTrapMatrix/apps/honey_server/global"
+	"ThreatTrapMatrix/apps/honey_server/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -23,7 +24,7 @@ func Run() {
 	r.Static("uploads", "uploads")
 	// 创建API根路由分组
 	g := r.Group("honey_server")
-	g.Use()
+	g.Use(middleware.AuthMiddleware) // 系统内部必须登录才能继续使用
 
 	// 注册用户相关路由
 	UserRouters(g)
