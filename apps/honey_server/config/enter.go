@@ -11,6 +11,7 @@ type Config struct {
 	Logger Logger `yaml:"logger"` // 日志配置信息
 	Redis  Redis  `yaml:"redis"`  // redis配置信息
 	System System `yaml:"system"` // 系统配置信息
+	Jwt    Jwt    `yaml:"jwt"`    // jwt配置信息
 }
 
 // DB 数据库连接配置结构体
@@ -54,4 +55,11 @@ type Redis struct {
 type System struct {
 	WebAddr string `yaml:"webAddr"` // Web服务监听地址
 	Mode    string `yaml:"mode"`    // 运行模式 [debug|release|test]
+}
+
+// Jwt 配置结构体
+type Jwt struct {
+	Expires int    `yaml:"expires"` // token过期时间,单位秒
+	Issuer  string `yaml:"issuer"`  // token签发者
+	Secret  string `yaml:"secret"`  // token密钥
 }
