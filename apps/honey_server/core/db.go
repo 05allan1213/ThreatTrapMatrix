@@ -4,6 +4,7 @@ package core
 // Description: 数据库核心模块，实现MySQL数据库连接初始化、连接池配置及连接有效性检测功能
 
 import (
+	"sync"
 	"time"
 
 	"ThreatTrapMatrix/apps/honey_server/global"
@@ -47,4 +48,17 @@ func InitDB() (database *gorm.DB) {
 
 	logrus.Infof("数据库连接成功")
 	return
+}
+
+var (
+	db   *gorm.DB
+	once sync.Once
+)
+
+// GetDB 获取数据库连接实例（单例模式）
+func GetDB() *gorm.DB {
+	once.Do(func() {
+		db = InitDB()
+	})
+	return db
 }
