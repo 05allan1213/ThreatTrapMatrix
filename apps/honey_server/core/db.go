@@ -15,11 +15,9 @@ import (
 )
 
 // InitDB 初始化MySQL数据库连接并配置连接池
-func InitDB() (database *gorm.DB) {
-	dsn := global.Config.DB.Dsn()
-	// 创建MySQL驱动的GORM连接实例
-	dialector := mysql.Open(dsn)
-	database, err := gorm.Open(dialector, &gorm.Config{
+func InitDB() (db *gorm.DB) {
+	cfg := global.Config.DB
+	db, err := gorm.Open(mysql.Open(cfg.Dsn()), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true, // 迁移时禁用外键约束，提高灵活性
 	})
 	if err != nil {
@@ -28,7 +26,7 @@ func InitDB() (database *gorm.DB) {
 	}
 
 	// 获取底层sql.DB实例以配置连接池
-	sqlDB, err := database.DB()
+	sqlDB, err := db.DB()
 	if err != nil {
 		logrus.Fatalf("获取数据库连接实例失败 %s", err)
 		return
@@ -42,9 +40,21 @@ func InitDB() (database *gorm.DB) {
 	}
 
 	// 配置数据库连接池参数
-	sqlDB.SetMaxIdleConns(10)           // 设置连接池最大空闲连接数
-	sqlDB.SetMaxOpenConns(100)          // 设置连接池最大打开连接数
-	sqlDB.SetConnMaxLifetime(time.Hour) // 设置连接的最大生命周期
+	if cfg.MaxIdleConns == 0 {
+		cfg.MaxIdleConns = 10
+	}
+	if cfg.MaxOpenConns == 0 {
+		cfg.MaxOpenConns = 100
+	}
+	if cfg.ConnMaxLifetime == 0 {
+		cfg.ConnMaxLifetime = 10000
+	}
+	logrus.Infof("最大空闲数 %d", cfg.MaxIdleConns)
+	logrus.Infof("最大连接数 %d", cfg.MaxOpenConns)
+	logrus.Infof("超时时间 %s", time.Duration(cfg.ConnMaxLifetime)*time.Second)
+	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
+	sqlDB.SetConnMaxLifetime(time.Duration(cfg.ConnMaxLifetime) * time.Second)
 
 	logrus.Infof("数据库连接成功")
 	return
