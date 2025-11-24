@@ -6,6 +6,7 @@ package global
 import (
 	"ThreatTrapMatrix/apps/honey_server/config"
 
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -13,6 +14,7 @@ import (
 var (
 	DB     *gorm.DB       // 全局数据库连接实例
 	Config *config.Config // 全局配置实例
+	Log    *logrus.Entry  // 全局日志实例
 )
 
 var (

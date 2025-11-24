@@ -4,3 +4,8 @@ db: # MySQL
   port: 3306  # 数据库端口号
   user: "ayp"  # 数据库用户名
   password: "801026qwe"  # 数据库密码
+
+logger: # 日志器
+  format: text # 日志格式
+  appName: honey_server # 应用名称
+  level: info # 日志级别

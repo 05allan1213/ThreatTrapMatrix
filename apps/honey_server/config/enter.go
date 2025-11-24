@@ -7,7 +7,8 @@ import "fmt"
 
 // Config 应用整体配置结构体
 type Config struct {
-	DB DB `yaml:"db"` // 数据库配置信息
+	DB     DB     `yaml:"db"`     // 数据库配置信息
+	Logger Logger `yaml:"logger"` // 日志配置信息
 }
 
 // DB 数据库连接配置结构体
@@ -28,4 +29,11 @@ func (cfg DB) Dsn() string {
 		cfg.Port,
 		cfg.DbName,
 	)
+}
+
+// Logger 日志配置结构体
+type Logger struct {
+	Format  string `yaml:"format"`  // 日志格式 [json|text]
+	Level   string `yaml:"level"`   // 日志级别
+	AppName string `yaml:"appName"` // 应用名称
 }
