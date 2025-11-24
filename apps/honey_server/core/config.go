@@ -6,6 +6,8 @@ package core
 import (
 	"os"
 
+	"ThreatTrapMatrix/apps/honey_server/flags"
+
 	"ThreatTrapMatrix/apps/honey_server/config"
 
 	"github.com/sirupsen/logrus"
@@ -15,7 +17,7 @@ import (
 // ReadConfig 读取并解析配置文件，返回配置结构体指针
 func ReadConfig() *config.Config {
 	// 读取配置文件内容
-	byteData, err := os.ReadFile("settings.yaml")
+	byteData, err := os.ReadFile(flags.Options.File)
 	if err != nil {
 		logrus.Fatalf("配置文件读取错误 %s", err)
 		return nil

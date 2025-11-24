@@ -6,6 +6,10 @@ package flags
 import (
 	"flag"
 	"os"
+
+	"ThreatTrapMatrix/apps/honey_server/global"
+
+	"github.com/sirupsen/logrus"
 )
 
 // FlagOptions 命令行参数选项结构体，存储解析后的命令行参数值
@@ -36,5 +40,11 @@ func Run() {
 	if Options.DB {
 		Migrate()  // 执行数据库表结构迁移操作
 		os.Exit(0) // 迁移完成后正常退出程序
+	}
+	// 如果指定了-v参数，则打印版本信息并退出程序
+	if Options.Version {
+		logrus.Infof("当前版本: %s  commit: %s, buildTime: %s",
+			global.Version, global.Commit, global.BuildTime)
+		os.Exit(0)
 	}
 }
