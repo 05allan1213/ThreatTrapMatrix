@@ -52,6 +52,6 @@ type Redis struct {
 
 // System 系统配置结构体
 type System struct {
-	WebAddr string `json:"webAddr"` // Web服务监听地址
-	Mode    string `json:"mode"`    // 运行模式 [debug|release|test]
+	WebAddr string `yaml:"webAddr"` // Web服务监听地址
+	Mode    string `yaml:"mode"`    // 运行模式 [debug|release|test]
 }
