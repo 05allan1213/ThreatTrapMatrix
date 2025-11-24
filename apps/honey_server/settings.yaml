@@ -1,0 +1,6 @@
+db: # MySQL
+  db_name: "honey_db" # 数据库名称
+  host: "82.157.155.26" # 数据库主机地址
+  port: 3306  # 数据库端口号
+  user: "ayp"  # 数据库用户名
+  password: "801026qwe"  # 数据库密码
