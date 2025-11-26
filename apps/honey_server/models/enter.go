@@ -25,3 +25,8 @@ type PageInfo struct {
 	Limit int    `form:"limit"` // 每页记录数（默认10条）
 	Key   string `form:"key"`   // 全局搜索关键词（用于模糊查询）
 }
+
+// IDListRequest 通用ID列表请求参数结构体
+type IDListRequest struct {
+	IdList []uint `json:"idList"`
+}

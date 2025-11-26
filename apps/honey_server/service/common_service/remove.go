@@ -5,6 +5,7 @@ package common_service
 
 import (
 	"ThreatTrapMatrix/apps/honey_server/global"
+
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -12,11 +13,12 @@ import (
 // RemoveRequest 通用删除请求参数结构体
 // 封装删除操作所需的条件、日志、调试等配置
 type RemoveRequest struct {
-	Debug  bool          // 调试模式开关（开启时打印SQL）
-	Where  *gorm.DB      // 自定义Where条件
-	IDList []uint        // 需要删除的记录ID列表
-	Log    *logrus.Entry // 日志实例（用于记录操作日志）
-	Msg    string        // 操作描述信息（用于日志说明）
+	Debug    bool          // 调试模式开关（开启时打印SQL）
+	Where    *gorm.DB      // 自定义Where条件
+	IDList   []uint        // 需要删除的记录ID列表
+	Log      *logrus.Entry // 日志实例（用于记录操作日志）
+	Msg      string        // 操作描述信息（用于日志说明）
+	Unscoped bool          // 是否使用物理删除
 }
 
 // Remove 通用删除函数（泛型实现）
@@ -30,6 +32,12 @@ func Remove[T any](model T, req RemoveRequest) (successCount int64, err error) {
 	if req.Debug {
 		db = db.Debug()
 		deleteDB = deleteDB.Debug()
+	}
+
+	// 物理删除
+	if req.Unscoped {
+		req.Log.Infof("启用物理删除")
+		deleteDB = deleteDB.Unscoped()
 	}
 
 	// 应用自定义Where条件（高级过滤）

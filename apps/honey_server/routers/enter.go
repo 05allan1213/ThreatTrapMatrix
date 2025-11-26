@@ -29,6 +29,7 @@ func Run() {
 	// 路由注册
 	UserRouters(g)    // 注册用户相关路由
 	CaptchaRouters(g) // 注册验证码相关路由
+	LogRouters(g)     // 注册日志相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
