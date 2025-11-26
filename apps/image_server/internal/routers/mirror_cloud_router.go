@@ -7,6 +7,7 @@ import (
 	"ThreatTrapMatrix/apps/image_server/internal/api"
 	"ThreatTrapMatrix/apps/image_server/internal/api/mirror_cloud_api"
 	"ThreatTrapMatrix/apps/image_server/internal/middleware"
+	"ThreatTrapMatrix/apps/image_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,4 +23,7 @@ func MirrorCloudRouter(r *gin.RouterGroup) {
 	// GET /mirror_cloud - 镜像文件列表接口
 	// 使用Query参数绑定中间件解析列表请求参数
 	r.GET("mirror_cloud", middleware.BindQueryMiddleware[mirror_cloud_api.ImageListRequest], app.ImageListView)
+	// GET /mirror_cloud/:id - 镜像文件详情接口
+	// 使用URI参数绑定中间件解析详情请求参数
+	r.GET("mirror_cloud/:id", middleware.BindUriMiddleware[models.IDRequest], app.ImageDetailView)
 }
