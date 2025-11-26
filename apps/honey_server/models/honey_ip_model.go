@@ -1,10 +1,8 @@
 package models
 
-import "gorm.io/gorm"
-
 // HoneyIpModel 诱捕ip模型
 type HoneyIpModel struct {
-	gorm.Model
+	Model
 	NodeID    uint      `json:"nodeID"`                     // 归属节点ID
 	NodeModel NodeModel `gorm:"foreignKey:NodeID" json:"-"` // 归属节点
 	NetID     uint      `json:"netID"`                      // 归属网络ID

@@ -1,10 +1,8 @@
 package models
 
-import "gorm.io/gorm"
-
 // LogModel 系统日志模型
 type LogModel struct {
-	gorm.Model
+	Model
 	Type        int8   `json:"type"`        // 日志类型
 	IP          string `json:"ip"`          // ip（登录日志）
 	Addr        string `json:"addr"`        // 地址

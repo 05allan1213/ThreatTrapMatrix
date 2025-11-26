@@ -1,10 +1,8 @@
 package models
 
-import "gorm.io/gorm"
-
 // ImageModel 镜像模型
 type ImageModel struct {
-	gorm.Model
+	Model
 	ImageName string `json:"imageName"` // 镜像名称
 	Title     string `json:"title"`     // 对外别名
 	Port      int    `json:"port"`      // 端口号

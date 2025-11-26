@@ -1,10 +1,8 @@
 package models
 
-import "gorm.io/gorm"
-
 // HoneyPortModel 诱捕端口模型
 type HoneyPortModel struct {
-	gorm.Model
+	Model
 	NodeID       uint         `json:"nodeID"`                        // 归属节点ID
 	NodeModel    NodeModel    `gorm:"foreignKey:NodeID" json:"-"`    // 归属节点
 	NetID        uint         `json:"netID"`                         // 归属网络ID

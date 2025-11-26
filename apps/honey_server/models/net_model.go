@@ -1,10 +1,8 @@
 package models
 
-import "gorm.io/gorm"
-
 // NetModel 网络模型
 type NetModel struct {
-	gorm.Model
+	Model
 	NodeID             uint      `json:"nodeID"`                        // 归属节点ID
 	NodeModel          NodeModel `gorm:"foreignKey:NodeID" json:"-"`    // 归属节点
 	Title              string    `gorm:"32" json:"title"`               // 网络名称

@@ -1,10 +1,8 @@
 package models
 
-import "gorm.io/gorm"
-
 // UserModel 用户模型
 type UserModel struct {
-	gorm.Model
+	Model
 	Username      string `gorm:"size:32" json:"username"`      // 用户名
 	Role          int8   `json:"role"`                         // 角色 1 管理员 2 普通用户
 	Password      string `gorm:"size:64" json:"-"`             // 密码

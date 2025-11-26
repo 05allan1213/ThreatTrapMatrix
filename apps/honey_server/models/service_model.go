@@ -1,10 +1,8 @@
 package models
 
-import "gorm.io/gorm"
-
 // ServiceModel 虚拟服务模型
 type ServiceModel struct {
-	gorm.Model
+	Model
 	Title        string     `json:"title"`                       // 虚拟服务名称
 	Agreement    int8       `json:"agreement"`                   // 协议
 	ImageID      uint       `json:"imageID"`                     // 使用的镜像id

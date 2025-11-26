@@ -1,10 +1,8 @@
 package models
 
-import "gorm.io/gorm"
-
 // NodeNetworkModel 节点网卡模型
 type NodeNetworkModel struct {
-	gorm.Model
+	Model
 	NodeID    uint      `json:"nodeID"`                     // 归属节点ID
 	NodeModel NodeModel `gorm:"foreignKey:NodeID" json:"-"` // 归属节点
 	Network   string    `gorm:"32" json:"network"`          // 网卡名称
