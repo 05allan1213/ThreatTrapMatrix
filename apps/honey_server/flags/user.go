@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"os"
 
+	"ThreatTrapMatrix/apps/honey_server/service/user_service"
+
 	"ThreatTrapMatrix/apps/honey_server/global"
 	"ThreatTrapMatrix/apps/honey_server/models"
-	"ThreatTrapMatrix/apps/honey_server/utils/pwd"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
@@ -19,16 +20,9 @@ import (
 // User 命令行用户操作处理器结构体，封装用户创建与列表查询功能
 type User struct{}
 
-// UserInfoRequest 用户信息详情请求结构体，用于接收创建用户的参数
-type UserInfoRequest struct {
-	Role     int8   `json:"role"`     // 用户角色（1-管理员，2-普通用户）
-	Username string `json:"username"` // 用户名
-	Password string `json:"password"` // 用户密码
-}
-
 // Create 创建用户，支持JSON参数传入或交互式输入两种方式
 func (User) Create(value string) {
-	var userInfo UserInfoRequest
+	var userInfo user_service.UserCreateRequest
 
 	// 判断是否通过JSON参数传入用户信息
 	if value != "" {
@@ -81,26 +75,12 @@ func (User) Create(value string) {
 		userInfo.Password = string(password)
 	}
 
-	// 检查用户名是否已存在
-	var u models.UserModel
-	err := global.DB.Take(&u, "username = ?", userInfo.Username).Error
-	if err == nil {
-		fmt.Println("用户名已存在")
-		return
-	}
-
-	// 密码加密并创建用户记录
-	hashPwd, _ := pwd.GenerateFromPassword(userInfo.Password)
-	err = global.DB.Create(&models.UserModel{
-		Username: userInfo.Username,
-		Password: hashPwd,
-		Role:     userInfo.Role,
-	}).Error
+	// 调用用户服务创建用户
+	us := user_service.NewUserService(global.Log)
+	_, err := us.Create(userInfo)
 	if err != nil {
-		logrus.Errorf("用户创建失败 %s", err)
-		return
+		logrus.Fatal(err)
 	}
-	logrus.Infof("用户创建成功")
 }
 
 // List 查询并展示最近创建的10条用户信息列表

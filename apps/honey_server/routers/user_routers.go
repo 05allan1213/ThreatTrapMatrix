@@ -17,4 +17,7 @@ func UserRouters(r *gin.RouterGroup) {
 	// 使用JSON参数绑定中间件解析登录请求参数
 	app := api.App.UserApi
 	r.POST("login", middleware.BindJsonMiddleware[user_api.LoginRequest], app.LoginView)
+	// POST /honey_server/users - 创建用户接口
+	// 使用JSON参数绑定中间件解析创建用户请求参数
+	r.POST("users", middleware.AdminMiddleware, middleware.BindJsonMiddleware[user_api.CreateRequest], app.CreateView)
 }
