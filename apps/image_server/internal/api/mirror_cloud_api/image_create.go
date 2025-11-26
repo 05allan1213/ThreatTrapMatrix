@@ -21,13 +21,13 @@ import (
 
 // ImageCreateRequest 镜像创建接口请求参数结构体
 type ImageCreateRequest struct {
-	ImageID   string `json:"imageID" binding:"required"`   // 镜像ID
-	ImageName string `json:"imageName" binding:"required"` // 镜像名称
-	ImageTag  string `json:"imageTag" binding:"required"`  // 镜像标签
-	ImagePath string `json:"imagePath" binding:"required"` // 镜像临时上传路径
-	Title     string `json:"title" binding:"required"`     // 镜像别名
-	Port      int    `json:"port" binding:"required"`      // 镜像运行端口
-	Agreement int8   `json:"agreement" binding:"required"` // 镜像通信协议
+	ImageID   string `json:"imageID" binding:"required"`              // 镜像ID
+	ImageName string `json:"imageName" binding:"required"`            // 镜像名称
+	ImageTag  string `json:"imageTag" binding:"required"`             // 镜像标签
+	ImagePath string `json:"imagePath" binding:"required"`            // 镜像临时上传路径
+	Title     string `json:"title" binding:"required"`                // 镜像别名
+	Port      int    `json:"port" binding:"required,min=1,max=65535"` // 镜像运行端口
+	Agreement int8   `json:"agreement" binding:"required,oneof=1"`    // 镜像通信协议 固定协议1:TCP
 }
 
 // ImageCreateView 镜像创建接口处理函数
