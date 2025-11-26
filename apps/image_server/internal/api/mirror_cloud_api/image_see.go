@@ -74,9 +74,9 @@ func (MirrorCloudApi) ImageSeeView(c *gin.Context) {
 		return
 	}
 
-	// 异步执行临时文件清理（延迟10秒）
+	// 异步执行临时文件清理（延迟5分钟）
 	go func() {
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Minute)
 		err = os.Remove(tempFilePath)
 		if os.IsNotExist(err) {
 			return

@@ -5,6 +5,8 @@ package routers
 
 import (
 	"ThreatTrapMatrix/apps/image_server/internal/api"
+	"ThreatTrapMatrix/apps/image_server/internal/api/mirror_cloud_api"
+	"ThreatTrapMatrix/apps/image_server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,4 +16,7 @@ func MirrorCloudRouter(r *gin.RouterGroup) {
 	app := api.App.MirrorCloudApi
 	// POST /mirror_cloud/see - 镜像文件查看接口
 	r.POST("mirror_cloud/see", app.ImageSeeView)
+	// POST /mirror_cloud - 镜像文件创建接口
+	// 使用JSON参数绑定中间件解析创建镜像请求参数
+	r.POST("mirror_cloud", middleware.BindJsonMiddleware[mirror_cloud_api.ImageCreateRequest], app.ImageCreateView)
 }
