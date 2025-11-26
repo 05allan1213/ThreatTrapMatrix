@@ -20,13 +20,12 @@ func Run() {
 
 	// 创建默认Gin引擎
 	r := gin.Default()
-	// 创建静态路由
-	r.Static("uploads", "uploads")
 	// 创建API根路由分组
-	g := r.Group("honey_server")
+	g := r.Group("image_server")
 	g.Use(middleware2.LogMiddleware, middleware2.AuthMiddleware) // 系统内部必须登录才能继续使用
 
 	// 路由注册
+	MirrorCloudRouter(g) // 镜像云相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
