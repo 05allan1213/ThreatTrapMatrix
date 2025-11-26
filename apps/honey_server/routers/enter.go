@@ -26,8 +26,9 @@ func Run() {
 	g := r.Group("honey_server")
 	g.Use(middleware.LogMiddleware, middleware.AuthMiddleware) // 系统内部必须登录才能继续使用
 
-	// 注册用户相关路由
-	UserRouters(g)
+	// 路由注册
+	UserRouters(g)    // 注册用户相关路由
+	CaptchaRouters(g) // 注册验证码相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
