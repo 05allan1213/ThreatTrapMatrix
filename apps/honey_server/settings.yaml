@@ -9,7 +9,7 @@ db: # MySQL
   connMaxLifetime: 10000 # 连接最大生命周期
 
 logger: # 日志器
-  format: text # 日志格式
+  format: json # 日志格式 [json, text]
   appName: honey_server # 应用名称
   level: info # 日志级别
 
