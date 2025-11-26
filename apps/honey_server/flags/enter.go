@@ -58,7 +58,7 @@ func Run() {
 		// 用户菜单下的子功能分支
 		switch Options.Type {
 		case "create":
-			user.Create()
+			user.Create(Options.Value)
 			os.Exit(0)
 		case "list":
 			user.List()
