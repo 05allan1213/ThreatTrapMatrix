@@ -3,7 +3,11 @@ package response
 // File: honey_server/utils/response/enter.go
 // Description: 统一响应格式模块，定义API接口返回数据结构及快捷响应函数
 
-import "github.com/gin-gonic/gin"
+import (
+	"ThreatTrapMatrix/apps/honey_server/utils/validate"
+
+	"github.com/gin-gonic/gin"
+)
 
 // Response API接口统一响应结构体
 type Response struct {
@@ -53,5 +57,6 @@ func FailWithMsg(msg string, c *gin.Context) {
 
 // FailWithError 失败响应（默认错误码，使用错误对象消息）
 func FailWithError(err error, c *gin.Context) {
-	response(1001, nil, err.Error(), c)
+	msg := validate.ValidateError(err)
+	response(1001, nil, msg, c)
 }
