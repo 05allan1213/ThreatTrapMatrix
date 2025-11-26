@@ -23,4 +23,6 @@ func UserRouters(r *gin.RouterGroup) {
 	// GET /honey_server/users - 用户列表查询接口
 	// 使用Query参数绑定中间件解析用户列表查询请求参数
 	r.GET("users", middleware.BindQueryMiddleware[user_api.UserListRequest], app.UserListView)
+	// POST /honey_server/logout - 用户注销接口
+	r.POST("logout", app.UserLogoutView)
 }

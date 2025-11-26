@@ -1,7 +1,7 @@
 package user_api
 
 // File: user_api.go
-// Description: 用户接口模块，处理用户登录等核心业务逻辑
+// Description: 用户登录API接口
 
 import (
 	"ThreatTrapMatrix/apps/honey_server/global"

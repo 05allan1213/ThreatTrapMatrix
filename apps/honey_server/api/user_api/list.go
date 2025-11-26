@@ -1,7 +1,7 @@
 package user_api
 
 // File: honey_server/api/user_api/list.go
-// Description: 用户列表查询API
+// Description: 用户列表查询API接口
 
 import (
 	"ThreatTrapMatrix/apps/honey_server/middleware"
