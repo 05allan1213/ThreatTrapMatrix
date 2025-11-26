@@ -3,7 +3,7 @@ package models
 // LogModel 系统日志模型
 type LogModel struct {
 	Model
-	Type        int8   `json:"type"`        // 日志类型
+	Type        int8   `json:"type"`        // 日志类型 1 登录日志
 	IP          string `json:"ip"`          // ip（登录日志）
 	Addr        string `json:"addr"`        // 地址
 	UserID      uint   `json:"userID"`      // 用户id

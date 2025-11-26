@@ -1,12 +1,13 @@
 package user_api
 
-// File: user_api.go
+// File: honey_server/api/user_api/login.go
 // Description: 用户登录API接口
 
 import (
 	"ThreatTrapMatrix/apps/honey_server/global"
 	"ThreatTrapMatrix/apps/honey_server/middleware"
 	"ThreatTrapMatrix/apps/honey_server/models"
+	"ThreatTrapMatrix/apps/honey_server/service/log_service"
 	"ThreatTrapMatrix/apps/honey_server/utils/captcha"
 	"ThreatTrapMatrix/apps/honey_server/utils/jwts"
 	"ThreatTrapMatrix/apps/honey_server/utils/pwd"
@@ -28,15 +29,18 @@ type LoginRequest struct {
 func (UserApi) LoginView(c *gin.Context) {
 	// 获取绑定的登录请求参数
 	cr := middleware.GetBind[LoginRequest](c)
-
+	// 创建用户登录日志服务
+	loginLog := log_service.NewLoginLog(c)
 	// 校验验证码参数是否完整
 	if cr.CaptchaID == "" || cr.CaptchaCode == "" {
+		loginLog.FailLog(cr.Username, "", "未输入图片验证码")
 		response.FailWithMsg("请输入图片验证码", c)
 		return
 	}
 
 	// 验证图片验证码有效性
 	if !captcha.CaptchaStore.Verify(cr.CaptchaID, cr.CaptchaCode, true) {
+		loginLog.FailLog(cr.Username, "", "图片验证码验证失败")
 		response.FailWithMsg("图片验证码验证失败", c)
 		return
 	}
@@ -45,12 +49,14 @@ func (UserApi) LoginView(c *gin.Context) {
 	var user models.UserModel
 	err := global.DB.Take(&user, "username = ?", cr.Username).Error
 	if err != nil {
+		loginLog.FailLog(cr.Username, cr.Password, "用户名不存在")
 		response.FailWithMsg("用户名或密码错误", c)
 		return
 	}
 
 	// 验证密码是否匹配
 	if !pwd.CompareHashAndPassword(user.Password, cr.Password) {
+		loginLog.FailLog(cr.Username, cr.Password, "密码错误")
 		response.FailWithMsg("用户名或密码错误", c)
 		return
 	}
@@ -66,6 +72,8 @@ func (UserApi) LoginView(c *gin.Context) {
 		return
 	}
 
+	// 登录成功，记录登录日志
+	loginLog.SuccessLog(user.ID, cr.Username)
 	// 返回登录成功结果（包含Token）
 	response.OkWithData(token, c)
 }
