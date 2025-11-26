@@ -12,6 +12,7 @@ import (
 	"ThreatTrapMatrix/apps/honey_server/utils/jwts"
 	"ThreatTrapMatrix/apps/honey_server/utils/pwd"
 	"ThreatTrapMatrix/apps/honey_server/utils/response"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -20,9 +21,9 @@ import (
 // LoginRequest 用户登录请求参数结构体
 type LoginRequest struct {
 	Username    string `json:"username" binding:"required" label:"用户名"` // 用户名（必填）
-	Password    string `json:"password" binding:"required" label:"密码"`  // 密码（必填）
-	CaptchaID   string `json:"captchaID" binding:"required"`            // 验证码ID（必填）
-	CaptchaCode string `json:"captchaCode" binding:"required"`          // 验证码内容（必填）
+	Password    string `json:"password" binding:"required" label:"密码"`   // 密码（必填）
+	CaptchaID   string `json:"captchaID" binding:"required"`               // 验证码ID（必填）
+	CaptchaCode string `json:"captchaCode" binding:"required"`             // 验证码内容（必填）
 }
 
 // LoginView 用户登录接口处理函数
@@ -71,6 +72,10 @@ func (UserApi) LoginView(c *gin.Context) {
 		response.FailWithMsg("登录失败", c)
 		return
 	}
+
+	// 更新用户最后登录时间
+	now := time.Now().Format(time.DateTime)
+	global.DB.Model(&user).Update("last_login_date", now)
 
 	// 登录成功，记录登录日志
 	loginLog.SuccessLog(user.ID, cr.Username)
