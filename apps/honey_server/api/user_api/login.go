@@ -21,6 +21,9 @@ type LoginRequest struct {
 
 func (UserApi) LoginView(c *gin.Context) {
 	cr := middleware.GetBind[LoginRequest](c)
+	log := middleware.GetLog(c)
+	log.Infof("这是请求的内容 %v", cr)
+	log.Infof("ip %s", c.ClientIP())
 
 	fmt.Println(cr)
 	response.OkWithMsg("登录成功", c)

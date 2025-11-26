@@ -24,7 +24,7 @@ func Run() {
 	r.Static("uploads", "uploads")
 	// 创建API根路由分组
 	g := r.Group("honey_server")
-	g.Use(middleware.AuthMiddleware) // 系统内部必须登录才能继续使用
+	g.Use(middleware.LogMiddleware, middleware.AuthMiddleware) // 系统内部必须登录才能继续使用
 
 	// 注册用户相关路由
 	UserRouters(g)
