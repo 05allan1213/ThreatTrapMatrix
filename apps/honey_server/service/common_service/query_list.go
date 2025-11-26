@@ -12,9 +12,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// Request 通用查询请求参数结构体
+// QueryListRequest 通用查询请求参数结构体
 // 封装分页、排序、模糊查询、预加载等通用查询条件
-type Request struct {
+type QueryListRequest struct {
 	Debug    bool            // 调试模式开关（开启时打印SQL）
 	Likes    []string        // 支持模糊查询的字段列表
 	Where    *gorm.DB        // 自定义Where条件
@@ -24,7 +24,7 @@ type Request struct {
 }
 
 // QueryList 通用列表查询函数（泛型实现）
-func QueryList[T any](model T, req Request) (list []T, count int64, err error) {
+func QueryList[T any](model T, req QueryListRequest) (list []T, count int64, err error) {
 	// 获取数据库连接实例
 	db := core.GetDB()
 

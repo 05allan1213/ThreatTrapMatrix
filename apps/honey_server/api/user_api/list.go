@@ -26,7 +26,7 @@ func (UserApi) UserListView(c *gin.Context) {
 
 	// 调用通用查询服务获取用户列表及总数
 	// 支持用户名模糊查询、分页及按创建时间倒序排序
-	list, count, _ := common_service.QueryList(models.UserModel{Username: cr.Username}, common_service.Request{
+	list, count, _ := common_service.QueryList(models.UserModel{Username: cr.Username}, common_service.QueryListRequest{
 		Likes:    []string{"username"}, // 用户名字段支持模糊查询
 		PageInfo: cr.PageInfo,          // 分页参数
 		Sort:     "created_at desc",    // 排序规则：按创建时间倒序

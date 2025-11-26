@@ -25,4 +25,7 @@ func UserRouters(r *gin.RouterGroup) {
 	r.GET("users", middleware.BindQueryMiddleware[user_api.UserListRequest], app.UserListView)
 	// POST /honey_server/logout - 用户注销接口
 	r.POST("logout", app.UserLogoutView)
+	// DELETE /honey_server/users - 用户删除接口
+	// 使用JSON参数绑定中间件解析删除用户请求参数
+	r.DELETE("users", middleware.BindJsonMiddleware[user_api.UserRemoveRequest], app.UserRemoveView)
 }
