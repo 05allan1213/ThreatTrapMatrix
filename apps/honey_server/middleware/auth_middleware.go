@@ -7,6 +7,7 @@ import (
 	"ThreatTrapMatrix/apps/honey_server/global"
 	"ThreatTrapMatrix/apps/honey_server/utils"
 	"ThreatTrapMatrix/apps/honey_server/utils/jwts"
+	"ThreatTrapMatrix/apps/honey_server/utils/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +27,7 @@ func AuthMiddleware(c *gin.Context) {
 	claims, err := jwts.ParseToken(token)
 	if err != nil {
 		// 认证失败，返回错误响应并终止请求链
-		c.JSON(200, gin.H{"code": 7, "msg": "认证失败", "data": gin.H{}})
+		response.FailWithMsg("认证失败", c)
 		c.Abort()
 		return
 	}
@@ -49,14 +50,14 @@ func AdminMiddleware(c *gin.Context) {
 	claims, err := jwts.ParseToken(token)
 	if err != nil {
 		// 认证失败，返回错误响应并终止请求链
-		c.JSON(200, gin.H{"code": 7, "msg": "认证失败", "data": gin.H{}})
+		response.FailWithMsg("认证失败", c)
 		c.Abort()
 		return
 	}
 	// 校验用户角色是否为管理员（角色标识1）
 	if claims.Role != 1 {
 		// 角色认证失败，返回错误响应并终止请求链
-		c.JSON(200, gin.H{"code": 7, "msg": "角色认证失败", "data": gin.H{}})
+		response.FailWithMsg("权限错误", c)
 		c.Abort()
 		return
 	}

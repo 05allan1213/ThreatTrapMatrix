@@ -4,6 +4,8 @@ package middleware
 // Description: 参数绑定中间件模块，提供JSON和Query参数的通用绑定及获取功能
 
 import (
+	"ThreatTrapMatrix/apps/honey_server/utils/response"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +16,7 @@ func BindJsonMiddleware[T any](c *gin.Context) {
 	err := c.ShouldBindJSON(&cr)
 	if err != nil {
 		// 参数绑定失败，返回错误响应并终止请求链
-		c.JSON(200, gin.H{"code": 1, "msg": "参数绑定错误"})
+		response.FailWithMsg("参数绑定错误", c)
 		c.Abort()
 		return
 	}
@@ -29,7 +31,7 @@ func BindQueryMiddleware[T any](c *gin.Context) {
 	err := c.ShouldBindQuery(&cr)
 	if err != nil {
 		// 参数绑定失败，返回错误响应并终止请求链
-		c.JSON(200, gin.H{"code": 1, "msg": "参数绑定错误"})
+		response.FailWithMsg("参数绑定错误", c)
 		c.Abort()
 		return
 	}

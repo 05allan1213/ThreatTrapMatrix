@@ -6,6 +6,8 @@ package user_api
 import (
 	"fmt"
 
+	"ThreatTrapMatrix/apps/honey_server/utils/response"
+
 	"ThreatTrapMatrix/apps/honey_server/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -21,5 +23,5 @@ func (UserApi) LoginView(c *gin.Context) {
 	cr := middleware.GetBind[LoginRequest](c)
 
 	fmt.Println(cr)
-	c.JSON(200, gin.H{"code": 0, "msg": "登录成功"})
+	response.OkWithMsg("登录成功", c)
 }
