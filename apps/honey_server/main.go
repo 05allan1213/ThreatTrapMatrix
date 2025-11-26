@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	core.InitIPDB()                      // 初始化IP地址数据库
 	global.Config = core.ReadConfig()    // 读取配置文件
 	core.SetLogDefault()                 // 设置默认日志配置
 	global.Log = core.GetLogger()        // 获取日志实例

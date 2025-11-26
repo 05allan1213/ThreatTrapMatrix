@@ -4,6 +4,7 @@ package log_service
 // Description: 日志服务模块，负责用户登录日志的记录与管理，包括成功/失败登录日志的存储
 
 import (
+	"ThreatTrapMatrix/apps/honey_server/core"
 	"ThreatTrapMatrix/apps/honey_server/global"
 	"ThreatTrapMatrix/apps/honey_server/models"
 
@@ -19,8 +20,8 @@ type LoginLogService struct {
 // NewLoginLog 创建LoginLogService实例的构造函数
 func NewLoginLog(c *gin.Context) *LoginLogService {
 	return &LoginLogService{
-		IP:   c.ClientIP(), // 从上下文获取客户端IP
-		Addr: "",           // 地理位置信息
+		IP:   c.ClientIP(),                 // 从上下文获取客户端IP
+		Addr: core.GetIpAddr(c.ClientIP()), // 地理位置信息
 	}
 }
 
