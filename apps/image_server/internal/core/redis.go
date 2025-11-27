@@ -1,6 +1,6 @@
 package core
 
-// File: redis.go
+// File: image_server/core/redis.go
 // Description: Redis客户端初始化模块，提供单例Redis客户端的创建与获取功能
 
 import (
@@ -13,7 +13,7 @@ import (
 )
 
 // client 全局Redis客户端实例，通过单例模式初始化
-var client *redis.Client
+var redisClient *redis.Client
 
 // InitRedis 初始化Redis客户端，建立连接并验证
 func InitRedis() (client *redis.Client) {
@@ -42,7 +42,7 @@ var onceRedis sync.Once
 // GetRedisClient 获取单例Redis客户端实例（懒加载）
 func GetRedisClient() *redis.Client {
 	onceRedis.Do(func() {
-		client = InitRedis()
+		redisClient = InitRedis()
 	})
-	return client
+	return redisClient
 }

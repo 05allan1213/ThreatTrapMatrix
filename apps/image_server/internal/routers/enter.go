@@ -26,6 +26,7 @@ func Run() {
 
 	// 路由注册
 	MirrorCloudRouter(g) // 镜像云相关路由
+	VsRouter(g)          // 虚拟服务相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
