@@ -19,4 +19,7 @@ func VsRouter(r *gin.RouterGroup) {
 	// POST /vs: 虚拟服务创建接口
 	// 绑定JSON请求参数并处理创建逻辑
 	r.POST("vs", middleware.BindJsonMiddleware[vs_api.VsCreateRequest], app.VsCreateView)
+	// GET /vs: 虚拟服务列表查询接口
+	// 绑定Query参数并处理列表逻辑
+	r.GET("vs", middleware.BindQueryMiddleware[vs_api.VsListRequest], app.VsListView)
 }
