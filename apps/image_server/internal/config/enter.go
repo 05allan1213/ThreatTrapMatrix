@@ -13,6 +13,7 @@ type Config struct {
 	System    System   `yaml:"system"`    // 系统配置信息
 	Jwt       Jwt      `yaml:"jwt"`       // jwt配置信息
 	WhiteList []string `yaml:"whiteList"` // 路由白名单
+	VsNet     VsNet    `yaml:"vsNet"`     // 虚拟网络配置信息
 }
 
 // DB 数据库连接配置结构体
@@ -63,4 +64,11 @@ type Jwt struct {
 	Expires int    `yaml:"expires"` // token过期时间,单位秒
 	Issuer  string `yaml:"issuer"`  // token签发者
 	Secret  string `yaml:"secret"`  // token密钥
+}
+
+// VsNet 虚拟网络配置结构体
+type VsNet struct {
+	Name   string `yaml:"name"`   // 虚拟网络名称
+	Prefix string `yaml:"prefix"` // 虚拟网络前缀
+	Net    string `yaml:"net"`    // 虚拟网络地址
 }

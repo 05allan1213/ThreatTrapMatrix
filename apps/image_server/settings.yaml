@@ -31,3 +31,8 @@ whiteList: # 路由白名单
   - /honey_server/login # 登录
   - /honey_server/captcha # 验证码
   - /honey_server/site # 站点信息
+
+vsNet: # 虚拟网络
+  name: honey-hy # 虚拟网络名称
+  prefix: hy- # 虚拟网络前缀
+  net: 10.2.0.0/24 # 虚拟网络地址
