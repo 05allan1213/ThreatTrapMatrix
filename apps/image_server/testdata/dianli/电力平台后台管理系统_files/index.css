@@ -1,0 +1,463 @@
+*{ 
+	margin: 0; padding: 0;
+}
+a{ 
+	text-decoration: none;
+}
+a:hover{
+	text-decoration: none !important;
+}
+body{
+	position: relative;
+	font-family: '微软雅黑';
+	background: #f5f5f5 !important;
+}
+button, input, optgroup, select, textarea{
+	outline: none;
+	border: none;
+}
+i{
+	font-style: normal;
+}
+p{
+	margin: 0 !important;
+}
+img{
+	vertical-align: middle;
+}
+ul,li{
+	list-style: none;
+}
+label{
+	margin-bottom: 0 !important;
+}
+.clearfix:after{
+	display: block;
+	clear: both;
+	content: "";
+	visibility: hidden;
+	height: 0;
+}
+.clearfix{
+	zoom: 1;
+}
+.error{
+	display: none;
+	background: rgba(0, 0, 0, 0.4);
+	border-radius: 4px;
+	line-height: 40px;
+	padding: 0 20px;
+	text-align: left;
+}
+.error span{
+	color: #fff;
+}
+.error .error-tit{
+	padding-left: 4px;
+}
+.login-div{
+	position:relative;
+}
+.error-tip{
+	position:absolute;
+	font-size: 12px;
+	color: #ed4014;
+	display: none;
+}
+.code-box{
+	position: absolute;
+	top: 1px;
+	right: 16px;
+	width: 100px;
+	height: 46px;
+	z-index: 999;
+}
+.login-board .code-box img{
+	margin-top: 0;
+	height: 46px;
+}
+.login-form .input-group input[name="captcha_code"]{
+	padding-left: 20px;
+}
+.login{
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 121, 254, 1);
+    background-image: url(../images/u1_state0.png);
+    background-position: right top;
+    background-repeat: no-repeat;
+    background-attachment: scroll;
+    background-size: cover;
+    background-origin: border-box;
+}
+.login-board{
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%,-50%);
+	-webkit-transform: translate(-50%,-50%);
+	-moz-transform: translate(-50%,-50%);
+	-o-transform: translate(-50%,-50%);
+	background: #fff;
+	width: 420px;
+    height: 600px;
+    border-radius: 20px;
+    -moz-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.349019607843137);
+    -webkit-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.349019607843137);
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.349019607843137);
+    text-align: center;
+}
+.login-form .dropdown-menu>.active>a, .login-form .dropdown-menu>.active>a:focus, .login-form .dropdown-menu>.active>a:hover{
+	background: #0079FE;
+}
+.login-form .open>.dropdown-toggle.btn-default:hover, .login-form .open>.dropdown-toggle.btn-default, .login-form .btn-default:active:hover{
+	background: none;
+}
+.login-form .btn{
+	border: none;
+}
+.login-board img{
+	width: 115px;
+    height: 115px;
+    margin-top: 32px;
+}
+.login-board p{
+	padding: 2px;
+	font-weight: 650;
+    font-size: 26px;
+    color: #0079FE;
+    line-height: 32px;
+    margin-top: 50px;
+}
+.login-form{
+	padding: 0 60px;
+}
+.login-form .input-group{
+	margin-top: 20px;
+	position: relative;
+	border: 1px solid #dbdbdb;
+	width: 300px;
+	display: flex;
+    align-items: center;
+    border-radius: 4px;
+}
+.login-form .input-group.con-edit{
+	margin-top: 70px;
+	border: none;
+}
+.login-form .input-group:hover{
+	border-color: #0079fe;
+}
+.login-form .input-group.login-none{
+	border: none;
+}
+.login-form .input-group label, .login-form .input-group .clearInput{
+	display: inline-block;
+	width: 40px;
+}
+.login-form .input-group .clearInput{
+	display: none;
+	color: #ccc;
+}
+.login-form .input-group .icon{ 
+	color: #ccc;
+	font-size: 20px;
+}
+.login-form .input-group .form-control{
+	float: none;
+}
+.login-form .input-group input{
+	height: 48px;
+	line-height: 48px;
+	width: 220px;
+	border:none;
+	padding: 0;
+}
+.login-form .input-group input[name="captcha_code"]{
+	width: 170px;
+	border-radius: 4px 0 0 4px;
+}
+.login-form .input-group input[name="phone"]{
+	width: 158px;
+}
+.getCode{
+	width: 96px;
+	line-height: 34px;
+	background:#aaa;
+	color: #fff;
+}
+.login-form .input-group  select{
+	width: 298px;
+	height: 48px;
+	line-height: 48px;
+}
+.login-btn{
+	width: 298px;
+	background: #0079fe;
+	color: #fff;
+	height: 50px;
+	line-height: 50px;
+	border-radius: 4px;
+}
+.login-msg{
+	margin-top: 12px;
+	display: flex;
+	justify-content: space-between;
+}
+.login-msg a{
+	font-size: 14px;
+	color: #666;
+}
+.login-role .bootstrap-select.form-control.input-group-btn{
+	width: 298px;
+	border-radius: 4px;
+}
+.login-role .btn{
+	padding: 13px 12px;
+}
+.input-group.login-role .bootstrap-select.form-control .dropdown-toggle{
+	border-radius: 4px;
+}
+.login-role{
+	width: 298px;
+}
+.edit-return a{
+	display: inline-block;
+	margin-top: 12px;
+	color: #666;
+}
+.edit-return a:hover{
+	color: #0079FE;
+}
+.forget{
+	display: flex;
+	align-items: center;
+}
+.login-form .input-group.acterr{
+	border-color: #ed4014;
+}
+.menu{
+	width: 100%;
+	height: 70px;
+	line-height: 70px;
+	background: url(../images/u53_state0.png) center center no-repeat;
+	position: fixed;
+	top: 0;
+	z-index: 1000;
+}
+.sys-logo{
+	margin-left: 10px;
+	width: 284px;
+	float: left;
+}
+.sys-logo img{
+	width: 40px;
+	height: 40px;
+}
+.sys-logo p{
+	display: inline-block;
+	font-size: 20px;
+	font-weight: 650;
+	color: #fff;
+	padding-left: 10px;
+}
+.right-bg{
+	width: 1140px;
+	height: 100%;
+	background: #f2f2f2;
+	margin: 0 auto;
+}
+.company-add{
+	background: #fff;
+	border: 1px solid #e4e4e4;
+	position: relative;
+}
+.data-name{
+	line-height: 48px;
+	border-bottom: 1px solid #e9e9e9;
+	padding-left: 18px;
+	font-size: 14px;
+	font-weight: 700;
+	color: #666;
+}
+.addForm, .input-groups{
+	width: 540px;
+	margin: 0 auto;
+}
+.input-groups{
+	margin-top: 20px;
+	font-size: 0;
+}
+.addForm label{
+	float: left;
+	width: 114px;
+	line-height: 34px;
+	text-align: right;
+	margin-right: 20px;
+	font-weight: normal;
+	font-size: 14px;
+}
+.addForm input{
+	display: inline-block;
+	width: 400px;
+}
+.addForm input.quhao,.addForm input.fenji{
+	width: 100px;
+	border-radius: 4px 0 0 4px;
+}
+.addForm input.haoma{
+	width: 200px;
+	border-left: none;
+	border-right: none;
+	border-radius: 0;
+}
+.yyzz{
+	float: left;
+	width: 402px;
+	height: 140px;
+	position: relative;
+}
+.addForm input[name="business_license"], .addForm input[name="qr_code"]{ 
+	opacity: 0;   
+	width: 100px;
+    height: 100px;
+    overflow: hidden;
+    position: absolute;
+    left: 0;
+    z-index: 1;
+}
+.img-preview{
+	position: absolute;
+    left: 120px;
+    top: 0;
+    width: 100px;
+    height: 100px;
+}
+.img-preview img{
+	width: 100px;
+    height: 100px;
+}
+.tip{
+	margin-top: 100px;
+}
+.file-send{    
+	width: 100px;
+    height: 100px;
+    background: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #e9e9e9;
+    border-radius: 4px;
+    position: absolute;
+    left: 404px;
+}
+.layui-upload-file {
+    display: none !important;
+}
+.img-list {
+    display: inline-block;
+    margin: 0 10px 10px 0;
+    position: relative;
+    cursor: pointer;
+}
+.img-list .glyphicon {
+    border-radius: 50%;
+    background: #ccc;
+    font-size: 14px;
+    position: absolute;
+    right: -6px;
+    top: -6px;
+    z-index: 999;
+}
+.img-list img {
+    width: 90px;
+    height: 90px;
+}
+.file-send span:nth-child(1){
+	font-size: 20px;
+	margin-bottom: 10px;
+}
+.file-send span{
+	color: #ccc;
+	font-size: 16px;
+}
+.file-send:hover{
+	border-color: #0079FE;
+}
+.file-send:hover span{
+	color: #0079FE;
+}
+.tip span{
+	display: inline-block;
+	line-height: 48px;
+	color: #999;
+	font-size: 12px;
+}
+.tip span:nth-child(1){
+	margin-right: 4px;
+}
+.con-add{
+	font-size: 14px;
+} 
+.addForm .con-add{
+	background: #0079FE;
+}
+.addForm .con-add a{
+	color: #fff;
+}
+.addForm .btn{
+	margin-bottom: 20px;
+	width: 140px;
+}
+.addForm .btn:nth-child(1){
+	margin-left: 134px;
+}
+.progess{
+	height: 400px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+.progess .inprogess{
+	color: #0079FE;
+	font-size: 85px;
+	transform:rotateY(180deg);
+}
+.progess .passprogess{
+	color: #4bd863;
+	font-size: 85px;
+}
+.progess .failprogess{
+	color: #f95e5a;
+	font-size: 85px;
+}
+.progess p{
+	font-size: 14px;
+	color: #999;
+}
+.progess p:nth-of-type(1){
+	font-size: 24px;
+	color: #666;
+	font-weight: 700;
+	margin: 14px 0 !important;
+}
+.inprogess-btn{
+	border-top: 1px solid #e9e9e9;
+	height: 88px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+.inprogess-btn .btn.progess-btn{
+	width: 140px;
+	height: 40px;
+	padding: 0;
+	color: #fff;
+	background: #0079FE;
+}
+#warn{
+	display: none;
+}
