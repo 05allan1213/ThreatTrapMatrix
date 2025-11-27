@@ -68,7 +68,7 @@ type Jwt struct {
 
 // VsNet 虚拟网络配置结构体
 type VsNet struct {
-	Name   string `yaml:"name"`   // 虚拟网络名称
-	Prefix string `yaml:"prefix"` // 虚拟网络前缀
-	Net    string `yaml:"net"`    // 虚拟网络地址
+	Name   string `yaml:"name" json:"name"`     // 虚拟网络名称
+	Prefix string `yaml:"prefix" json:"prefix"` // 虚拟网络前缀
+	Net    string `yaml:"net" json:"net"`       // 虚拟网络地址
 }
