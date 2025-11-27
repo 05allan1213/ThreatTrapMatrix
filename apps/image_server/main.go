@@ -6,6 +6,7 @@ import (
 	"ThreatTrapMatrix/apps/image_server/internal/global"
 	"ThreatTrapMatrix/apps/image_server/internal/routers"
 	"ThreatTrapMatrix/apps/image_server/internal/service/cron_service"
+	"ThreatTrapMatrix/apps/image_server/internal/service/vs_net_service"
 )
 
 func main() {
@@ -18,5 +19,6 @@ func main() {
 	global.Redis = core.GetRedisClient()    // 获取Redis实例
 	flags.Run()                             // 运行命令行参数
 	cron_service.Run()                      // 运行定时任务
+	vs_net_service.Run()                    // 运行虚拟网络服务
 	routers.Run()                           // 启动路由
 }
