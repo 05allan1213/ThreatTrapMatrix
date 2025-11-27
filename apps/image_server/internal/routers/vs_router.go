@@ -7,6 +7,7 @@ import (
 	"ThreatTrapMatrix/apps/image_server/internal/api"
 	"ThreatTrapMatrix/apps/image_server/internal/api/vs_api"
 	"ThreatTrapMatrix/apps/image_server/internal/middleware"
+	"ThreatTrapMatrix/apps/image_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,4 +25,7 @@ func VsRouter(r *gin.RouterGroup) {
 	r.GET("vs", middleware.BindQueryMiddleware[vs_api.VsListRequest], app.VsListView)
 	// GET /vs/options: 虚拟服务选项列表接口
 	r.GET("vs/options", app.VsOptionsListView)
+	// DELETE /vs: 虚拟服务批量删除接口
+	// 绑定JSON请求参数并处理删除逻辑
+	r.DELETE("vs", middleware.BindJsonMiddleware[models.IDListRequest], app.VsRemoveView)
 }
