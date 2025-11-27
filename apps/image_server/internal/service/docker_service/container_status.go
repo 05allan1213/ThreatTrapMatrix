@@ -25,8 +25,8 @@ func ListAllContainers() ([]container.Summary, error) {
 	return containers, nil
 }
 
-// GetContainerStatus 根据容器名称查询指定容器的状态信息
-func GetContainerStatus(containerName string) (container.Summary, error) {
+// PrefixContainerStatus 根据容器名前缀获取容器状态
+func PrefixContainerStatus(containerName string) (summaryList []container.Summary, err error) {
 	// 创建过滤器：按容器名称筛选
 	filter := filters.NewArgs()
 	filter.Add("name", containerName)
@@ -37,14 +37,8 @@ func GetContainerStatus(containerName string) (container.Summary, error) {
 		All:     true,
 	})
 	if err != nil {
-		return container.Summary{}, fmt.Errorf("获取容器列表失败: %v", err)
+		return
 	}
-
-	// 检查是否找到匹配的容器
-	if len(containers) == 0 {
-		return container.Summary{}, fmt.Errorf("未找到名为 %s 的容器", containerName)
-	}
-
-	// 返回第一个匹配的容器（Docker容器名称具有唯一性）
-	return containers[0], nil
+	// 返回匹配的容器（Docker容器名称具有唯一性）
+	return containers, nil
 }

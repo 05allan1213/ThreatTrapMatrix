@@ -15,8 +15,8 @@ func Run() {
 	timezone, _ := time.LoadLocation("Asia/Shanghai")
 	// 创建定时任务实例，支持秒级精度并使用指定时区
 	crontab := cron.New(cron.WithSeconds(), cron.WithLocation(timezone))
-	// 注册虚拟服务健康检查任务（每秒执行一次）
-	crontab.AddFunc("* * * * * *", VsHealth)
+	// 注册虚拟服务健康检查任务(每日1点执行)
+	crontab.AddFunc("0 0 1 * * *", VsHealth)
 	// 启动定时任务调度器
 	crontab.Start()
 }

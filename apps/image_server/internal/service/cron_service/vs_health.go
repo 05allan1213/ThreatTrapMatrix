@@ -15,7 +15,8 @@ import (
 // VsHealth 虚拟服务健康检查核心逻辑
 func VsHealth() {
 	// 获取Docker引擎中所有容器的状态信息
-	allContainers, err := docker_service.ListAllContainers()
+	logrus.Infof("获取前缀 %s 的容器状态", global.Config.VsNet.Prefix)
+	allContainers, err := docker_service.PrefixContainerStatus(global.Config.VsNet.Prefix)
 	if err != nil {
 		logrus.Errorf("容器状态检测失败 %s", err)
 		return
@@ -57,14 +58,11 @@ func VsHealth() {
 
 		// 存在状态差异时更新数据库
 		if isUpdate {
-			logrus.Infof("%s 容器存在状态修改 %s => %s", model.ContainerName, model.State(), newModel.State())
+			logrus.Infof("%s 容器存在状态修改 %s => %s", model.ContainerName, model.State(), container.State)
 			global.DB.Model(model).Updates(map[string]any{
 				"status":    newModel.Status,
 				"error_msg": newModel.ErrorMsg,
 			})
 		}
-
-		// 打印容器状态信息
-		fmt.Printf("ID: %s, 名称: %s, 状态: %s\n", container.ID[:12], container.Names[0][1:], container.State)
 	}
 }

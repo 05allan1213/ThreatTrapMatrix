@@ -11,6 +11,7 @@ import (
 	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -143,6 +144,78 @@ func (VsApi) VsCreateView(c *gin.Context) {
 		return
 	}
 
+	// 启动一个协程，定时检查容器状态并更新数据库
+	go func(model *models.ServiceModel) {
+		var delayList = []<-chan time.Time{
+			time.After(5 * time.Second),
+			time.After(20 * time.Second),
+			time.After(1 * time.Minute),
+			time.After(5 * time.Minute),
+			time.After(10 * time.Minute),
+			time.After(30 * time.Minute),
+			time.After(1 * time.Hour),
+		}
+		for _, times := range delayList {
+			<-times
+			ContainerStatus(model)
+		}
+	}(&model)
+
 	response.OkWithMsg("创建虚拟服务成功", c)
 	return
+}
+
+// ContainerStatus 单个容器状态检查与同步
+func ContainerStatus(model *models.ServiceModel) {
+	// 记录容器状态检测日志
+	logrus.Infof("检测容器状态 %s", model.ContainerName)
+
+	var newModel models.ServiceModel
+	// 根据容器名称前缀查询容器状态
+	containers, err := docker_service.PrefixContainerStatus(model.ContainerName)
+
+	var isUpdate bool // 是否需要更新数据库标记
+	var state string  // 最新容器状态描述
+
+	// 容器查询失败处理
+	if err != nil {
+		newModel.Status = 2             // 标记为异常状态
+		newModel.ErrorMsg = err.Error() // 记录错误信息
+		isUpdate = true
+		state = err.Error()
+	}
+	// 未找到匹配容器
+	if len(containers) != 1 {
+		newModel.Status = 2              // 标记为异常状态
+		newModel.ErrorMsg = "容器不存在" // 记录错误信息
+		isUpdate = true
+		state = newModel.ErrorMsg
+	} else {
+		// 获取匹配的容器信息
+		container := containers[0]
+
+		// 场景1：数据库记录异常，但容器实际运行正常 → 同步为正常状态
+		if container.State == "running" && model.Status != 1 {
+			newModel.Status = 1
+			newModel.ErrorMsg = ""
+			isUpdate = true
+			state = container.State
+		}
+		// 场景2：数据库记录正常，但容器实际异常 → 同步为异常状态
+		if container.State != "running" && model.Status == 1 {
+			newModel.Status = 2
+			newModel.ErrorMsg = fmt.Sprintf("%s(%s)", container.State, container.Status)
+			isUpdate = true
+			state = container.State
+		}
+	}
+
+	// 存在状态差异时更新数据库
+	if isUpdate {
+		logrus.Infof("%s 容器存在状态修改 %s => %s", model.ContainerName, model.State(), state)
+		global.DB.Model(model).Updates(map[string]any{
+			"status":    newModel.Status,
+			"error_msg": newModel.ErrorMsg,
+		})
+	}
 }
