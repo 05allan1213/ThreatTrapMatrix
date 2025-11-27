@@ -6,7 +6,7 @@ package global
 import (
 	"ThreatTrapMatrix/apps/image_server/internal/config"
 
-	"github.com/moby/moby/client"
+	"github.com/docker/docker/client"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"

@@ -10,7 +10,17 @@ type ServiceModel struct {
 	IP            string     `json:"ip"`                          // 虚拟ip
 	Port          int        `json:"port"`                        // 端口号
 	Status        int8       `json:"status"`                      // 运行状态
+	ErrorMsg      string     `json:"errorMsg"`                    // 错误信息
 	HoneyIPCount  int        `json:"honeyIPCount"`                // 关联诱捕ip数量
 	ContainerID   string     `json:"containerID"`                 // 容器id
 	ContainerName string     `json:"containerName"`               // 容器名称
+}
+
+// State 获取虚拟服务状态
+func (s *ServiceModel) State() string {
+	switch s.Status {
+	case 1:
+		return "running"
+	}
+	return "error"
 }

@@ -4,7 +4,7 @@ package core
 // Description: Docker客户端初始化工具，提供Docker SDK客户端的创建及初始化功能
 
 import (
-	"github.com/moby/moby/client"
+	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
 )
 

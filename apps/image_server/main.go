@@ -5,6 +5,7 @@ import (
 	"ThreatTrapMatrix/apps/image_server/internal/flags"
 	"ThreatTrapMatrix/apps/image_server/internal/global"
 	"ThreatTrapMatrix/apps/image_server/internal/routers"
+	"ThreatTrapMatrix/apps/image_server/internal/service/cron_service"
 )
 
 func main() {
@@ -16,5 +17,6 @@ func main() {
 	global.DB = core.GetDB()                // 获取MySQL数据库实例
 	global.Redis = core.GetRedisClient()    // 获取Redis实例
 	flags.Run()                             // 运行命令行参数
+	cron_service.Run()                      // 运行定时任务
 	routers.Run()                           // 启动路由
 }
