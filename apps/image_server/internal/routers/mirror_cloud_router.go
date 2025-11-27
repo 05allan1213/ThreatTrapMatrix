@@ -32,4 +32,6 @@ func MirrorCloudRouter(r *gin.RouterGroup) {
 	// DELETE /mirror_cloud/:id - 镜像文件删除接口
 	// 使用URI参数绑定中间件解析删除镜像请求参数
 	r.DELETE("mirror_cloud/:id", middleware.BindUriMiddleware[models.IDRequest], app.ImageRemoveView)
+	// GET /mirror_cloud/options - 镜像文件选项列表接口
+	r.GET("mirror_cloud/options", app.ImageOptionsListView)
 }
