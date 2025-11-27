@@ -22,4 +22,6 @@ func VsRouter(r *gin.RouterGroup) {
 	// GET /vs: 虚拟服务列表查询接口
 	// 绑定Query参数并处理列表逻辑
 	r.GET("vs", middleware.BindQueryMiddleware[vs_api.VsListRequest], app.VsListView)
+	// GET /vs/options: 虚拟服务选项列表接口
+	r.GET("vs/options", app.VsOptionsListView)
 }
