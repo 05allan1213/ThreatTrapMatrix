@@ -25,10 +25,11 @@ func Run() {
 	g.Use(middleware2.LogMiddleware, middleware2.AuthMiddleware) // 系统内部必须登录才能继续使用
 
 	// 路由注册
-	MirrorCloudRouter(g)  // 镜像云相关路由
-	VsRouter(g)           // 虚拟服务相关路由
-	VsNetRouter(g)        // 虚拟服务网络相关路由
-	HostTemplateRouter(g) // 主机模板相关路由
+	MirrorCloudRouter(g)    // 镜像云相关路由
+	VsRouter(g)             // 虚拟服务相关路由
+	VsNetRouter(g)          // 虚拟服务网络相关路由
+	HostTemplateRouter(g)   // 主机模板相关路由
+	MatrixTemplateRouter(g) // 矩阵模板相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
