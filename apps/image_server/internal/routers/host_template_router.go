@@ -25,4 +25,7 @@ func HostTemplateRouter(r *gin.RouterGroup) {
 	r.GET("host_template", middleware.BindQueryMiddleware[models.PageInfo], app.ListView)
 	// GET /host_template/options: 主机模板选项查询接口
 	r.GET("host_template/options", app.OptionsView)
+	// DELETE /host_template: 主机模板删除接口
+	// 绑定JSON请求参数并处理删除逻辑
+	r.DELETE("host_template", middleware.BindJsonMiddleware[models.IDListRequest], app.Remove)
 }
