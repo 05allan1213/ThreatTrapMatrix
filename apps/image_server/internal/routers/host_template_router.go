@@ -28,4 +28,7 @@ func HostTemplateRouter(r *gin.RouterGroup) {
 	// DELETE /host_template: 主机模板删除接口
 	// 绑定JSON请求参数并处理删除逻辑
 	r.DELETE("host_template", middleware.BindJsonMiddleware[models.IDListRequest], app.Remove)
+	// PUT /host_template: 主机模板更新接口
+	// 绑定JSON请求参数并处理更新逻辑
+	r.PUT("host_template", middleware.BindJsonMiddleware[host_template_api.UpdateRequest], app.UpdateView)
 }
