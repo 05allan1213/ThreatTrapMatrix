@@ -24,7 +24,7 @@ func (MirrorCloudApi) ImageListView(c *gin.Context) {
 	// 调用通用查询服务获取镜像列表及总数
 	list, count, _ := common_service.QueryList(models.ImageModel{},
 		common_service.QueryListRequest{
-			Likes:    []string{"title", "image_name"}, // 支持按标题和镜像名称模糊搜索
+			Likes:    []string{"title", "image_name"}, // 支持按别名和镜像名称模糊搜索
 			PageInfo: cr.PageInfo,                     // 分页参数
 			Sort:     "created_at desc",               // 按创建时间降序排序
 		})

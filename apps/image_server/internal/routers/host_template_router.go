@@ -7,6 +7,7 @@ import (
 	"ThreatTrapMatrix/apps/image_server/internal/api"
 	"ThreatTrapMatrix/apps/image_server/internal/api/host_template_api"
 	"ThreatTrapMatrix/apps/image_server/internal/middleware"
+	"ThreatTrapMatrix/apps/image_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,4 +20,7 @@ func HostTemplateRouter(r *gin.RouterGroup) {
 	// POST /host_template: 主机模板创建接口
 	// 绑定JSON请求参数并处理创建逻辑
 	r.POST("host_template", middleware.BindJsonMiddleware[host_template_api.CreateRequest], app.CreateView)
+	// GET /host_template: 主机模板列表查询接口
+	// 绑定Query参数并处理列表查询逻辑
+	r.GET("host_template", middleware.BindQueryMiddleware[models.PageInfo], app.ListView)
 }

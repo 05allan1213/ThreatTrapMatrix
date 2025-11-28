@@ -126,7 +126,7 @@ func (VsApi) VsCreateView(c *gin.Context) {
 
 	// 组装虚拟服务数据模型
 	var model = models.ServiceModel{
-		Title:         image.Title,     // 虚拟服务标题（复用镜像别名）
+		Title:         image.Title,     // 虚拟服务名称（复用镜像别名）
 		ContainerName: containerName,   // Docker容器名称（配置前缀+镜像名）
 		Agreement:     image.Agreement, // 通信协议（复用镜像配置）
 		ImageID:       image.ID,        // 关联镜像ID

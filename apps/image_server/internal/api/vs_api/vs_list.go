@@ -13,12 +13,11 @@ import (
 )
 
 // VsListRequest 虚拟服务列表查询请求参数结构体
-// 包含分页信息及端口、IP、标题等筛选条件
 type VsListRequest struct {
 	models.PageInfo        // 嵌套分页参数（页码、页大小）
 	Port            int    `form:"port"` // 筛选条件：服务端口
 	IP              string `form:"ip"` // 筛选条件：容器IP地址
-	Title           string `form:"title"` // 筛选条件：服务标题（支持模糊匹配）
+	Title           string `form:"title"` // 筛选条件：服务名称（支持模糊匹配）
 }
 
 // VsListView 虚拟服务列表查询接口处理函数
@@ -28,7 +27,7 @@ func (VsApi) VsListView(c *gin.Context) {
 
 	// 调用公共查询服务，构建查询条件并执行分页查询
 	list, count, _ := common_service.QueryList(models.ServiceModel{
-		Title: cr.Title, // 标题精确/模糊匹配
+		Title: cr.Title, // 名称精确/模糊匹配
 		IP:    cr.IP,    // IP精确匹配
 		Port:  cr.Port,  // 端口精确匹配
 	},
