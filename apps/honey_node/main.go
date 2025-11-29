@@ -2,17 +2,20 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"honey_node/internal/core"
 	"honey_node/internal/global"
 	"honey_node/internal/rpc/node_rpc"
 	"honey_node/internal/utils/ip"
+	"io/ioutil"
 	"os"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 )
 
 func main() {
@@ -26,8 +29,31 @@ func main() {
 	// 从配置获取gRPC管理服务地址
 	addr := global.Config.System.GrpcManageAddr
 
-	// 创建gRPC客户端连接
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// 加载客户端证书和私钥
+	cert, err := tls.LoadX509KeyPair("cert/client.crt", "cert/client.key")
+	if err != nil {
+		logrus.Fatalf("failed to load client key pair: %v", err)
+	}
+
+	// 加载 CA 证书
+	caCert, err := ioutil.ReadFile("cert/ca.crt")
+	if err != nil {
+		logrus.Fatalf("failed to read CA certificate: %v", err)
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	// 创建 TLS 配置
+	config := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
+	}
+
+	// 创建 credentials
+	creds := credentials.NewTLS(config)
+
+	// 创建 gRPC 连接
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		// 连接失败时记录致命日志并终止程序
 		logrus.Fatalf(fmt.Sprintf("grpc connect addr [%s] 连接失败 %s", addr, err))

@@ -4,12 +4,16 @@ package grpc_service
 // Description: gRPC服务端实现，提供节点相关的gRPC服务接口
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"honey_server/internal/global"
 	"honey_server/internal/rpc/node_rpc"
+	"io/ioutil"
 	"net"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // NodeService 节点服务gRPC实现结构体
@@ -27,8 +31,33 @@ func Run() {
 		logrus.Fatalf("Failed to listen: %v", err) // 监听失败则终止程序
 	}
 
-	// 创建gRPC服务器实例
-	s := grpc.NewServer()
+	// 加载服务端证书和私钥
+	cert, err := tls.LoadX509KeyPair("cert/server.crt", "cert/server.key")
+	if err != nil {
+		logrus.Fatalf("failed to load key pair: %v", err)
+	}
+
+	// 加载 CA 证书
+	caCert, err := ioutil.ReadFile("cert/ca.crt")
+	if err != nil {
+		logrus.Fatalf("failed to read CA certificate: %v", err)
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	// 创建 TLS 配置
+	config := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.RequireAndVerifyClientCert, // 双向认证
+		ClientCAs:    caCertPool,
+	}
+
+	// 创建 credentials
+	creds := credentials.NewTLS(config)
+
+	// 创建 gRPC 服务器，使用 TLS credentials
+	s := grpc.NewServer(grpc.Creds(creds))
+
 	server := NodeService{}
 	// 将NodeService实例注册到gRPC服务器，使其处理对应服务的请求
 	node_rpc.RegisterNodeServiceServer(s, &server)
