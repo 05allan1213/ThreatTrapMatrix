@@ -1,0 +1,7 @@
+logger: # 日志器
+  format: json # 日志格式 [json, text]
+  appName: honey_node # 应用名称
+  level: info # 日志级别
+
+system: # 系统路由
+  grpcManageAddr: "127.0.0.1:8081" # gRPC管理服务监听地址
