@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NodeService_Register_FullMethodName = "/node_rpc.NodeService/Register"
+	NodeService_Register_FullMethodName     = "/node_rpc.NodeService/Register"
+	NodeService_NodeResource_FullMethodName = "/node_rpc.NodeService/NodeResource"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -28,8 +29,10 @@ const (
 //
 // 定义rpc服务
 type NodeServiceClient interface {
-	// 注册节点
+	// 节点注册
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*BaseResponse, error)
+	// 节点资源检测
+	NodeResource(ctx context.Context, in *NodeResourceRequest, opts ...grpc.CallOption) (*BaseResponse, error)
 }
 
 type nodeServiceClient struct {
@@ -50,14 +53,26 @@ func (c *nodeServiceClient) Register(ctx context.Context, in *RegisterRequest, o
 	return out, nil
 }
 
+func (c *nodeServiceClient) NodeResource(ctx context.Context, in *NodeResourceRequest, opts ...grpc.CallOption) (*BaseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BaseResponse)
+	err := c.cc.Invoke(ctx, NodeService_NodeResource_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility.
 //
 // 定义rpc服务
 type NodeServiceServer interface {
-	// 注册节点
+	// 节点注册
 	Register(context.Context, *RegisterRequest) (*BaseResponse, error)
+	// 节点资源检测
+	NodeResource(context.Context, *NodeResourceRequest) (*BaseResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -70,6 +85,9 @@ type UnimplementedNodeServiceServer struct{}
 
 func (UnimplementedNodeServiceServer) Register(context.Context, *RegisterRequest) (*BaseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedNodeServiceServer) NodeResource(context.Context, *NodeResourceRequest) (*BaseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method NodeResource not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 func (UnimplementedNodeServiceServer) testEmbeddedByValue()                     {}
@@ -110,6 +128,24 @@ func _NodeService_Register_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_NodeResource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NodeResourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).NodeResource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_NodeResource_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).NodeResource(ctx, req.(*NodeResourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -120,6 +156,10 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Register",
 			Handler:    _NodeService_Register_Handler,
+		},
+		{
+			MethodName: "NodeResource",
+			Handler:    _NodeService_NodeResource_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
