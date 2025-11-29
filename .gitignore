@@ -168,9 +168,6 @@ swagger.json
 swagger.yaml
 docs/swagger/
 
-*.pb.go
-*.pb.gw.go
-*.grpc.pb.go
 mocks/
 generated/
 

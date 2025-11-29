@@ -1,0 +1,27 @@
+syntax = "proto3"; // 指定proto版本
+package node_rpc;     // 指定默认包名
+
+// 指定golang包名
+option go_package = "/node_rpc";
+
+// 定义rpc服务
+service NodeService {
+  // 注册节点
+  rpc Register (RegisterRequest) returns (BaseResponse) {}
+}
+// 基础响应结构体
+message BaseResponse{
+  int32 code = 1; // 状态码
+  string msg = 2; // 响应信息
+}
+// 注册节点请求结构体
+message RegisterRequest {
+  string ip = 1; // 节点ip
+  string mac = 2; // 节点mac
+  string node_uid = 3; // 节点uid
+  string version = 4; // 节点版本
+  string Commit = 5; // 节点commit
+}
+
+// protoc --go_out=. --go-grpc_out=. *.proto
+// 在rpc目录下执行

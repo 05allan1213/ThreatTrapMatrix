@@ -1,0 +1,1 @@
+protoc --go_out=./internal/rpc/ --go-grpc_out=./internal/rpc/ ./internal/rpc/node.proto
