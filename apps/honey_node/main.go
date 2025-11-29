@@ -58,6 +58,21 @@ func register() (err error) {
 		return
 	}
 
+	// 获取网络信息
+	var networkList []*node_rpc.NetworkInfoMessage
+	_networkList, err := info.GetNetworkList("hy-")
+	if err != nil {
+		return
+	}
+	for _, networkInfo := range _networkList {
+		networkList = append(networkList, &node_rpc.NetworkInfoMessage{
+			Network: networkInfo.Network,
+			Ip:      networkInfo.Ip,
+			Net:     networkInfo.Net,
+			Mask:    int32(networkInfo.Mask),
+		})
+	}
+
 	// 构造节点注册请求（映射采集到的信息到gRPC请求结构体）
 	req := node_rpc.RegisterRequest{
 		Ip:      _ip,
@@ -72,6 +87,7 @@ func register() (err error) {
 			SystemType:          systemInfo.Architecture,
 			StartTime:           systemInfo.BootTime,
 		},
+		NetworkList: networkList,
 	}
 
 	// 调用gRPC注册接口完成节点注册

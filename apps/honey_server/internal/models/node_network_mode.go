@@ -9,5 +9,5 @@ type NodeNetworkModel struct {
 	IP        string    `gorm:"32" json:"ip"`               // 探针ip
 	Mask      int8      `json:"mask"`                       // 子网掩码 8-32
 	Gateway   string    `gorm:"32" json:"gateway"`          // 网关
-	Status    int8      `json:"status"`                     // 网卡启用状态
+	Status    int8      `json:"status"`                     // 网卡启用状态 1 启用 2 未启用
 }

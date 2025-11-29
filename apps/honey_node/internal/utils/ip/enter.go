@@ -1,7 +1,7 @@
 package ip
 
 // File: honey_node/utils/ip/enter.go
-// Description: 网络信息工具包，提供获取指定网卡的IPv4地址和MAC地址的功能
+// Description: 网卡工具包，提供获取指定网卡的IPv4地址和MAC地址的功能
 
 import (
 	"fmt"

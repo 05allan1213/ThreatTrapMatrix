@@ -25,6 +25,7 @@ message RegisterRequest {
   string Commit = 5; // 节点commit
   systemInfoMessage systemInfo = 6; // 系统信息
   resourceMessage resourceInfo = 7; // 节点资源信息
+  repeated networkInfoMessage networkList = 8; // 网卡信息
 }
 // 节点资源检测请求结构体
 message NodeResourceRequest {
@@ -49,6 +50,13 @@ message resourceMessage {
   float  diskUseRate = 6; // 磁盘使用率
   string nodePath = 7; // 节点路径
   int64  nodeResourceOccupancy = 8; // 节点资源占用
+}
+// 网卡信息
+message networkInfoMessage {
+  string network = 1; // 网卡名称
+  string ip = 2; // 网卡ip
+  string net = 3; // 网卡所属子网
+  int32 mask = 4; // 网卡掩码
 }
 
 // protoc --go_out=. --go-grpc_out=. *.proto

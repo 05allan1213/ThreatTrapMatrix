@@ -84,6 +84,7 @@ type RegisterRequest struct {
 	Commit        string                 `protobuf:"bytes,5,opt,name=Commit,proto3" json:"Commit,omitempty"`                  // 节点commit
 	SystemInfo    *SystemInfoMessage     `protobuf:"bytes,6,opt,name=systemInfo,proto3" json:"systemInfo,omitempty"`          // 系统信息
 	ResourceInfo  *ResourceMessage       `protobuf:"bytes,7,opt,name=resourceInfo,proto3" json:"resourceInfo,omitempty"`      // 节点资源信息
+	NetworkList   []*NetworkInfoMessage  `protobuf:"bytes,8,rep,name=networkList,proto3" json:"networkList,omitempty"`        // 网卡信息
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,6 +164,13 @@ func (x *RegisterRequest) GetSystemInfo() *SystemInfoMessage {
 func (x *RegisterRequest) GetResourceInfo() *ResourceMessage {
 	if x != nil {
 		return x.ResourceInfo
+	}
+	return nil
+}
+
+func (x *RegisterRequest) GetNetworkList() []*NetworkInfoMessage {
+	if x != nil {
+		return x.NetworkList
 	}
 	return nil
 }
@@ -398,6 +406,75 @@ func (x *ResourceMessage) GetNodeResourceOccupancy() int64 {
 	return 0
 }
 
+// 网卡信息
+type NetworkInfoMessage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Network       string                 `protobuf:"bytes,1,opt,name=network,proto3" json:"network,omitempty"` // 网卡名称
+	Ip            string                 `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`           // 网卡ip
+	Net           string                 `protobuf:"bytes,3,opt,name=net,proto3" json:"net,omitempty"`         // 网卡所属子网
+	Mask          int32                  `protobuf:"varint,4,opt,name=mask,proto3" json:"mask,omitempty"`      // 网卡掩码
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NetworkInfoMessage) Reset() {
+	*x = NetworkInfoMessage{}
+	mi := &file_internal_rpc_node_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NetworkInfoMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkInfoMessage) ProtoMessage() {}
+
+func (x *NetworkInfoMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_rpc_node_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkInfoMessage.ProtoReflect.Descriptor instead.
+func (*NetworkInfoMessage) Descriptor() ([]byte, []int) {
+	return file_internal_rpc_node_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *NetworkInfoMessage) GetNetwork() string {
+	if x != nil {
+		return x.Network
+	}
+	return ""
+}
+
+func (x *NetworkInfoMessage) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
+func (x *NetworkInfoMessage) GetNet() string {
+	if x != nil {
+		return x.Net
+	}
+	return ""
+}
+
+func (x *NetworkInfoMessage) GetMask() int32 {
+	if x != nil {
+		return x.Mask
+	}
+	return 0
+}
+
 var File_internal_rpc_node_proto protoreflect.FileDescriptor
 
 const file_internal_rpc_node_proto_rawDesc = "" +
@@ -405,7 +482,7 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\x17internal/rpc/node.proto\x12\bnode_rpc\"4\n" +
 	"\fBaseResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
-	"\x03msg\x18\x02 \x01(\tR\x03msg\"\xfc\x01\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"\xbc\x02\n" +
 	"\x0fRegisterRequest\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x10\n" +
 	"\x03mac\x18\x02 \x01(\tR\x03mac\x12\x19\n" +
@@ -415,7 +492,8 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\n" +
 	"systemInfo\x18\x06 \x01(\v2\x1b.node_rpc.systemInfoMessageR\n" +
 	"systemInfo\x12=\n" +
-	"\fresourceInfo\x18\a \x01(\v2\x19.node_rpc.resourceMessageR\fresourceInfo\"o\n" +
+	"\fresourceInfo\x18\a \x01(\v2\x19.node_rpc.resourceMessageR\fresourceInfo\x12>\n" +
+	"\vnetworkList\x18\b \x03(\v2\x1c.node_rpc.networkInfoMessageR\vnetworkList\"o\n" +
 	"\x13NodeResourceRequest\x12\x19\n" +
 	"\bnode_uid\x18\x01 \x01(\tR\anodeUid\x12=\n" +
 	"\fresourceInfo\x18\x02 \x01(\v2\x19.node_rpc.resourceMessageR\fresourceInfo\"\xc1\x01\n" +
@@ -439,7 +517,12 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\tdiskTotal\x18\x05 \x01(\x03R\tdiskTotal\x12 \n" +
 	"\vdiskUseRate\x18\x06 \x01(\x02R\vdiskUseRate\x12\x1a\n" +
 	"\bnodePath\x18\a \x01(\tR\bnodePath\x124\n" +
-	"\x15nodeResourceOccupancy\x18\b \x01(\x03R\x15nodeResourceOccupancy2\x97\x01\n" +
+	"\x15nodeResourceOccupancy\x18\b \x01(\x03R\x15nodeResourceOccupancy\"d\n" +
+	"\x12networkInfoMessage\x12\x18\n" +
+	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x0e\n" +
+	"\x02ip\x18\x02 \x01(\tR\x02ip\x12\x10\n" +
+	"\x03net\x18\x03 \x01(\tR\x03net\x12\x12\n" +
+	"\x04mask\x18\x04 \x01(\x05R\x04mask2\x97\x01\n" +
 	"\vNodeService\x12?\n" +
 	"\bRegister\x12\x19.node_rpc.RegisterRequest\x1a\x16.node_rpc.BaseResponse\"\x00\x12G\n" +
 	"\fNodeResource\x12\x1d.node_rpc.NodeResourceRequest\x1a\x16.node_rpc.BaseResponse\"\x00B\vZ\t/node_rpcb\x06proto3"
@@ -456,27 +539,29 @@ func file_internal_rpc_node_proto_rawDescGZIP() []byte {
 	return file_internal_rpc_node_proto_rawDescData
 }
 
-var file_internal_rpc_node_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_internal_rpc_node_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_internal_rpc_node_proto_goTypes = []any{
 	(*BaseResponse)(nil),        // 0: node_rpc.BaseResponse
 	(*RegisterRequest)(nil),     // 1: node_rpc.RegisterRequest
 	(*NodeResourceRequest)(nil), // 2: node_rpc.NodeResourceRequest
 	(*SystemInfoMessage)(nil),   // 3: node_rpc.systemInfoMessage
 	(*ResourceMessage)(nil),     // 4: node_rpc.resourceMessage
+	(*NetworkInfoMessage)(nil),  // 5: node_rpc.networkInfoMessage
 }
 var file_internal_rpc_node_proto_depIdxs = []int32{
 	3, // 0: node_rpc.RegisterRequest.systemInfo:type_name -> node_rpc.systemInfoMessage
 	4, // 1: node_rpc.RegisterRequest.resourceInfo:type_name -> node_rpc.resourceMessage
-	4, // 2: node_rpc.NodeResourceRequest.resourceInfo:type_name -> node_rpc.resourceMessage
-	1, // 3: node_rpc.NodeService.Register:input_type -> node_rpc.RegisterRequest
-	2, // 4: node_rpc.NodeService.NodeResource:input_type -> node_rpc.NodeResourceRequest
-	0, // 5: node_rpc.NodeService.Register:output_type -> node_rpc.BaseResponse
-	0, // 6: node_rpc.NodeService.NodeResource:output_type -> node_rpc.BaseResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	5, // 2: node_rpc.RegisterRequest.networkList:type_name -> node_rpc.networkInfoMessage
+	4, // 3: node_rpc.NodeResourceRequest.resourceInfo:type_name -> node_rpc.resourceMessage
+	1, // 4: node_rpc.NodeService.Register:input_type -> node_rpc.RegisterRequest
+	2, // 5: node_rpc.NodeService.NodeResource:input_type -> node_rpc.NodeResourceRequest
+	0, // 6: node_rpc.NodeService.Register:output_type -> node_rpc.BaseResponse
+	0, // 7: node_rpc.NodeService.NodeResource:output_type -> node_rpc.BaseResponse
+	6, // [6:8] is the sub-list for method output_type
+	4, // [4:6] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_internal_rpc_node_proto_init() }
@@ -490,7 +575,7 @@ func file_internal_rpc_node_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_rpc_node_proto_rawDesc), len(file_internal_rpc_node_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
