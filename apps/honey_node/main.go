@@ -13,6 +13,7 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc/metadata"
 )
 
 func main() {
@@ -47,7 +48,8 @@ var CmdResponseChan = make(chan *node_rpc.CmdResponse, 0)
 // command 处理节点与服务端的命令交互，实现双向流通信逻辑
 func command() {
 	// 建立Command双向流连接
-	stream, err := global.GrpcClient.Command(context.Background())
+	ctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs("nodeID", global.Config.System.Uid))
+	stream, err := global.GrpcClient.Command(ctx)
 	if err != nil {
 		if err != nil { // 原逻辑保留：重复错误判断
 			logrus.Errorf("节点Command失败 %s", err)
