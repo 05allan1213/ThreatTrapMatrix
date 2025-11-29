@@ -82,6 +82,8 @@ type RegisterRequest struct {
 	NodeUid       string                 `protobuf:"bytes,3,opt,name=node_uid,json=nodeUid,proto3" json:"node_uid,omitempty"` // 节点uid
 	Version       string                 `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`                // 节点版本
 	Commit        string                 `protobuf:"bytes,5,opt,name=Commit,proto3" json:"Commit,omitempty"`                  // 节点commit
+	SystemInfo    *SystemInfoMessage     `protobuf:"bytes,6,opt,name=systemInfo,proto3" json:"systemInfo,omitempty"`          // 系统信息
+	ResourceInfo  *ResourceMessage       `protobuf:"bytes,7,opt,name=resourceInfo,proto3" json:"resourceInfo,omitempty"`      // 节点资源信息
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -151,6 +153,198 @@ func (x *RegisterRequest) GetCommit() string {
 	return ""
 }
 
+func (x *RegisterRequest) GetSystemInfo() *SystemInfoMessage {
+	if x != nil {
+		return x.SystemInfo
+	}
+	return nil
+}
+
+func (x *RegisterRequest) GetResourceInfo() *ResourceMessage {
+	if x != nil {
+		return x.ResourceInfo
+	}
+	return nil
+}
+
+// 系统信息
+type SystemInfoMessage struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	HostName            string                 `protobuf:"bytes,1,opt,name=hostName,proto3" json:"hostName,omitempty"`                       // 主机名
+	DistributionVersion string                 `protobuf:"bytes,2,opt,name=distributionVersion,proto3" json:"distributionVersion,omitempty"` // 发行版本
+	CoreVersion         string                 `protobuf:"bytes,3,opt,name=coreVersion,proto3" json:"coreVersion,omitempty"`                 // 内核版本
+	SystemType          string                 `protobuf:"bytes,4,opt,name=systemType,proto3" json:"systemType,omitempty"`                   // 系统类型
+	StartTime           string                 `protobuf:"bytes,5,opt,name=startTime,proto3" json:"startTime,omitempty"`                     //  启动时间
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *SystemInfoMessage) Reset() {
+	*x = SystemInfoMessage{}
+	mi := &file_internal_rpc_node_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SystemInfoMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SystemInfoMessage) ProtoMessage() {}
+
+func (x *SystemInfoMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_rpc_node_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SystemInfoMessage.ProtoReflect.Descriptor instead.
+func (*SystemInfoMessage) Descriptor() ([]byte, []int) {
+	return file_internal_rpc_node_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SystemInfoMessage) GetHostName() string {
+	if x != nil {
+		return x.HostName
+	}
+	return ""
+}
+
+func (x *SystemInfoMessage) GetDistributionVersion() string {
+	if x != nil {
+		return x.DistributionVersion
+	}
+	return ""
+}
+
+func (x *SystemInfoMessage) GetCoreVersion() string {
+	if x != nil {
+		return x.CoreVersion
+	}
+	return ""
+}
+
+func (x *SystemInfoMessage) GetSystemType() string {
+	if x != nil {
+		return x.SystemType
+	}
+	return ""
+}
+
+func (x *SystemInfoMessage) GetStartTime() string {
+	if x != nil {
+		return x.StartTime
+	}
+	return ""
+}
+
+// 节点资源信息
+type ResourceMessage struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	CpuCount              int64                  `protobuf:"varint,1,opt,name=cpuCount,proto3" json:"cpuCount,omitempty"`                           // cpu数量
+	CpuUseRate            float32                `protobuf:"fixed32,2,opt,name=cpuUseRate,proto3" json:"cpuUseRate,omitempty"`                      // cpu使用率
+	MemTotal              int64                  `protobuf:"varint,3,opt,name=memTotal,proto3" json:"memTotal,omitempty"`                           // 内存容量
+	MemUseRate            float32                `protobuf:"fixed32,4,opt,name=memUseRate,proto3" json:"memUseRate,omitempty"`                      // 内存使用率
+	DiskTotal             int64                  `protobuf:"varint,5,opt,name=diskTotal,proto3" json:"diskTotal,omitempty"`                         // 磁盘容量
+	DiskUseRate           float32                `protobuf:"fixed32,6,opt,name=diskUseRate,proto3" json:"diskUseRate,omitempty"`                    // 磁盘使用率
+	NodePath              string                 `protobuf:"bytes,7,opt,name=nodePath,proto3" json:"nodePath,omitempty"`                            // 节点路径
+	NodeResourceOccupancy int64                  `protobuf:"varint,8,opt,name=nodeResourceOccupancy,proto3" json:"nodeResourceOccupancy,omitempty"` // 节点资源占用
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *ResourceMessage) Reset() {
+	*x = ResourceMessage{}
+	mi := &file_internal_rpc_node_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResourceMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourceMessage) ProtoMessage() {}
+
+func (x *ResourceMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_rpc_node_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResourceMessage.ProtoReflect.Descriptor instead.
+func (*ResourceMessage) Descriptor() ([]byte, []int) {
+	return file_internal_rpc_node_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ResourceMessage) GetCpuCount() int64 {
+	if x != nil {
+		return x.CpuCount
+	}
+	return 0
+}
+
+func (x *ResourceMessage) GetCpuUseRate() float32 {
+	if x != nil {
+		return x.CpuUseRate
+	}
+	return 0
+}
+
+func (x *ResourceMessage) GetMemTotal() int64 {
+	if x != nil {
+		return x.MemTotal
+	}
+	return 0
+}
+
+func (x *ResourceMessage) GetMemUseRate() float32 {
+	if x != nil {
+		return x.MemUseRate
+	}
+	return 0
+}
+
+func (x *ResourceMessage) GetDiskTotal() int64 {
+	if x != nil {
+		return x.DiskTotal
+	}
+	return 0
+}
+
+func (x *ResourceMessage) GetDiskUseRate() float32 {
+	if x != nil {
+		return x.DiskUseRate
+	}
+	return 0
+}
+
+func (x *ResourceMessage) GetNodePath() string {
+	if x != nil {
+		return x.NodePath
+	}
+	return ""
+}
+
+func (x *ResourceMessage) GetNodeResourceOccupancy() int64 {
+	if x != nil {
+		return x.NodeResourceOccupancy
+	}
+	return 0
+}
+
 var File_internal_rpc_node_proto protoreflect.FileDescriptor
 
 const file_internal_rpc_node_proto_rawDesc = "" +
@@ -158,13 +352,38 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\x17internal/rpc/node.proto\x12\bnode_rpc\"4\n" +
 	"\fBaseResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
-	"\x03msg\x18\x02 \x01(\tR\x03msg\"\x80\x01\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"\xfc\x01\n" +
 	"\x0fRegisterRequest\x12\x0e\n" +
 	"\x02ip\x18\x01 \x01(\tR\x02ip\x12\x10\n" +
 	"\x03mac\x18\x02 \x01(\tR\x03mac\x12\x19\n" +
 	"\bnode_uid\x18\x03 \x01(\tR\anodeUid\x12\x18\n" +
 	"\aversion\x18\x04 \x01(\tR\aversion\x12\x16\n" +
-	"\x06Commit\x18\x05 \x01(\tR\x06Commit2N\n" +
+	"\x06Commit\x18\x05 \x01(\tR\x06Commit\x12;\n" +
+	"\n" +
+	"systemInfo\x18\x06 \x01(\v2\x1b.node_rpc.systemInfoMessageR\n" +
+	"systemInfo\x12=\n" +
+	"\fresourceInfo\x18\a \x01(\v2\x19.node_rpc.resourceMessageR\fresourceInfo\"\xc1\x01\n" +
+	"\x11systemInfoMessage\x12\x1a\n" +
+	"\bhostName\x18\x01 \x01(\tR\bhostName\x120\n" +
+	"\x13distributionVersion\x18\x02 \x01(\tR\x13distributionVersion\x12 \n" +
+	"\vcoreVersion\x18\x03 \x01(\tR\vcoreVersion\x12\x1e\n" +
+	"\n" +
+	"systemType\x18\x04 \x01(\tR\n" +
+	"systemType\x12\x1c\n" +
+	"\tstartTime\x18\x05 \x01(\tR\tstartTime\"\x9b\x02\n" +
+	"\x0fresourceMessage\x12\x1a\n" +
+	"\bcpuCount\x18\x01 \x01(\x03R\bcpuCount\x12\x1e\n" +
+	"\n" +
+	"cpuUseRate\x18\x02 \x01(\x02R\n" +
+	"cpuUseRate\x12\x1a\n" +
+	"\bmemTotal\x18\x03 \x01(\x03R\bmemTotal\x12\x1e\n" +
+	"\n" +
+	"memUseRate\x18\x04 \x01(\x02R\n" +
+	"memUseRate\x12\x1c\n" +
+	"\tdiskTotal\x18\x05 \x01(\x03R\tdiskTotal\x12 \n" +
+	"\vdiskUseRate\x18\x06 \x01(\x02R\vdiskUseRate\x12\x1a\n" +
+	"\bnodePath\x18\a \x01(\tR\bnodePath\x124\n" +
+	"\x15nodeResourceOccupancy\x18\b \x01(\x03R\x15nodeResourceOccupancy2N\n" +
 	"\vNodeService\x12?\n" +
 	"\bRegister\x12\x19.node_rpc.RegisterRequest\x1a\x16.node_rpc.BaseResponse\"\x00B\vZ\t/node_rpcb\x06proto3"
 
@@ -180,19 +399,23 @@ func file_internal_rpc_node_proto_rawDescGZIP() []byte {
 	return file_internal_rpc_node_proto_rawDescData
 }
 
-var file_internal_rpc_node_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_internal_rpc_node_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internal_rpc_node_proto_goTypes = []any{
-	(*BaseResponse)(nil),    // 0: node_rpc.BaseResponse
-	(*RegisterRequest)(nil), // 1: node_rpc.RegisterRequest
+	(*BaseResponse)(nil),      // 0: node_rpc.BaseResponse
+	(*RegisterRequest)(nil),   // 1: node_rpc.RegisterRequest
+	(*SystemInfoMessage)(nil), // 2: node_rpc.systemInfoMessage
+	(*ResourceMessage)(nil),   // 3: node_rpc.resourceMessage
 }
 var file_internal_rpc_node_proto_depIdxs = []int32{
-	1, // 0: node_rpc.NodeService.Register:input_type -> node_rpc.RegisterRequest
-	0, // 1: node_rpc.NodeService.Register:output_type -> node_rpc.BaseResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: node_rpc.RegisterRequest.systemInfo:type_name -> node_rpc.systemInfoMessage
+	3, // 1: node_rpc.RegisterRequest.resourceInfo:type_name -> node_rpc.resourceMessage
+	1, // 2: node_rpc.NodeService.Register:input_type -> node_rpc.RegisterRequest
+	0, // 3: node_rpc.NodeService.Register:output_type -> node_rpc.BaseResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_internal_rpc_node_proto_init() }
@@ -206,7 +429,7 @@ func file_internal_rpc_node_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_rpc_node_proto_rawDesc), len(file_internal_rpc_node_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

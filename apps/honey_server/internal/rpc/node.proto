@@ -21,6 +21,27 @@ message RegisterRequest {
   string node_uid = 3; // 节点uid
   string version = 4; // 节点版本
   string Commit = 5; // 节点commit
+  systemInfoMessage systemInfo = 6; // 系统信息
+  resourceMessage resourceInfo = 7; // 节点资源信息
+}
+// 系统信息
+message systemInfoMessage {
+  string  hostName = 1; // 主机名
+  string distributionVersion = 2; // 发行版本
+  string coreVersion = 3; // 内核版本
+  string systemType = 4; // 系统类型
+  string startTime = 5; //  启动时间
+}
+// 节点资源信息
+message resourceMessage {
+  int64 cpuCount = 1; // cpu数量
+  float cpuUseRate = 2; // cpu使用率
+  int64 memTotal = 3; // 内存容量
+  float  memUseRate = 4; // 内存使用率
+  int64 diskTotal = 5; // 磁盘容量
+  float  diskUseRate = 6; // 磁盘使用率
+  string nodePath = 7; // 节点路径
+  int64  nodeResourceOccupancy = 8; // 节点资源占用
 }
 
 // protoc --go_out=. --go-grpc_out=. *.proto
