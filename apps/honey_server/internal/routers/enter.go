@@ -27,10 +27,11 @@ func Run() {
 	g.Use(middleware2.LogMiddleware, middleware2.AuthMiddleware) // 系统内部必须登录才能继续使用
 
 	// 路由注册
-	UserRouters(g)    // 注册用户相关路由
-	CaptchaRouters(g) // 注册验证码相关路由
-	LogRouters(g)     // 注册日志相关路由
-	NodeRouters(g)    // 节点相关路由
+	UserRouters(g)        // 注册用户相关路由
+	CaptchaRouters(g)     // 注册验证码相关路由
+	LogRouters(g)         // 注册日志相关路由
+	NodeRouters(g)        // 节点相关路由
+	NodeNetworkRouters(g) // 节点网卡相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr

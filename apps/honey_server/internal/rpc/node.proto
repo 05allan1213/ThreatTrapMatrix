@@ -10,6 +10,8 @@ service NodeService {
   rpc Register (RegisterRequest) returns (BaseResponse) {}
   // 节点资源检测
   rpc NodeResource (NodeResourceRequest) returns (BaseResponse) {}
+  // 管理下发命令到节点运行
+  rpc Command (stream CmdResponse) returns (stream CmdRequest) {}
 }
 // 基础响应结构体
 message BaseResponse{
@@ -57,6 +59,56 @@ message networkInfoMessage {
   string ip = 2; // 网卡ip
   string net = 3; // 网卡所属子网
   int32 mask = 4; // 网卡掩码
+}
+// 命令类型枚举
+enum CmdType {
+  cmdNetworkFlushType = 0; // 网卡刷新
+  cmdNetScanType = 1; // 扫描网卡
+  cmdNodeRemoveType = 2; // 删除节点
+}
+// 命令请求结构体
+message CmdRequest {
+  CmdType cmdType = 1; // 命令类型
+  string taskID = 2; // 任务id
+  NetworkFlushInMessage NetworkFlushInMessage = 3; // 网卡刷新信息
+  NetScanInMessage NetScanInMessage = 4; // 扫描网卡信息
+  NodeRemoveInMessage NodeRemoveInMessage = 5; // 删除节点信息
+}
+// 网卡刷新请求结构体
+message NetworkFlushInMessage {
+  repeated string filterNetworkName = 1; // 过滤网卡名称
+}
+// 扫描网卡请求结构体
+message NetScanInMessage {
+
+}
+// 删除节点请求结构体
+message NodeRemoveInMessage {
+
+}
+// 网卡刷新响应结构体
+message NetworkFlushOutMessage {
+  repeated networkInfoMessage networkList = 1; // 网卡信息
+}
+// 扫描网卡响应结构体
+message NetScanOutMessage {
+
+}
+// 删除节点响应结构体
+message NodeRemoveOutMessage {
+
+}
+// 命令响应结构体
+message CmdResponse {
+  CmdType cmdType = 1; // 命令类型
+  string taskID = 2; // 任务id
+  string nodeID = 3; // 节点id
+  int32 code = 4; // 状态码
+  string errorMsg = 5; // 错误信息
+
+  NetworkFlushOutMessage NetworkFlushOutMessage = 6; // 网卡刷新信息
+  NetScanOutMessage NetScanOutMessage = 7; // 扫描网卡信息
+  NodeRemoveOutMessage NodeRemoveOutMessage = 8; // 删除节点信息
 }
 
 // protoc --go_out=. --go-grpc_out=. *.proto

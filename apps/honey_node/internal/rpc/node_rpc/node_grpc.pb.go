@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	NodeService_Register_FullMethodName     = "/node_rpc.NodeService/Register"
 	NodeService_NodeResource_FullMethodName = "/node_rpc.NodeService/NodeResource"
+	NodeService_Command_FullMethodName      = "/node_rpc.NodeService/Command"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -33,6 +34,8 @@ type NodeServiceClient interface {
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*BaseResponse, error)
 	// 节点资源检测
 	NodeResource(ctx context.Context, in *NodeResourceRequest, opts ...grpc.CallOption) (*BaseResponse, error)
+	// 管理下发命令到节点运行
+	Command(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CmdResponse, CmdRequest], error)
 }
 
 type nodeServiceClient struct {
@@ -63,6 +66,19 @@ func (c *nodeServiceClient) NodeResource(ctx context.Context, in *NodeResourceRe
 	return out, nil
 }
 
+func (c *nodeServiceClient) Command(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CmdResponse, CmdRequest], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &NodeService_ServiceDesc.Streams[0], NodeService_Command_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[CmdResponse, CmdRequest]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NodeService_CommandClient = grpc.BidiStreamingClient[CmdResponse, CmdRequest]
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility.
@@ -73,6 +89,8 @@ type NodeServiceServer interface {
 	Register(context.Context, *RegisterRequest) (*BaseResponse, error)
 	// 节点资源检测
 	NodeResource(context.Context, *NodeResourceRequest) (*BaseResponse, error)
+	// 管理下发命令到节点运行
+	Command(grpc.BidiStreamingServer[CmdResponse, CmdRequest]) error
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -88,6 +106,9 @@ func (UnimplementedNodeServiceServer) Register(context.Context, *RegisterRequest
 }
 func (UnimplementedNodeServiceServer) NodeResource(context.Context, *NodeResourceRequest) (*BaseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method NodeResource not implemented")
+}
+func (UnimplementedNodeServiceServer) Command(grpc.BidiStreamingServer[CmdResponse, CmdRequest]) error {
+	return status.Error(codes.Unimplemented, "method Command not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 func (UnimplementedNodeServiceServer) testEmbeddedByValue()                     {}
@@ -146,6 +167,13 @@ func _NodeService_NodeResource_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_Command_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(NodeServiceServer).Command(&grpc.GenericServerStream[CmdResponse, CmdRequest]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NodeService_CommandServer = grpc.BidiStreamingServer[CmdResponse, CmdRequest]
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -162,6 +190,13 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _NodeService_NodeResource_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Command",
+			Handler:       _NodeService_Command_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "internal/rpc/node.proto",
 }
