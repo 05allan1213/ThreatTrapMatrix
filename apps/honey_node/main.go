@@ -11,6 +11,7 @@ import (
 	"honey_node/internal/utils/ip"
 	"io"
 	"os"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/metadata"
@@ -45,72 +46,79 @@ func main() {
 // CmdResponseChan 命令响应通道，用于缓存待发送给服务端的命令执行结果
 var CmdResponseChan = make(chan *node_rpc.CmdResponse, 0)
 
-// command 处理节点与服务端的命令交互，实现双向流通信逻辑
+// Stream gRPC双向流客户端实例，用于与服务端保持命令交互连接
+var Stream node_rpc.NodeService_CommandClient
+
+// command 处理节点与服务端的gRPC命令交互，实现双向流通信逻辑
 func command() {
-	// 建立Command双向流连接
+	// 创建携带节点ID的gRPC元数据上下文
 	ctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs("nodeID", global.Config.System.Uid))
-	stream, err := global.GrpcClient.Command(ctx)
+	var err error
+	// 建立Command双向流连接
+	Stream, err = global.GrpcClient.Command(ctx)
 	if err != nil {
-		if err != nil { // 原逻辑保留：重复错误判断
-			logrus.Errorf("节点Command失败 %s", err)
-			return
-		}
+		logrus.Errorf("节点Command失败 %s", err)
+		return
 	}
 
-	// 启动协程持续接收服务端命令请求
+	// 启动协程持续发送响应数据至服务端
 	go func() {
-		for {
-			request, err := stream.Recv()
-			if err == io.EOF {
-				logrus.Infof("节点断开")
-				return
-			}
+		for response := range CmdResponseChan {
+			err := Stream.Send(response)
 			if err != nil {
-				logrus.Infof("节点出错 %s", err)
-				return
-			}
-			fmt.Println("接收管理的数据", request)
-
-			// 根据命令类型分发处理逻辑
-			switch request.CmdType {
-			case node_rpc.CmdType_cmdNetworkFlushType:
-				fmt.Println("网卡刷新")
-				// 获取过滤后的网络接口列表
-				_networkList, _ := info.GetNetworkList(request.NetworkFlushInMessage.FilterNetworkName[0])
-				var networkList []*node_rpc.NetworkInfoMessage
-				// 转换为RPC协议定义的消息结构
-				for _, networkInfo := range _networkList {
-					networkList = append(networkList, &node_rpc.NetworkInfoMessage{
-						Network: networkInfo.Network,
-						Ip:      networkInfo.Ip,
-						Net:     networkInfo.Net,
-						Mask:    int32(networkInfo.Mask),
-					})
-				}
-				// 组装网卡刷新响应并发送至通道
-				CmdResponseChan <- &node_rpc.CmdResponse{
-					CmdType: node_rpc.CmdType_cmdNetworkFlushType,
-					TaskID:  "xx",
-					NodeID:  global.Config.System.Uid,
-					NetworkFlushOutMessage: &node_rpc.NetworkFlushOutMessage{
-						NetworkList: networkList,
-					},
-				}
+				logrus.Infof("数据发送失败 %s", err)
+				continue
 			}
 		}
 	}()
 
-	// 监听响应通道，将结果发送至服务端
-	for response := range CmdResponseChan {
-		err := stream.Send(response)
+	// 循环接收服务端命令请求
+	for {
+		request, err := Stream.Recv()
+		if err == io.EOF {
+			logrus.Infof("节点断开")
+			break
+		}
 		if err != nil {
-			logrus.Infof("数据发送失败 %s", err)
-			continue
+			logrus.Infof("节点出错 %s", err)
+			break
+		}
+		fmt.Println("接收管理的数据", request)
+
+		// 根据命令类型分发处理逻辑
+		switch request.CmdType {
+		case node_rpc.CmdType_cmdNetworkFlushType:
+			fmt.Println("网卡刷新")
+			// 获取过滤后的网络接口列表
+			_networkList, _ := info.GetNetworkList(request.NetworkFlushInMessage.FilterNetworkName[0])
+			var networkList []*node_rpc.NetworkInfoMessage
+			// 转换网络信息为RPC协议消息结构
+			for _, networkInfo := range _networkList {
+				networkList = append(networkList, &node_rpc.NetworkInfoMessage{
+					Network: networkInfo.Network,
+					Ip:      networkInfo.Ip,
+					Net:     networkInfo.Net,
+					Mask:    int32(networkInfo.Mask),
+				})
+			}
+			// 组装网卡刷新响应并发送至通道
+			CmdResponseChan <- &node_rpc.CmdResponse{
+				CmdType: node_rpc.CmdType_cmdNetworkFlushType,
+				TaskID:  "xx",
+				NodeID:  global.Config.System.Uid,
+				NetworkFlushOutMessage: &node_rpc.NetworkFlushOutMessage{
+					NetworkList: networkList,
+				},
+			}
 		}
 	}
+
+	// 断线后延迟重连
+	time.Sleep(2 * time.Second)
+	command()
 }
 
-// register 完成节点向服务端的注册流程，上报节点基础信息
+// register 完成节点向服务端的注册，上报节点身份、系统及网络信息
 func register() (err error) {
 	// 获取指定网卡的IP和MAC地址
 	_ip, mac, err := ip.GetNetworkInfo(global.Config.System.Network)
@@ -123,7 +131,7 @@ func register() (err error) {
 	if err != nil {
 		return
 	}
-	// 获取系统信息（OS版本、内核等）
+	// 获取系统基础信息（OS版本、内核等）
 	systemInfo, err := info.GetSystemInfo()
 	if err != nil {
 		return
