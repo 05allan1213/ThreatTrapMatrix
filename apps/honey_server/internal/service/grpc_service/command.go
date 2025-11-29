@@ -14,10 +14,10 @@ import (
 )
 
 // CmdRequestChan 命令请求通道，用于传递发给节点的命令请求
-var CmdRequestChan = make(chan *node_rpc.CmdRequest, 0)
+var CmdRequestChan = make(chan *node_rpc.CmdRequest)
 
 // CmdResponseChan 命令响应通道，用于接收节点返回的命令执行结果
-var CmdResponseChan = make(chan *node_rpc.CmdResponse, 0)
+var CmdResponseChan = make(chan *node_rpc.CmdResponse)
 
 // StreamMap 节点流映射表，用于存储每个节点的流对象
 var StreamMap = map[string]node_rpc.NodeService_CommandServer{}
@@ -38,29 +38,29 @@ func (NodeService) Command(stream node_rpc.NodeService_CommandServer) error {
 	StreamMap[nodeID] = stream
 	// 启动goroutine持续接收节点推送的响应数据
 	go func() {
-		for {
-			response, err := StreamMap[nodeID].Recv()
-			if err == io.EOF {
-				logrus.Infof("节点断开")
-				return
-			}
+		for request := range CmdRequestChan {
+			err := StreamMap[nodeID].Send(request)
 			if err != nil {
-				logrus.Infof("节点出错 %s", err)
-				return
+				logrus.Infof("数据发送失败 %s", err)
+				continue
 			}
-			// 接收节点返回的命令执行结果并转发至响应通道
-			fmt.Println("命令结果", response)
-			CmdResponseChan <- response
 		}
 	}()
-
-	// 监听请求通道，将待发送的命令请求推送至节点
-	for request := range CmdRequestChan {
-		err := StreamMap[nodeID].Send(request)
-		if err != nil {
-			logrus.Infof("数据发送失败 %s", err)
-			continue
+	for {
+		response, err := StreamMap[nodeID].Recv()
+		if err == io.EOF {
+			logrus.Infof("节点断开")
+			break
 		}
+		if err != nil {
+			logrus.Infof("节点出错 %s", err)
+			break
+		}
+		// 节点往管理发的，命令的执行结果
+		fmt.Println("命令结果", response)
+		CmdResponseChan <- response
 	}
+
+	delete(StreamMap, nodeID)
 	return nil
 }

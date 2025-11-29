@@ -18,7 +18,7 @@ func NodeRouters(r *gin.RouterGroup) {
 	var app = api.App.NodeApi
 
 	// GET /node - 获取节点列表
-	// 绑定查询参数解析URL查询参数到PageInfo结构体
+	// 绑定Query参数解析URL查询参数到PageInfo结构体
 	r.GET("node", middleware.BindQueryMiddleware[models.PageInfo], app.ListView)
 
 	// GET /node/:id - 获取指定节点详情

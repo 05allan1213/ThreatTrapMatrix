@@ -33,5 +33,5 @@ type IDListRequest struct {
 
 // IDRequest 通用ID请求参数结构体
 type IDRequest struct {
-	Id []uint `json:"id" uri:"id" form:"id"`
+	Id uint `json:"id" uri:"id" form:"id"`
 }

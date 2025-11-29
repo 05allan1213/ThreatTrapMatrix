@@ -5,6 +5,8 @@ package routers
 
 import (
 	"honey_server/internal/api"
+	"honey_server/internal/middleware"
+	"honey_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,5 +16,6 @@ func NodeNetworkRouters(r *gin.RouterGroup) {
 	// 获取节点网卡API实例
 	var app = api.App.NodeNetworkApi
 	// GET /node_network/flush - 获取节点网卡信息刷新
-	r.GET("node_network/flush", app.FlushView)
+	// 使用Query参数绑定中间件解析通用ID请求参数
+	r.GET("node_network/flush", middleware.BindQueryMiddleware[models.IDRequest], app.FlushView)
 }
