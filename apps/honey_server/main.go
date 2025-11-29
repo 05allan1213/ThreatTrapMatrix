@@ -5,6 +5,7 @@ import (
 	"honey_server/internal/flags"
 	"honey_server/internal/global"
 	"honey_server/internal/routers"
+	"honey_server/internal/service/grpc_service"
 )
 
 func main() {
@@ -14,6 +15,7 @@ func main() {
 	global.Log = core2.GetLogger()        // 获取日志实例
 	global.DB = core2.GetDB()             // 获取MySQL数据库实例
 	global.Redis = core2.GetRedisClient() // 获取Redis实例
+	go grpc_service.Run()                 // 启动gRPC服务
 	flags.Run()                           // 运行命令行参数
 	routers.Run()                         // 启动路由
 }
