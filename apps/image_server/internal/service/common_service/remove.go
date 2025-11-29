@@ -1,6 +1,6 @@
 package common_service
 
-// File: honey_server/service/common_service/remove.go
+// File: image_server/service/common_service/remove.go
 // Description: 通用删除服务模块，提供支持条件过滤、ID列表批量删除的通用删除能力
 
 import (

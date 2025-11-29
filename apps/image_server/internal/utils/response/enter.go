@@ -1,6 +1,6 @@
 package response
 
-// File: honey_server/utils/response/enter.go
+// File: image_server/utils/response/enter.go
 // Description: 统一响应格式模块，定义API接口返回数据结构及快捷响应函数
 
 import (

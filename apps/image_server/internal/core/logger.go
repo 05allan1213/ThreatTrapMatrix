@@ -1,12 +1,12 @@
 package core
 
-// File: honey_server/core/logger.go
+// File: image_server/core/logger.go
 // Description: 日志模块，自定义logrus日志格式与钩子，实现日志按日期分割、分级存储及彩色输出
 
 import (
-	"image_server/internal/global"
 	"bytes"
 	"fmt"
+	"image_server/internal/global"
 	"os"
 	"path"
 	"sync"

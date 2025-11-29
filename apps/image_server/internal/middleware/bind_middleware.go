@@ -1,6 +1,6 @@
 package middleware
 
-// File: honey_server/middleware/bind_middleware.go
+// File: image_server/middleware/bind_middleware.go
 // Description: 参数绑定中间件模块，提供JSON和Query参数的通用绑定及获取功能
 
 import (

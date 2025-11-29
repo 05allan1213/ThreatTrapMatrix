@@ -1,6 +1,6 @@
 package core
 
-// File: honey_server/core/config.go
+// File: image_server/core/config.go
 // Description: 核心模块，提供配置文件读取功能
 
 import (

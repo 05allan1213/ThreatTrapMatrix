@@ -1,6 +1,6 @@
 package middleware
 
-// File: honey_server/middleware/auth_middleware.go
+// File: image_server/middleware/auth_middleware.go
 // Description: 中间件模块，提供JWT认证和角色权限校验中间件
 
 import (

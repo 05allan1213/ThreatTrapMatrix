@@ -1,6 +1,6 @@
 package ip
 
-// File: honey_server/utils/ip/enter.go
+// File: image_server/utils/ip/enter.go
 // Description: 提供IP地址相关的工具方法，包含本地IP地址判断功能
 
 import "net"

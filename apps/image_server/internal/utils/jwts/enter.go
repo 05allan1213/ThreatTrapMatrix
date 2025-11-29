@@ -1,11 +1,11 @@
 package jwts
 
-// File: honey_server/utils/jwt/enter.go
+// File: image_server/utils/jwt/enter.go
 // Description: JWT工具模块，提供Token生成、解析及验证功能
 
 import (
-	"image_server/internal/global"
 	"errors"
+	"image_server/internal/global"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"

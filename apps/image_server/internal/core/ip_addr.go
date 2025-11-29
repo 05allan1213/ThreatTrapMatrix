@@ -1,12 +1,12 @@
 package core
 
-// File: honey_server/core/ip_addr.go
+// File: image_server/core/ip_addr.go
 // Description: IP地址解析核心模块，基于ip2region数据库实现IP地址到地理位置的解析
 
 import (
-	"image_server/internal/utils/ip"
 	_ "embed"
 	"fmt"
+	"image_server/internal/utils/ip"
 	"strings"
 
 	"github.com/lionsoul2014/ip2region/binding/golang/xdb"

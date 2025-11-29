@@ -1,6 +1,6 @@
 package global
 
-// File: honey_server/global/enter.go
+// File: image_server/global/enter.go
 // Description: 全局变量模块，定义应用程序级别的全局共享变量
 
 import (

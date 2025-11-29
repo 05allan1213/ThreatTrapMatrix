@@ -1,6 +1,6 @@
 package models
 
-// File: honey_server/models/enter.go
+// File: image_server/models/enter.go
 // Description: 数据基础模型定义，提供通用基础模型和分页信息结构体
 
 import (

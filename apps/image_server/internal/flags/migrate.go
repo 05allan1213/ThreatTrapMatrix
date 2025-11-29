@@ -1,6 +1,6 @@
 package flags
 
-// File: honey_server/flags/migrate.go
+// File: image_server/flags/migrate.go
 // Description: 负责执行GORM自动迁移以创建或更新数据表结构
 
 import (

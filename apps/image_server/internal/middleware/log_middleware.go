@@ -1,6 +1,6 @@
 package middleware
 
-// File: honey_server/middleware/log_middleware.go
+// File: image_server/middleware/log_middleware.go
 // Description: 日志上下文中间件模块，为每个请求生成唯一日志ID并注入带标识的日志实例
 
 import (

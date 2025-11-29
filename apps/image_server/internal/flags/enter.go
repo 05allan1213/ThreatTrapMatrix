@@ -1,12 +1,12 @@
 package flags
 
-// File: honey_server/flag/enter.go
+// File: image_server/flag/enter.go
 // Description: 命令行参数解析模块，处理命令行参数解析及对应功能调度
 
 import (
-	"image_server/internal/global"
 	"flag"
 	"fmt"
+	"image_server/internal/global"
 	"os"
 
 	"github.com/sirupsen/logrus"

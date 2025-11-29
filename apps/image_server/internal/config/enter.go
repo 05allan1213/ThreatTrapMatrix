@@ -1,6 +1,6 @@
 package config
 
-// File: honey_server/config/enter.go
+// File: image_server/config/enter.go
 // Description: 配置模块，定义应用配置结构体及资源配置相关方法
 
 import "fmt"

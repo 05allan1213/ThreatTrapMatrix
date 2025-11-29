@@ -1,6 +1,6 @@
 package core
 
-// File: honey_server/core/db.go
+// File: image_server/core/db.go
 // Description: 数据库核心模块，实现MySQL数据库连接初始化、连接池配置及连接有效性检测功能
 
 import (

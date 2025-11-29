@@ -1,6 +1,6 @@
 package pwd
 
-// File: honey_server/utils/pwd/enter.go
+// File: image_server/utils/pwd/enter.go
 // Description: 密码安全处理模块，基于bcrypt算法实现密码加密与校验功能
 
 import "golang.org/x/crypto/bcrypt"

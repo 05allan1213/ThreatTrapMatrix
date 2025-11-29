@@ -10,7 +10,7 @@ db: # MySQL
 
 logger: # 日志器
   format: json # 日志格式 [json, text]
-  appName: honey_server # 应用名称
+  appName: image_server # 应用名称
   level: info # 日志级别
 
 redis: # Redis
@@ -28,9 +28,9 @@ jwt: # JWT
   secret: a5y3p2t6y3p2 # token密钥
 
 whiteList: # 路由白名单
-  - /honey_server/login # 登录
-  - /honey_server/captcha # 验证码
-  - /honey_server/site # 站点信息
+  - /image_server/login # 登录
+  - /image_server/captcha # 验证码
+  - /image_server/site # 站点信息
 
 vsNet: # 虚拟网络
   name: honey-hy # 虚拟网络名称

@@ -1,12 +1,12 @@
 package common_service
 
-// File: honey_server/service/common_service/query_list.go
+// File: image_server/service/common_service/query_list.go
 // Description: 通用查询服务模块，提供支持分页、模糊查询、排序等功能的通用列表查询能力
 
 import (
+	"fmt"
 	"image_server/internal/core"
 	"image_server/internal/models"
-	"fmt"
 
 	"gorm.io/gorm"
 )
