@@ -4,10 +4,10 @@ package user_api
 // Description: 用户列表查询API接口
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/middleware"
-	models2 "ThreatTrapMatrix/apps/honey_server/internal/models"
-	"ThreatTrapMatrix/apps/honey_server/internal/service/common_service"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/response"
+	"honey_server/internal/middleware"
+	models2 "honey_server/internal/models"
+	"honey_server/internal/service/common_service"
+	"honey_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 )

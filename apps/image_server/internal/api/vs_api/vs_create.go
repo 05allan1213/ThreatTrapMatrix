@@ -4,11 +4,11 @@ package vs_api
 // Description: 虚拟服务创建接口实现，基于Docker SDK创建容器并完成虚拟服务数据管理
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	"ThreatTrapMatrix/apps/image_server/internal/middleware"
-	"ThreatTrapMatrix/apps/image_server/internal/models"
-	"ThreatTrapMatrix/apps/image_server/internal/service/docker_service"
-	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
+	"image_server/internal/global"
+	"image_server/internal/middleware"
+	"image_server/internal/models"
+	"image_server/internal/service/docker_service"
+	"image_server/internal/utils/response"
 	"fmt"
 	"net"
 	"time"

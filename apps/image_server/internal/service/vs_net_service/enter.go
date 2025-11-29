@@ -4,7 +4,7 @@ package vs_net_service
 // Description: 虚拟子网初始化服务，负责检查并初始化Docker虚拟网络，确保网络配置与系统配置一致
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
+	"image_server/internal/global"
 	"context"
 
 	"github.com/docker/docker/api/types/network"

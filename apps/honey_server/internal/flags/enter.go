@@ -4,7 +4,7 @@ package flags
 // Description: 命令行参数解析模块，处理命令行参数解析及对应功能调度
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
+	"honey_server/internal/global"
 	"flag"
 	"fmt"
 	"os"

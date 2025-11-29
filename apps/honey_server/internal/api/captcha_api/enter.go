@@ -4,8 +4,8 @@ package captcha_api
 // Description: 验证码接口模块，提供图片验证码生成接口及相关数据结构定义
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/captcha"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/response"
+	"honey_server/internal/utils/captcha"
+	"honey_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"

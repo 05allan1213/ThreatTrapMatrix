@@ -4,7 +4,7 @@ package jwts
 // Description: JWT工具模块，提供Token生成、解析及验证功能
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
+	"honey_server/internal/global"
 	"errors"
 	"time"
 

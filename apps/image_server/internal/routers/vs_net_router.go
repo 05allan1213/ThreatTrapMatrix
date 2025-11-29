@@ -4,9 +4,9 @@ package routers
 // Description: 虚拟子网模块路由配置，定义虚拟子网相关接口的路由规则及中间件绑定
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/api"
-	"ThreatTrapMatrix/apps/image_server/internal/api/vs_net_api"
-	"ThreatTrapMatrix/apps/image_server/internal/middleware"
+	"image_server/internal/api"
+	"image_server/internal/api/vs_net_api"
+	"image_server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )

@@ -4,10 +4,10 @@ package vs_api
 // Description: 虚拟服务批量删除API接口实现
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	"ThreatTrapMatrix/apps/image_server/internal/middleware"
-	"ThreatTrapMatrix/apps/image_server/internal/models"
-	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
+	"image_server/internal/global"
+	"image_server/internal/middleware"
+	"image_server/internal/models"
+	"image_server/internal/utils/response"
 	"fmt"
 
 	"github.com/gin-gonic/gin"

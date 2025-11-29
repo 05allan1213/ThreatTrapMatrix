@@ -4,13 +4,13 @@ package mirror_cloud_api
 // Description: 镜像文件查看API接口实现，处理镜像文件上传、验证、解析及临时文件管理
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/utils/docker"
+	"image_server/internal/utils/docker"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
-	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
+	"image_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"

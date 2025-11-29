@@ -4,8 +4,8 @@ package routers
 // Description: 路由模块，负责初始化Gin引擎、注册API路由并启动HTTP服务
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
-	middleware2 "ThreatTrapMatrix/apps/honey_server/internal/middleware"
+	"honey_server/internal/global"
+	middleware2 "honey_server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"

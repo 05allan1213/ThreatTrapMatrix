@@ -4,9 +4,9 @@ package cron_service
 // Description: 虚拟服务健康检查定时任务，同步Docker容器状态与数据库中服务状态
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	"ThreatTrapMatrix/apps/image_server/internal/models"
-	"ThreatTrapMatrix/apps/image_server/internal/service/docker_service"
+	"image_server/internal/global"
+	"image_server/internal/models"
+	"image_server/internal/service/docker_service"
 	"fmt"
 
 	"github.com/sirupsen/logrus"

@@ -4,9 +4,9 @@ package log_service
 // Description: 日志服务模块，负责用户登录日志的记录与管理，包括成功/失败登录日志的存储
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/core"
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
-	"ThreatTrapMatrix/apps/honey_server/internal/models"
+	"honey_server/internal/core"
+	"honey_server/internal/global"
+	"honey_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )

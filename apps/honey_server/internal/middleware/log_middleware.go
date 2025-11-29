@@ -4,7 +4,7 @@ package middleware
 // Description: 日志上下文中间件模块，为每个请求生成唯一日志ID并注入带标识的日志实例
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
+	"honey_server/internal/global"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

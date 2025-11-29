@@ -4,8 +4,8 @@ package user_api
 // Description: 用户注销API接口
 
 import (
-	middleware2 "ThreatTrapMatrix/apps/honey_server/internal/middleware"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/response"
+	middleware2 "honey_server/internal/middleware"
+	"honey_server/internal/utils/response"
 	"time"
 
 	"github.com/gin-gonic/gin"

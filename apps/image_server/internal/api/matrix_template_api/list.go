@@ -4,11 +4,11 @@ package matrix_template_api
 // Description: 矩阵模板列表查询API接口
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	"ThreatTrapMatrix/apps/image_server/internal/middleware"
-	"ThreatTrapMatrix/apps/image_server/internal/models"
-	"ThreatTrapMatrix/apps/image_server/internal/service/common_service"
-	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
+	"image_server/internal/global"
+	"image_server/internal/middleware"
+	"image_server/internal/models"
+	"image_server/internal/service/common_service"
+	"image_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 )

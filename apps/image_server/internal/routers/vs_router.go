@@ -4,10 +4,10 @@ package routers
 // Description: 虚拟服务路由注册
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/api"
-	"ThreatTrapMatrix/apps/image_server/internal/api/vs_api"
-	"ThreatTrapMatrix/apps/image_server/internal/middleware"
-	"ThreatTrapMatrix/apps/image_server/internal/models"
+	"image_server/internal/api"
+	"image_server/internal/api/vs_api"
+	"image_server/internal/middleware"
+	"image_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )

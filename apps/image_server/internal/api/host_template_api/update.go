@@ -4,10 +4,10 @@ package host_template_api
 // Description: 主机模板更新接口实现，包含模板存在性校验、名称唯一性校验、端口及服务有效性校验
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	"ThreatTrapMatrix/apps/image_server/internal/middleware"
-	"ThreatTrapMatrix/apps/image_server/internal/models"
-	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
+	"image_server/internal/global"
+	"image_server/internal/middleware"
+	"image_server/internal/models"
+	"image_server/internal/utils/response"
 	"fmt"
 
 	"github.com/gin-gonic/gin"

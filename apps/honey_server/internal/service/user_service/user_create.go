@@ -4,9 +4,9 @@ package user_service
 // Description: 用户服务模块，实现用户创建的核心业务逻辑处理
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
-	"ThreatTrapMatrix/apps/honey_server/internal/models"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/pwd"
+	"honey_server/internal/global"
+	"honey_server/internal/models"
+	"honey_server/internal/utils/pwd"
 	"fmt"
 )
 

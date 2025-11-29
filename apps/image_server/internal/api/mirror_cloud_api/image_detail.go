@@ -4,10 +4,10 @@ package mirror_cloud_api
 // Description: 镜像文件详情API接口
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	"ThreatTrapMatrix/apps/image_server/internal/middleware"
-	"ThreatTrapMatrix/apps/image_server/internal/models"
-	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
+	"image_server/internal/global"
+	"image_server/internal/middleware"
+	"image_server/internal/models"
+	"image_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 )

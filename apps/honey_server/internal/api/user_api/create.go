@@ -4,9 +4,9 @@ package user_api
 // Description: 用户创建API接口
 
 import (
-	middleware2 "ThreatTrapMatrix/apps/honey_server/internal/middleware"
-	user_service2 "ThreatTrapMatrix/apps/honey_server/internal/service/user_service"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/response"
+	middleware2 "honey_server/internal/middleware"
+	user_service2 "honey_server/internal/service/user_service"
+	"honey_server/internal/utils/response"
 	"fmt"
 
 	"github.com/gin-gonic/gin"

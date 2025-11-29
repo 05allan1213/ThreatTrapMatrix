@@ -4,10 +4,10 @@ package user_api
 // Description: 用户批量删除API接口
 
 import (
-	middleware2 "ThreatTrapMatrix/apps/honey_server/internal/middleware"
-	"ThreatTrapMatrix/apps/honey_server/internal/models"
-	"ThreatTrapMatrix/apps/honey_server/internal/service/common_service"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/response"
+	middleware2 "honey_server/internal/middleware"
+	"honey_server/internal/models"
+	"honey_server/internal/service/common_service"
+	"honey_server/internal/utils/response"
 	"fmt"
 
 	"github.com/gin-gonic/gin"

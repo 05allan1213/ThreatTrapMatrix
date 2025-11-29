@@ -4,8 +4,8 @@ package common_service
 // Description: 通用查询服务模块，提供支持分页、模糊查询、排序等功能的通用列表查询能力
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/core"
-	"ThreatTrapMatrix/apps/honey_server/internal/models"
+	"honey_server/internal/core"
+	"honey_server/internal/models"
 	"fmt"
 
 	"gorm.io/gorm"

@@ -4,9 +4,9 @@ package flags
 // Description: 用户命令行操作模块，支持通过JSON参数或交互式方式创建用户及查询用户列表
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
-	"ThreatTrapMatrix/apps/honey_server/internal/models"
-	user_service2 "ThreatTrapMatrix/apps/honey_server/internal/service/user_service"
+	"honey_server/internal/global"
+	"honey_server/internal/models"
+	user_service2 "honey_server/internal/service/user_service"
 	"encoding/json"
 	"fmt"
 	"os"

@@ -4,7 +4,7 @@ package global
 // Description: 全局变量模块，定义应用程序级别的全局共享变量
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/config"
+	"honey_server/internal/config"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"

@@ -4,7 +4,7 @@ package global
 // Description: 全局变量模块，定义应用程序级别的全局共享变量
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/config"
+	"image_server/internal/config"
 
 	"github.com/docker/docker/client"
 	"github.com/redis/go-redis/v9"
@@ -23,6 +23,6 @@ var (
 
 var (
 	Version   = "v1.0.1"
-	Commit    = "a29bb955"
-	BuildTime = "2025-11-24 19:45:58"
+	Commit    = "e7ab665d"
+	BuildTime = "2025-11-29 10:11:04"
 )

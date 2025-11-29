@@ -4,7 +4,7 @@ package core
 // Description: IP地址解析核心模块，基于ip2region数据库实现IP地址到地理位置的解析
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/ip"
+	"honey_server/internal/utils/ip"
 	_ "embed"
 	"fmt"
 	"strings"

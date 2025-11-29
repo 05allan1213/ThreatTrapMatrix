@@ -1,7 +1,7 @@
 package models
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/utils/cmd"
+	"image_server/internal/utils/cmd"
 	"errors"
 	"fmt"
 

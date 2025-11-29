@@ -1,0 +1,21 @@
+services:
+
+  image-server:
+    image: image_server:v1.0.1
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./settings.yaml:/app/settings.yaml
+    networks:
+      image_network:
+        ipv4_address: 10.1.0.3
+
+networks:
+  image_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.1.0.0/24

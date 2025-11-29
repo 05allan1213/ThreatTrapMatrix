@@ -4,10 +4,10 @@ package routers
 // Description: 矩阵模板模块路由配置，定义矩阵模板相关接口的路由规则及中间件绑定
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/api"
-	"ThreatTrapMatrix/apps/image_server/internal/api/matrix_template_api"
-	"ThreatTrapMatrix/apps/image_server/internal/middleware"
-	"ThreatTrapMatrix/apps/image_server/internal/models"
+	"image_server/internal/api"
+	"image_server/internal/api/matrix_template_api"
+	"image_server/internal/middleware"
+	"image_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )

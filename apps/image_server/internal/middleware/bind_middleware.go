@@ -4,7 +4,7 @@ package middleware
 // Description: 参数绑定中间件模块，提供JSON和Query参数的通用绑定及获取功能
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
+	"image_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 )

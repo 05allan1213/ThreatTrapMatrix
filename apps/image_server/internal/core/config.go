@@ -4,9 +4,9 @@ package core
 // Description: 核心模块，提供配置文件读取功能
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/config"
-	"ThreatTrapMatrix/apps/image_server/internal/flags"
-	"ThreatTrapMatrix/apps/image_server/internal/global"
+	"image_server/internal/config"
+	"image_server/internal/flags"
+	"image_server/internal/global"
 	"os"
 
 	"github.com/sirupsen/logrus"

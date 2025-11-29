@@ -4,10 +4,10 @@ package middleware
 // Description: 中间件模块，提供JWT认证和角色权限校验中间件
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/jwts"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/response"
+	"honey_server/internal/global"
+	"honey_server/internal/utils"
+	"honey_server/internal/utils/jwts"
+	"honey_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 )

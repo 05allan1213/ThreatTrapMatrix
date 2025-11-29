@@ -4,10 +4,10 @@ package middleware
 // Description: 中间件模块，提供JWT认证和角色权限校验中间件
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	"ThreatTrapMatrix/apps/image_server/internal/utils"
-	"ThreatTrapMatrix/apps/image_server/internal/utils/jwts"
-	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
+	"image_server/internal/global"
+	"image_server/internal/utils"
+	"image_server/internal/utils/jwts"
+	"image_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 )

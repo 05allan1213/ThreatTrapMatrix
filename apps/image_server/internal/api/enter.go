@@ -4,11 +4,11 @@ package api
 // Description: 系统Api入口
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/api/host_template_api"
-	"ThreatTrapMatrix/apps/image_server/internal/api/matrix_template_api"
-	"ThreatTrapMatrix/apps/image_server/internal/api/mirror_cloud_api"
-	"ThreatTrapMatrix/apps/image_server/internal/api/vs_api"
-	"ThreatTrapMatrix/apps/image_server/internal/api/vs_net_api"
+	"image_server/internal/api/host_template_api"
+	"image_server/internal/api/matrix_template_api"
+	"image_server/internal/api/mirror_cloud_api"
+	"image_server/internal/api/vs_api"
+	"image_server/internal/api/vs_net_api"
 )
 
 // Api 全局Api定义

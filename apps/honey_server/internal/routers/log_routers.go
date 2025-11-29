@@ -4,10 +4,10 @@ package routers
 // Description: 日志模块路由配置，定义日志相关接口的路由规则及中间件绑定
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/api"
-	"ThreatTrapMatrix/apps/honey_server/internal/api/log_api"
-	middleware2 "ThreatTrapMatrix/apps/honey_server/internal/middleware"
-	"ThreatTrapMatrix/apps/honey_server/internal/models"
+	"honey_server/internal/api"
+	"honey_server/internal/api/log_api"
+	middleware2 "honey_server/internal/middleware"
+	"honey_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )

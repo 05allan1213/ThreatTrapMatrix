@@ -4,10 +4,10 @@ package log_api
 // Description: 日志模块API接口定义，提供日志列表查询、日志删除等HTTP接口处理逻辑
 
 import (
-	middleware2 "ThreatTrapMatrix/apps/honey_server/internal/middleware"
-	models2 "ThreatTrapMatrix/apps/honey_server/internal/models"
-	common_service2 "ThreatTrapMatrix/apps/honey_server/internal/service/common_service"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/response"
+	middleware2 "honey_server/internal/middleware"
+	models2 "honey_server/internal/models"
+	common_service2 "honey_server/internal/service/common_service"
+	"honey_server/internal/utils/response"
 	"fmt"
 
 	"github.com/gin-gonic/gin"

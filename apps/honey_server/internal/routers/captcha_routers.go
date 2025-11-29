@@ -4,7 +4,7 @@ package routers
 // Description: 验证码模块路由定义，注册验证码相关API接口
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/api"
+	"honey_server/internal/api"
 
 	"github.com/gin-gonic/gin"
 )

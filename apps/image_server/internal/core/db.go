@@ -4,7 +4,7 @@ package core
 // Description: 数据库核心模块，实现MySQL数据库连接初始化、连接池配置及连接有效性检测功能
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
+	"image_server/internal/global"
 	"sync"
 	"time"
 

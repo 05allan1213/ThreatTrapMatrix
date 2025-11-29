@@ -4,7 +4,7 @@ package common_service
 // Description: 通用删除服务模块，提供支持条件过滤、ID列表批量删除的通用删除能力
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
+	"honey_server/internal/global"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"

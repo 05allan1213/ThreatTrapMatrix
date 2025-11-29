@@ -4,9 +4,9 @@ package routers
 // Description: 用户模块路由定义，注册用户相关API接口
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/api"
-	user_api2 "ThreatTrapMatrix/apps/honey_server/internal/api/user_api"
-	middleware2 "ThreatTrapMatrix/apps/honey_server/internal/middleware"
+	"honey_server/internal/api"
+	user_api2 "honey_server/internal/api/user_api"
+	middleware2 "honey_server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )

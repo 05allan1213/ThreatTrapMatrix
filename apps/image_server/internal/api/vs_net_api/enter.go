@@ -4,13 +4,13 @@ package vs_net_api
 // Description: 虚拟子网配置API接口实现，提供子网信息查询及子网配置更新功能
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/config"
-	"ThreatTrapMatrix/apps/image_server/internal/core"
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	"ThreatTrapMatrix/apps/image_server/internal/middleware"
-	"ThreatTrapMatrix/apps/image_server/internal/models"
-	"ThreatTrapMatrix/apps/image_server/internal/utils/cmd"
-	"ThreatTrapMatrix/apps/image_server/internal/utils/response"
+	"image_server/internal/config"
+	"image_server/internal/core"
+	"image_server/internal/global"
+	"image_server/internal/middleware"
+	"image_server/internal/models"
+	"image_server/internal/utils/cmd"
+	"image_server/internal/utils/response"
 	"fmt"
 
 	"github.com/gin-gonic/gin"

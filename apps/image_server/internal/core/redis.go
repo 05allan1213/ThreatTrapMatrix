@@ -4,7 +4,7 @@ package core
 // Description: Redis客户端初始化模块，提供单例Redis客户端的创建与获取功能
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
+	"image_server/internal/global"
 	"context"
 	"sync"
 

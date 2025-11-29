@@ -4,7 +4,7 @@ package response
 // Description: 统一响应格式模块，定义API接口返回数据结构及快捷响应函数
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/validate"
+	"honey_server/internal/utils/validate"
 
 	"github.com/gin-gonic/gin"
 )

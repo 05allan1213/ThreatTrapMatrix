@@ -4,9 +4,9 @@ package api
 // Description: 系统Api入口
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/api/captcha_api"
-	"ThreatTrapMatrix/apps/honey_server/internal/api/log_api"
-	"ThreatTrapMatrix/apps/honey_server/internal/api/user_api"
+	"honey_server/internal/api/captcha_api"
+	"honey_server/internal/api/log_api"
+	"honey_server/internal/api/user_api"
 )
 
 // Api 全局Api定义

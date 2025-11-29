@@ -1,12 +1,12 @@
 package main
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/core"
-	"ThreatTrapMatrix/apps/image_server/internal/flags"
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	"ThreatTrapMatrix/apps/image_server/internal/routers"
-	"ThreatTrapMatrix/apps/image_server/internal/service/cron_service"
-	"ThreatTrapMatrix/apps/image_server/internal/service/vs_net_service"
+	"image_server/internal/core"
+	"image_server/internal/flags"
+	"image_server/internal/global"
+	"image_server/internal/routers"
+	"image_server/internal/service/cron_service"
+	"image_server/internal/service/vs_net_service"
 )
 
 func main() {

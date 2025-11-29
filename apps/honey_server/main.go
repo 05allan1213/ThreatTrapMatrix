@@ -1,10 +1,10 @@
 package main
 
 import (
-	core2 "ThreatTrapMatrix/apps/honey_server/internal/core"
-	"ThreatTrapMatrix/apps/honey_server/internal/flags"
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
-	"ThreatTrapMatrix/apps/honey_server/internal/routers"
+	core2 "honey_server/internal/core"
+	"honey_server/internal/flags"
+	"honey_server/internal/global"
+	"honey_server/internal/routers"
 )
 
 func main() {

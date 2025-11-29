@@ -4,7 +4,7 @@ package jwts
 // Description: JWT工具模块，提供Token生成、解析及验证功能
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
+	"image_server/internal/global"
 	"errors"
 	"time"
 

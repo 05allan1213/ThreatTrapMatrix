@@ -4,7 +4,7 @@ package core
 // Description: 日志模块，自定义logrus日志格式与钩子，实现日志按日期分割、分级存储及彩色输出
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
+	"image_server/internal/global"
 	"bytes"
 	"fmt"
 	"os"

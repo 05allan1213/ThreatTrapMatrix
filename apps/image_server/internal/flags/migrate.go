@@ -4,8 +4,8 @@ package flags
 // Description: 负责执行GORM自动迁移以创建或更新数据表结构
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
-	models2 "ThreatTrapMatrix/apps/image_server/internal/models"
+	"image_server/internal/global"
+	models2 "image_server/internal/models"
 
 	"github.com/sirupsen/logrus"
 )

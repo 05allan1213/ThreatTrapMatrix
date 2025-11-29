@@ -4,14 +4,14 @@ package user_api
 // Description: 用户登录API接口
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/global"
-	"ThreatTrapMatrix/apps/honey_server/internal/middleware"
-	"ThreatTrapMatrix/apps/honey_server/internal/models"
-	"ThreatTrapMatrix/apps/honey_server/internal/service/log_service"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/captcha"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/jwts"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/pwd"
-	"ThreatTrapMatrix/apps/honey_server/internal/utils/response"
+	"honey_server/internal/global"
+	"honey_server/internal/middleware"
+	"honey_server/internal/models"
+	"honey_server/internal/service/log_service"
+	"honey_server/internal/utils/captcha"
+	"honey_server/internal/utils/jwts"
+	"honey_server/internal/utils/pwd"
+	"honey_server/internal/utils/response"
 	"time"
 
 	"github.com/gin-gonic/gin"

@@ -4,8 +4,8 @@ package core
 // Description: 核心模块，提供配置文件读取功能
 
 import (
-	"ThreatTrapMatrix/apps/honey_server/internal/config"
-	"ThreatTrapMatrix/apps/honey_server/internal/flags"
+	"honey_server/internal/config"
+	"honey_server/internal/flags"
 	"os"
 
 	"github.com/sirupsen/logrus"

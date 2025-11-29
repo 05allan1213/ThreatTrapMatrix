@@ -4,7 +4,7 @@ package docker_service
 // Description: Docker容器信息查询服务，提供容器列表获取、容器状态查询等功能
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
+	"image_server/internal/global"
 	"context"
 	"fmt"
 

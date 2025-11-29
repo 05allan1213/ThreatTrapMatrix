@@ -4,7 +4,7 @@ package docker_service
 // Description: Docker容器服务工具，基于Docker SDK实现容器创建、配置及启动，支持IP地址合法性校验
 
 import (
-	"ThreatTrapMatrix/apps/image_server/internal/global"
+	"image_server/internal/global"
 	"context"
 
 	"github.com/docker/docker/api/types/container"
