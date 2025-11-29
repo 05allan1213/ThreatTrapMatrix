@@ -82,6 +82,12 @@ func main() {
 		logrus.Fatalln(err)
 	}
 
+	// 获取节点系统信息
+	systemInfo, err := info.GetSystemInfo()
+	if err != nil {
+		logrus.Fatalln(err)
+	}
+
 	// 调用管理端Register接口发送节点注册请求
 	_, err = client.Register(context.Background(), &node_rpc.RegisterRequest{
 		Ip:      _ip,                      // 节点ip
@@ -90,7 +96,11 @@ func main() {
 		Version: global.Version,           // 节点程序版本
 		Commit:  global.Commit,            // 节点commit
 		SystemInfo: &node_rpc.SystemInfoMessage{
-			HostName: hostname, // 节点主机名
+			HostName:            hostname,
+			DistributionVersion: systemInfo.OSVersion,
+			CoreVersion:         systemInfo.Kernel,
+			SystemType:          systemInfo.Architecture,
+			StartTime:           systemInfo.BootTime,
 		},
 	})
 	if err != nil {
