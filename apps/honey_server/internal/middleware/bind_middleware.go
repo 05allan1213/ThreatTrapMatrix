@@ -31,7 +31,7 @@ func BindQueryMiddleware[T any](c *gin.Context) {
 	err := c.ShouldBindQuery(&cr)
 	if err != nil {
 		// 参数绑定失败，返回错误响应并终止请求链
-		response.FailWithMsg("参数绑定错误", c)
+		response.FailWithError(err, c)
 		c.Abort()
 		return
 	}
@@ -46,7 +46,7 @@ func BindUriMiddleware[T any](c *gin.Context) {
 	err := c.ShouldBindUri(&cr)
 	if err != nil {
 		// 参数绑定失败，返回错误响应并终止请求链
-		response.FailWithMsg("参数绑定错误", c)
+		response.FailWithError(err, c)
 		c.Abort()
 		return
 	}

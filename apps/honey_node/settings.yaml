@@ -7,3 +7,10 @@ system: # 系统路由
   grpcManageAddr: "192.168.5.1:8081" # gRPC管理服务监听地址
   network: ens33 # 网卡名称
   uid: dde9b8cc-08b4-4f17-8c8e-209e0504a2eb # 节点唯一标识（UUID）
+
+filterNetworkList: # 网卡过滤列表
+  - br- # 过滤前缀为br-的网卡
+  - docker # 过滤前缀为docker的网卡
+  - mc_ # 过滤前缀为mc_的网卡
+  - veth # 过滤前缀为veth的网卡
+  - lo # 过滤lo网卡

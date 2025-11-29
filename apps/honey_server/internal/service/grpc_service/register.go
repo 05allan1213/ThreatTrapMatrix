@@ -49,23 +49,40 @@ func (NodeService) Register(ctx context.Context, request *node_rpc.RegisterReque
 		}
 	}
 
-	// 创建网卡记录
-	var networkList []models.NodeNetworkModel
+	// 处理网卡记录 - 先查询再决定操作
 	for _, message := range request.NetworkList {
-		networkList = append(networkList, models.NodeNetworkModel{
-			NodeID:  model.ID,
-			Network: message.Network,
-			IP:      message.Ip,
-			Mask:    int8(message.Mask),
-			Status:  2,
-		})
-	}
-	// 批量保存网卡记录
-	if len(networkList) > 0 {
-		err = global.DB.Create(&networkList).Error
+		var existingNetwork models.NodeNetworkModel
+		// 查询是否已存在相同的网卡记录（同一节点下相同网卡名称）
+		err = global.DB.Where("node_id = ? AND network = ?", model.ID, message.Network).First(&existingNetwork).Error
+		
 		if err != nil {
-			logrus.Errorf("节点网卡保存失败 %s", err)
-			return nil, errors.New("节点网卡保存失败")
+			// 记录不存在，创建新记录
+			networkRecord := models.NodeNetworkModel{
+				NodeID:  model.ID,
+				Network: message.Network,
+				IP:      message.Ip,
+				Mask:    int8(message.Mask),
+				Status:  2,
+			}
+			err = global.DB.Create(&networkRecord).Error
+			if err != nil {
+				logrus.Errorf("节点网卡保存失败 %s", err)
+				return nil, errors.New("节点网卡保存失败")
+			}
+		} else {
+			// 记录已存在，检查是否需要更新
+			if existingNetwork.IP != message.Ip || existingNetwork.Mask != int8(message.Mask) {
+				// IP或掩码有变化，更新记录
+				updates := map[string]interface{}{
+					"ip":   message.Ip,
+					"mask": int8(message.Mask),
+				}
+				err = global.DB.Model(&existingNetwork).Updates(updates).Error
+				if err != nil {
+					logrus.Errorf("节点网卡更新失败 %s", err)
+					return nil, errors.New("节点网卡更新失败")
+				}
+			}
 		}
 	}
 

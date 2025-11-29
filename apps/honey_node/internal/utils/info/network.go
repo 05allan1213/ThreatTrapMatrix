@@ -16,8 +16,44 @@ type NetworkInfo struct {
 	Net     string // 网络段地址（CIDR格式）
 }
 
-// GetNetworkList 获取系统有效网卡列表，支持过滤指定后缀的网卡
-func GetNetworkList(filterNetworkName string) (list []NetworkInfo, err error) {
+// isFilteredNetwork 判断网卡是否应该被过滤
+// 支持三种匹配模式：
+// 1. 以'-'结尾：前缀匹配
+// 2. 以'-'开头：后缀匹配
+// 3. 其他：包含匹配
+func isFilteredNetwork(networkName string, filterList []string) bool {
+	for _, filter := range filterList {
+		// 空过滤条件跳过
+		if filter == "" {
+			continue
+		}
+
+		// 根据过滤规则的格式选择不同的匹配方式
+		switch {
+		case strings.HasSuffix(filter, "-"):
+			// 前缀匹配（例如"br-"匹配"br-eth0"）
+			prefix := strings.TrimSuffix(filter, "-")
+			if strings.HasPrefix(networkName, prefix) {
+				return true
+			}
+		case strings.HasPrefix(filter, "-"):
+			// 后缀匹配（例如"-eth"匹配"br-eth"）
+			suffix := strings.TrimPrefix(filter, "-")
+			if strings.HasSuffix(networkName, suffix) {
+				return true
+			}
+		default:
+			// 包含匹配（例如"docker"匹配"docker0"）
+			if strings.Contains(networkName, filter) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// GetNetworkList 获取系统有效网卡列表，支持过滤指定前缀的网卡
+func GetNetworkList(filterNetworkList []string) (list []NetworkInfo, err error) {
 	// 获取系统所有网卡
 	faces, err := net.Interfaces()
 	if err != nil {
@@ -31,10 +67,12 @@ func GetNetworkList(filterNetworkName string) (list []NetworkInfo, err error) {
 		if faceName == "lo" {
 			continue
 		}
-		// 过滤掉指定前缀的诱捕IP网卡
-		if strings.HasPrefix(faceName, filterNetworkName) {
+
+		// 检查网卡是否应该被过滤
+		if isFilteredNetwork(faceName, filterNetworkList) {
 			continue
 		}
+
 		// 获取当前接口绑定的所有地址
 		addrs, err := face.Addrs()
 		if err != nil {
