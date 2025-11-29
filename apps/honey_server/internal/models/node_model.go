@@ -1,5 +1,10 @@
 package models
 
+import (
+	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+)
+
 // NodeModel 节点模型
 type NodeModel struct {
 	Model
@@ -12,6 +17,43 @@ type NodeModel struct {
 	HoneyIPCount int            `json:"honeyIPCount"`                      // 诱捕ip数
 	Resource     NodeResource   `gorm:"serializer:json" json:"resource"`   // 节点资源占用
 	SystemInfo   NodeSystemInfo `gorm:"serializer:json" json:"systemInfo"` // 节点系统信息详情
+}
+
+func (n *NodeModel) BeforeDelete(tx *gorm.DB) error {
+	// 删除与节点关联的诱捕转发
+	var list []HoneyPortModel
+	err := tx.Find(&list, "node_id = ?", n.ID).Delete(&list).Error
+	if err != nil {
+		return err
+	}
+	logrus.Infof("关联诱捕转发 %d", len(list))
+
+	// 删除与节点关联的诱捕IP
+	var ipList []HoneyIpModel
+	err = tx.Find(&ipList, "node_id = ?", n.ID).Delete(&ipList).Error
+	if err != nil {
+		return err
+	}
+	logrus.Infof("关联诱捕ip %d", len(ipList))
+
+	// 删除与节点关联的网络
+	var netList []NetModel
+	err = tx.Find(&netList, "node_id = ?", n.ID).Delete(&netList).Error
+	if err != nil {
+		return err
+	}
+	logrus.Infof("关联网络 %d", len(netList))
+
+	// 删除与节点关联的网卡
+	var networkList []NodeNetworkModel
+	err = tx.Find(&networkList, "node_id = ?", n.ID).Delete(&networkList).Error
+	if err != nil {
+		return err
+	}
+	logrus.Infof("关联节点网卡 %d", len(networkList))
+
+	// 如果没有错误，返回nil
+	return nil
 }
 
 // NodeResource 节点资源占用模型

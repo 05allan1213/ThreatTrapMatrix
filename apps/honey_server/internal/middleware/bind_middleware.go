@@ -39,6 +39,20 @@ func BindQueryMiddleware[T any](c *gin.Context) {
 	c.Set("request", cr)
 }
 
+// BindUriMiddleware URI参数绑定中间件，将URL路径参数绑定到指定类型结构体
+func BindUriMiddleware[T any](c *gin.Context) {
+	var cr T
+	// 将URL路径参数绑定到目标结构体
+	err := c.ShouldBindUri(&cr)
+	if err != nil {
+		// 参数绑定失败，返回错误响应并终止请求链
+		response.FailWithMsg("参数绑定错误", c)
+		c.Abort()
+		return
+	}
+	c.Set("request", cr)
+}
+
 // GetBind 从Gin上下文中获取已绑定的参数结构体
 func GetBind[T any](c *gin.Context) (cr T) {
 	// 从上下文获取绑定数据并类型断言为目标类型
