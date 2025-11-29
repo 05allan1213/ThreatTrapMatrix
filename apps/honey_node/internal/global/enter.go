@@ -5,14 +5,16 @@ package global
 
 import (
 	"honey_node/internal/config"
+	"honey_node/internal/rpc/node_rpc"
 
 	"github.com/sirupsen/logrus"
 )
 
 // 全局变量声明区
 var (
-	Config *config.Config // 全局配置实例
-	Log    *logrus.Entry  // 全局日志实例
+	Config     *config.Config             // 全局配置实例
+	Log        *logrus.Entry              // 全局日志实例
+	GrpcClient node_rpc.NodeServiceClient // 全局gRPC客户端实例
 )
 
 var (

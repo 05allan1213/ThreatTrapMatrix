@@ -9,6 +9,7 @@ import (
 	"honey_node/internal/global"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -31,8 +32,16 @@ func ReadConfig() *config.Config {
 		logrus.Fatalf("配置文件配置错误 %s", err)
 		return nil
 	}
-
+	SetDefault(c)
 	return c
+}
+
+// SetDefault 设置默认配置项
+func SetDefault(c *config.Config) {
+	if c.System.Uid == "" {
+		c.System.Uid = uuid.New().String()
+		SetConfig()
+	}
 }
 
 // SetConfig 更新配置文件内容，并保存到文件中
