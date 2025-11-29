@@ -31,14 +31,14 @@ func (NodeNetworkApi) FlushView(c *gin.Context) {
 	}
 
 	// 判断节点在不在
-	_, ok := grpc_service.StreamMap[model.Uid]
+	_, ok := grpc_service.NodeCommandMap[model.Uid]
 	if !ok {
 		response.FailWithMsg("节点离线中", c)
 		return
 	}
 
 	// 构建网络刷新RPC请求并发送至通道
-	grpc_service.CmdRequestChan <- &node_rpc.CmdRequest{
+	grpc_service.NodeCommandMap[model.Uid].ReqChan <- &node_rpc.CmdRequest{
 		CmdType: node_rpc.CmdType_cmdNetworkFlushType,
 		TaskID:  "xx",
 		NetworkFlushInMessage: &node_rpc.NetworkFlushInMessage{
@@ -47,7 +47,7 @@ func (NodeNetworkApi) FlushView(c *gin.Context) {
 	}
 
 	// 阻塞等待RPC响应结果
-	res := <-grpc_service.CmdResponseChan
+	res := <-grpc_service.NodeCommandMap[model.Uid].ResChan
 	fmt.Println("网卡刷新数据", res) // 日志打印刷新结果（调试用）
 
 	// 返回网络刷新结果给客户端

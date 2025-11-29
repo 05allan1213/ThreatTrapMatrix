@@ -58,6 +58,8 @@ func command() {
 	Stream, err = global.GrpcClient.Command(ctx)
 	if err != nil {
 		logrus.Errorf("节点Command失败 %s", err)
+		time.Sleep(2 * time.Second)
+		command()
 		return
 	}
 
@@ -71,7 +73,7 @@ func command() {
 			}
 		}
 	}()
-
+	fmt.Println("节点连接command成功")
 	// 循环接收服务端命令请求
 	for {
 		request, err := Stream.Recv()
@@ -104,7 +106,7 @@ func command() {
 			// 组装网卡刷新响应并发送至通道
 			CmdResponseChan <- &node_rpc.CmdResponse{
 				CmdType: node_rpc.CmdType_cmdNetworkFlushType,
-				TaskID:  "xx",
+				TaskID:  request.TaskID,
 				NodeID:  global.Config.System.Uid,
 				NetworkFlushOutMessage: &node_rpc.NetworkFlushOutMessage{
 					NetworkList: networkList,
