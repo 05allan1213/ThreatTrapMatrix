@@ -19,4 +19,6 @@ type Logger struct {
 // System 系统配置结构体
 type System struct {
 	GrpcManageAddr string `yaml:"grpcManageAddr"` // gRPC管理服务监听地址
+	Network        string `yaml:"network"`        // 网卡
+	Uid            string `yaml:"uid"`            // 节点uid
 }

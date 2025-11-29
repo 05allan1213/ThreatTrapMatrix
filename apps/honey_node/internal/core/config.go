@@ -6,6 +6,7 @@ package core
 import (
 	"honey_node/internal/config"
 	"honey_node/internal/flags"
+	"honey_node/internal/global"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -32,4 +33,24 @@ func ReadConfig() *config.Config {
 	}
 
 	return c
+}
+
+// SetConfig 更新配置文件内容，并保存到文件中
+func SetConfig() {
+	// 将全局配置序列化为YAML格式
+	byteData, err := yaml.Marshal(global.Config)
+	if err != nil {
+		logrus.Errorf("配置序列化失败 %s", err)
+		return
+	}
+
+	// 将序列化后的配置写入文件
+	err = os.WriteFile(flags.Options.File, byteData, 0666)
+	if err != nil {
+		logrus.Errorf("配置文件写入错误 %s", err)
+		return
+	}
+
+	// 记录配置文件更新成功的日志
+	logrus.Infof("%s 配置文件更新成功", flags.Options.File)
 }
