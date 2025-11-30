@@ -5,6 +5,7 @@ import (
 	"honey_node/internal/global"
 	"honey_node/internal/service/command"
 	"honey_node/internal/service/cron_service"
+	"honey_node/internal/service/mq_service"
 
 	"github.com/sirupsen/logrus"
 )
@@ -32,11 +33,15 @@ func main() {
 		return
 	}
 
+	// 初始化MQ连接
+	global.Queue = core.InitMQ()
+
 	// 启动命令交互服务（含断线重连）
 	nodeClient.StartCommandHandling()
 
 	// 启动定时任务调度服务
 	cron_service.Run()
+	mq_service.Run()
 
 	// 阻塞主协程，保持程序持续运行
 	select {}

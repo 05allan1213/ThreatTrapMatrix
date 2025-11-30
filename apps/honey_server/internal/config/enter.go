@@ -84,7 +84,16 @@ type MQ struct {
 
 // Addr 获取rabbitMQ地址
 func (m MQ) Addr() string {
-	return fmt.Sprintf("amqps://%s:%s@%s:%d/",
+	// 判断是否使用SSL
+	if m.Ssl {
+		return fmt.Sprintf("amqps://%s:%s@%s:%d/", // 使用SSL
+			m.User,
+			m.Password,
+			m.Host,
+			m.Port,
+		)
+	}
+	return fmt.Sprintf("amqp://%s:%s@%s:%d/",
 		m.User,
 		m.Password,
 		m.Host,
