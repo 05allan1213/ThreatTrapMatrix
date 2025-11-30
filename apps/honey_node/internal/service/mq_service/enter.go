@@ -40,12 +40,12 @@ func register(exChangeName string, fun func(msg string) error) {
 	cf := global.Config
 	// 声明专属队列（按节点UID命名，确保队列唯一性）
 	queue, err := global.Queue.QueueDeclare(
-		fmt.Sprintf("exChangeName_%s_queue", cf.System.Uid), // 队列名称：结合交换器名与节点UID，避免冲突
-		true,                                                // 持久化队列：队列重启后保留
-		false,                                               // 自动删除：不自动删除
-		false,                                               // 排他性：否（允许多个消费者消费，但此处每个节点独占队列）
-		false,                                               // 非阻塞：立即返回
-		nil,                                                 // 额外参数：无
+		fmt.Sprintf("%s_%s_queue", exChangeName, cf.System.Uid), // 队列名称（唯一标识，与node01绑定）
+		true,                                                    // 持久化队列：队列重启后保留
+		false,                                                   // 自动删除：不自动删除
+		false,                                                   // 排他性：否（允许多个消费者消费，但此处每个节点独占队列）
+		false,                                                   // 非阻塞：立即返回
+		nil,                                                     // 额外参数：无
 	)
 	if err != nil {
 		logrus.Fatalf("声明队列失败 %s", err)
@@ -73,6 +73,8 @@ func register(exChangeName string, fun func(msg string) error) {
 		false,      // 非阻塞：立即返回
 		nil,        // 额外参数：无
 	)
+
+	logrus.Infof("绑定交换器成功 %s", exChangeName)
 
 	// 循环消费消息通道中的消息
 	for d := range msgs {
