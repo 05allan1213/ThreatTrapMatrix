@@ -6,7 +6,7 @@ services:
       - "5672:5672"  # RabbitMQ的AMQP端口
       - "15672:15672"  # RabbitMQ的管理界面端口
       - "5671:5671" # RabbitMQ的AMQP加密端口
-      - "15691:15691" # RabbitMQ的管理界面加密端口
+      - "15671:15671" # RabbitMQ的管理界面加密端口
     environment:
       RABBITMQ_DEFAULT_USER: admin  # 设置默认用户名
       RABBITMQ_DEFAULT_PASS: password  # 设置默认密码
