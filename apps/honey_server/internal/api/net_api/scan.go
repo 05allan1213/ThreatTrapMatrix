@@ -20,68 +20,70 @@ import (
 
 // ScanView 处理网络扫描请求，通过RPC指令触发节点执行指定网络的扫描任务
 func (NetApi) ScanView(c *gin.Context) {
-	// 绑定并解析请求中的网络ID参数
+	// 获取请求绑定的ID参数
 	cr := middleware.GetBind[models.IDRequest](c)
 
 	var model models.NetModel
-	// 查询指定ID的网络信息，并预加载关联的节点模型
+	// 查询网络模型并预加载关联的节点信息
 	if err := global.DB.Preload("NodeModel").Take(&model, cr.Id).Error; err != nil {
 		response.FailWithMsg("网络不存在", c)
 		return
 	}
 
-	// 校验关联节点是否处于运行状态
+	// 检查节点是否处于运行状态
 	if model.NodeModel.Status != 1 {
 		response.FailWithMsg("节点未运行", c)
 		return
 	}
 
-	// 通过节点唯一标识获取RPC命令通道
+	// 使用封装的获取节点函数，获取指定节点的命令通道
 	cmd, ok := grpc_service.GetNodeCommand(model.NodeModel.Uid)
 	if !ok {
 		response.FailWithMsg("节点离线中", c)
 		return
 	}
 
-	// 构建网络扫描RPC请求
+	// 构建网络扫描请求参数
 	req := &node_rpc.CmdRequest{
-		CmdType: node_rpc.CmdType_cmdNetScanType,                  // 命令类型：网络扫描
-		TaskID:  fmt.Sprintf("netScan-%d", time.Now().UnixNano()), // 生成唯一任务标识
+		CmdType: node_rpc.CmdType_cmdNetScanType,
+		TaskID:  fmt.Sprintf("netScan-%d", time.Now().UnixNano()), // 生成唯一任务ID
 		NetScanInMessage: &node_rpc.NetScanInMessage{
-			Network:      model.Network,            // 目标网络段
-			IpRange:      model.CanUseHoneyIPRange, // 扫描IP范围
-			FilterIPList: []string{},               // IP过滤列表
-			NetID:        uint32(model.ID),         // 网络ID关联
+			Network:      model.Network,            // 扫描使用的网络接口
+			IpRange:      model.CanUseHoneyIPRange, // 待扫描的IP范围
+			FilterIPList: []string{},               // 过滤IP列表（暂为空）
+			NetID:        uint32(model.ID),         // 关联的网络ID
 		},
 	}
 
-	// 创建带30秒超时的上下文，控制RPC交互生命周期
+	// 创建带超时的上下文，设置30秒超时时间
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 
-	// 发送扫描命令到节点
+	// 发送扫描请求到节点命令通道
 	select {
 	case cmd.ReqChan <- req:
-		logrus.Debugf("已向节点 %s 发送网络扫描请求", model.NodeModel.Uid)
+		logrus.Debugf("Sent flush request to node %s", model.NodeModel.Uid)
 	case <-ctx.Done():
 		response.FailWithMsg("发送命令超时", c)
 		return
 	}
 
-	// 循环接收节点扫描响应，直到收到结束标识
 label:
+	// 循环接收节点的扫描响应结果
 	for {
 		select {
 		case res := <-cmd.ResChan:
-			logrus.Debugf("已接收节点 %s 的扫描响应", model.NodeModel.Uid)
-			message := res.NetScanOutMessage // 提取扫描响应数据
-			fmt.Printf("网络扫描数据: %v\n", message)
-			// 检测扫描错误标识，返回错误信息
+			logrus.Debugf("Received flush response from node %s", model.NodeModel.Uid)
+			message := res.NetScanOutMessage
+			fmt.Printf("网络扫描 数据 %v\n", message)
+
+			// 检查扫描过程中是否出现错误
 			if message.ErrMsg != "" {
 				response.FailWithMsg("扫描错误"+message.ErrMsg, c)
 				return
 			}
-			// 检测扫描任务结束标识，退出循环
+
+			// 扫描完成时跳出循环
 			if message.End {
 				break label
 			}
@@ -91,5 +93,6 @@ label:
 		}
 	}
 
+	// 扫描成功完成，返回成功响应
 	response.OkWithMsg("扫描成功", c)
 }
