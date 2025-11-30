@@ -1,0 +1,25 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.9-management  # 使用带有管理插件的RabbitMQ镜像
+    container_name: rabbitmq  # 容器名称
+    ports:
+      - "5672:5672"  # RabbitMQ的AMQP端口
+      - "15672:15672"  # RabbitMQ的管理界面端口
+      - "5671:5671" # RabbitMQ的AMQP加密端口
+      - "15691:15691" # RabbitMQ的管理界面加密端口
+    environment:
+      RABBITMQ_DEFAULT_USER: admin  # 设置默认用户名
+      RABBITMQ_DEFAULT_PASS: password  # 设置默认密码
+    volumes:
+      - ./rabbitMQ/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+      - ./rabbitMQ/ssl:/etc/rabbitmq/ssl          # SSL证书目录
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.8
+networks:
+  honey_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.4.0.0/24
