@@ -10,6 +10,7 @@ import (
 	"honey_server/internal/utils/ip"
 	"honey_server/internal/utils/response"
 	"net"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,12 +21,20 @@ type NetUseIPListResponse struct {
 	Used               int      `json:"used"`               // 已使用IP数量
 	UseIPList          []string `json:"useIPList"`          // 可用IP列表
 	CanUseHoneyIPRange string   `json:"canUseHoneyIPRange"` // 子网内可分配的诱捕IP范围
+	CurrentPage        int      `json:"currentPage"`        // 当前页码
+	TotalPages         int      `json:"totalPages"`         // 总页码
+}
+
+// NetUseIPListRequest 网络可用IP列表查询请求结构体
+type NetUseIPListRequest struct {
+	models.IDRequest // ID请求参数
+	models.PageInfo  // 分页参数
 }
 
 // NetUseIPListView 查询网络可用IP列表与使用状态
 func (NetApi) NetUseIPListView(c *gin.Context) {
 	// 获取请求绑定的网络ID参数
-	cr := middleware.GetBind[models.IDRequest](c)
+	cr := middleware.GetBind[NetUseIPListRequest](c)
 
 	var model models.NetModel
 	// 查询网络基础信息
@@ -79,11 +88,46 @@ func (NetApi) NetUseIPListView(c *gin.Context) {
 		}
 	}
 
+	// 应用前缀匹配
+	if cr.Key != "" {
+		var filteredIPs []string
+		for _, ip := range availableIPs {
+			if strings.HasPrefix(ip, cr.Key) {
+				filteredIPs = append(filteredIPs, ip)
+			}
+		}
+		availableIPs = filteredIPs
+	}
+
+	// 设置默认分页参数
+	if cr.Page <= 0 {
+		cr.Page = 1
+	}
+	if cr.Limit <= 0 || cr.Limit > 254 {
+		cr.Limit = 254
+	}
+
+	// 计算分页
+	startIndex := (cr.Page - 1) * cr.Limit
+	endIndex := startIndex + cr.Limit
+	if startIndex > len(availableIPs) {
+		startIndex = len(availableIPs)
+	}
+	if endIndex > len(availableIPs) {
+		endIndex = len(availableIPs)
+	}
+	paginatedIPs := availableIPs[startIndex:endIndex]
+
+	// 计算总页数
+	totalPages := (len(availableIPs) + cr.Limit - 1) / cr.Limit
+
 	// 返回IP使用统计与可用列表
 	response.OkWithData(NetUseIPListResponse{
 		Total:              len(ipList),
 		Used:               len(ipList) - len(availableIPs),
-		UseIPList:          availableIPs,
+		UseIPList:          paginatedIPs,
 		CanUseHoneyIPRange: model.CanUseHoneyIPRange,
+		CurrentPage:        cr.Page,
+		TotalPages:         totalPages,
 	}, c)
 }
