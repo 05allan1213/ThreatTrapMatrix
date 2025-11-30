@@ -1,7 +1,7 @@
 package net_api
 
 // File: honey_server/api/net_api/scan.go
-// Description: 网络扫描API接口实现，处理网络扫描请求并异步接收结果更新数据库
+// Description: 网络扫描API接口，实现扫描状态互斥与诱捕IP过滤，异步处理扫描结果并更新数据库
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"honey_server/internal/rpc/node_rpc"
 	"honey_server/internal/service/grpc_service"
 	"honey_server/internal/utils/response"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,13 +20,16 @@ import (
 	"gorm.io/gorm"
 )
 
-// ScanView 处理异步网络扫描请求的视图函数，立即返回任务启动结果并后台处理扫描数据
+// 全局互斥锁，用于控制同一子网扫描任务的并发执行
+var mutex sync.Mutex
+
+// ScanView 带并发控制的网络扫描请求处理函数，支持诱捕IP过滤与扫描状态管理
 func (NetApi) ScanView(c *gin.Context) {
-	// 获取请求绑定的ID参数（网络ID）
+	// 获取请求绑定的网络ID参数
 	cr := middleware.GetBind[models.IDRequest](c)
 
 	var model models.NetModel
-	// 查询网络模型并预加载关联的节点信息
+	// 查询网络信息并预加载关联的节点数据
 	if err := global.DB.Preload("NodeModel").Take(&model, cr.Id).Error; err != nil {
 		response.FailWithMsg("网络不存在", c)
 		return
@@ -37,28 +41,45 @@ func (NetApi) ScanView(c *gin.Context) {
 		return
 	}
 
-	// 获取指定节点的命令通道
+	// 获取节点的命令通道，用于与节点通信
 	cmd, ok := grpc_service.GetNodeCommand(model.NodeModel.Uid)
 	if !ok {
 		response.FailWithMsg("节点离线中", c)
 		return
 	}
 
-	// 生成唯一任务ID用于跟踪扫描任务
+	// 查询当前网络下的诱捕IP列表，用于扫描时过滤
+	var filterIPList []string
+	global.DB.Model(models.HoneyIpModel{}).Where("net_id = ?", cr.Id).Select("ip").Scan(&filterIPList)
+	fmt.Println("过滤的ip列表", filterIPList)
+
+	// 生成唯一的扫描任务ID
 	taskID := fmt.Sprintf("netScan-%d", time.Now().UnixNano())
-	// 构建网络扫描请求参数
+	// 构建扫描请求参数
 	req := &node_rpc.CmdRequest{
 		CmdType: node_rpc.CmdType_cmdNetScanType,
 		TaskID:  taskID,
 		NetScanInMessage: &node_rpc.NetScanInMessage{
 			Network:      model.Network,            // 扫描使用的网络接口
 			IpRange:      model.CanUseHoneyIPRange, // 待扫描的IP范围
-			FilterIPList: []string{},               // 过滤IP列表
+			FilterIPList: filterIPList,             // 需过滤的诱捕IP列表
 			NetID:        uint32(model.ID),         // 关联的网络ID
 		},
 	}
 
-	// 非阻塞发送扫描请求到节点命令通道
+	// 加锁控制扫描状态，避免同一子网并发扫描
+	mutex.Lock()
+	if model.ScanStatus == 2 {
+		response.FailWithMsg("当前子网正在扫描中", c)
+		mutex.Unlock()
+		return
+	}
+
+	// 更新网络扫描状态为"扫描中"
+	global.DB.Model(&model).Update("scan_status", 2)
+	mutex.Unlock()
+
+	// 非阻塞发送扫描请求到节点
 	select {
 	case cmd.ReqChan <- req:
 		logrus.Debugf("Sent scan request to node %s, taskID: %s", model.NodeModel.Uid, taskID)
@@ -67,17 +88,21 @@ func (NetApi) ScanView(c *gin.Context) {
 		return
 	}
 
-	// 立即返回响应给客户端，告知任务已启动
+	// 立即返回响应，告知客户端任务已启动
 	response.Ok(map[string]string{
 		"task_id": taskID,
 		"message": "扫描任务已启动，请稍后查询结果",
 	}, "扫描任务已启动", c)
 
-	// 启动异步协程处理扫描结果，不阻塞HTTP响应
+	// 异步协程处理扫描结果，不阻塞HTTP响应
 	go func(nodeUid string, netModel models.NetModel, cmdChan *grpc_service.Command, taskID string) {
-		// 为异步处理创建独立上下文，设置较长超时（适配扫描耗时）
+		// 设置异步处理超时时间（5分钟）
 		ctxAsync, cancelAsync := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancelAsync()
+		// 最终将扫描状态重置为"已完成"
+		defer func() {
+			global.DB.Model(&netModel).Update("scan_status", 1)
+		}()
 
 		// 收集有效扫描结果
 		var netScanMsg []*node_rpc.NetScanOutMessage
@@ -85,7 +110,7 @@ func (NetApi) ScanView(c *gin.Context) {
 		for {
 			select {
 			case res := <-cmdChan.ResChan:
-				// 过滤当前任务的响应，避免处理其他任务数据
+				// 过滤当前任务的响应数据
 				if res.TaskID != taskID {
 					// 非当前任务响应，放回通道供其他协程处理
 					select {
@@ -99,13 +124,13 @@ func (NetApi) ScanView(c *gin.Context) {
 				logrus.Debugf("Received scan response from node %s, taskID: %s", nodeUid, taskID)
 				message := res.NetScanOutMessage
 
-				// 扫描过程出现错误则终止接收
+				// 扫描出错时终止处理
 				if message.ErrMsg != "" {
 					logrus.Errorf("Scan error from node %s: %s", nodeUid, message.ErrMsg)
 					break label
 				}
 
-				// 扫描完成则跳出循环
+				// 扫描完成时跳出循环
 				if message.End {
 					break label
 				}
@@ -121,7 +146,7 @@ func (NetApi) ScanView(c *gin.Context) {
 			}
 		}
 
-		// 有效结果或未超时情况下处理扫描数据
+		// 处理并持久化扫描结果
 		if len(netScanMsg) > 0 || ctxAsync.Err() == nil {
 			processScanResult(netModel, netScanMsg)
 		} else {
@@ -131,7 +156,7 @@ func (NetApi) ScanView(c *gin.Context) {
 	}(model.NodeModel.Uid, model, cmd, taskID)
 }
 
-// processScanResult 处理扫描结果，对比数据库主机信息并执行增删改操作
+// processScanResult 对比扫描结果与数据库数据，执行主机信息的增删改操作
 func processScanResult(netModel models.NetModel, scanMsgs []*node_rpc.NetScanOutMessage) {
 	// 查询当前网络下已存在的主机列表
 	var hostList []models.HostModel
@@ -140,13 +165,13 @@ func processScanResult(netModel models.NetModel, scanMsgs []*node_rpc.NetScanOut
 		return
 	}
 
-	// 构建数据库主机IP映射（便于快速查找）
+	// 构建数据库主机IP映射表，用于快速比对
 	dbHostMap := make(map[string]models.HostModel)
 	for _, host := range hostList {
 		dbHostMap[host.IP] = host
 	}
 
-	// 构建扫描结果IP映射
+	// 构建扫描结果IP映射表
 	scanResultMap := make(map[string]*node_rpc.NetScanOutMessage)
 	for _, msg := range scanMsgs {
 		if msg.Ip != "" {
@@ -154,15 +179,15 @@ func processScanResult(netModel models.NetModel, scanMsgs []*node_rpc.NetScanOut
 		}
 	}
 
-	// 分类处理：新增主机、更新主机、删除主机
-	var newHosts []models.HostModel     // 新增主机列表
-	var deletedHostIDs []uint           // 待删除主机ID列表
-	var updatedHosts []models.HostModel // 待更新主机列表
+	// 分类存储需新增、更新、删除的主机信息
+	var newHosts []models.HostModel
+	var deletedHostIDs []uint
+	var updatedHosts []models.HostModel
 
-	// 处理新增和更新逻辑
+	// 处理新增与更新逻辑
 	for ip, scanMsg := range scanResultMap {
 		if dbHost, exists := dbHostMap[ip]; exists {
-			// 主机已存在，检查MAC/厂商信息是否变化
+			// 主机已存在，检查信息是否变化
 			if dbHost.Mac != scanMsg.Mac || dbHost.Manuf != scanMsg.Manuf {
 				dbHost.Mac = scanMsg.Mac
 				dbHost.Manuf = scanMsg.Manuf
@@ -170,7 +195,7 @@ func processScanResult(netModel models.NetModel, scanMsgs []*node_rpc.NetScanOut
 			}
 			delete(dbHostMap, ip) // 标记为已处理
 		} else {
-			// 主机不存在，加入新增列表
+			// 新增主机记录
 			newHosts = append(newHosts, models.HostModel{
 				NodeID: netModel.NodeModel.ID,
 				NetID:  netModel.ID,
@@ -181,7 +206,7 @@ func processScanResult(netModel models.NetModel, scanMsgs []*node_rpc.NetScanOut
 		}
 	}
 
-	// 剩余未处理的数据库主机即为需删除的主机
+	// 剩余未处理的主机即为需删除的记录
 	for _, dbHost := range dbHostMap {
 		deletedHostIDs = append(deletedHostIDs, dbHost.ID)
 	}
@@ -189,9 +214,9 @@ func processScanResult(netModel models.NetModel, scanMsgs []*node_rpc.NetScanOut
 	logrus.Infof("Net %d scan result: new=%d, updated=%d, deleted=%d",
 		netModel.ID, len(newHosts), len(updatedHosts), len(deletedHostIDs))
 
-	// 使用事务批量更新数据库，保证数据一致性
+	// 事务批量更新数据库，保证数据一致性
 	err := global.DB.Transaction(func(tx *gorm.DB) error {
-		// 批量创建新增主机
+		// 批量创建新主机
 		if len(newHosts) > 0 {
 			if err := tx.Create(&newHosts).Error; err != nil {
 				return fmt.Errorf("创建新主机失败: %w", err)
