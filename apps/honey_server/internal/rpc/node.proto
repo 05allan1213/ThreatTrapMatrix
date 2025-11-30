@@ -100,6 +100,8 @@ message NetScanOutMessage {
   string ip = 3; // ip
   string mac = 4; // mac地址
   string manuf = 5; // mac对应厂商
+  uint32 netID = 6; // 网络id
+  string errMsg = 7; // 错误信息
 }
 // 删除节点响应结构体
 message NodeRemoveOutMessage {

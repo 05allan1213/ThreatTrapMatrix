@@ -4,8 +4,11 @@ package ip
 // Description: 网卡工具包，提供获取指定网卡的IPv4地址和MAC地址的功能
 
 import (
+	"bytes"
 	"fmt"
 	"net"
+	"strconv"
+	"strings"
 )
 
 // GetNetworkInfo 获取指定网卡的IPv4地址和MAC地址
@@ -49,4 +52,81 @@ func GetNetworkInfo(i string) (ip string, mac string, err error) {
 		return
 	}
 	return
+}
+
+// ParseIPRange 解析IP范围字符串，支持单个IP、IP段（如192.168.1.1-100或192.168.1.1-192.168.1.100）格式
+func ParseIPRange(ipRange string) ([]string, error) {
+	var result []string
+	// 按逗号分割多个IP范围段
+	segments := strings.Split(ipRange, ",")
+
+	for _, segment := range segments {
+		segment = strings.TrimSpace(segment)
+		if segment == "" {
+			continue
+		}
+
+		// 处理IP段格式（包含连字符）
+		if strings.Contains(segment, "-") {
+			parts := strings.SplitN(segment, "-", 2)
+			if len(parts) != 2 {
+				return nil, fmt.Errorf("无效的IP段格式: %s", segment)
+			}
+
+			startIPStr := strings.TrimSpace(parts[0])
+			endPart := strings.TrimSpace(parts[1])
+
+			startIP := net.ParseIP(startIPStr)
+			if startIP == nil {
+				return nil, fmt.Errorf("无效的起始IP: %s", startIPStr)
+			}
+
+			// 仅支持IPv4地址段解析
+			if ipv4 := startIP.To4(); ipv4 != nil {
+				startIP = ipv4
+				var endIP net.IP
+
+				// 尝试解析结束部分为完整IP地址
+				if endIP = net.ParseIP(endPart); endIP != nil {
+					endIP = endIP.To4()
+					if endIP == nil {
+						return nil, fmt.Errorf("无效的结束IP: %s", endPart)
+					}
+				} else {
+					// 处理简写格式（如192.168.1.1-100），解析最后一个八位组
+					endNum, err := strconv.Atoi(endPart)
+					if err != nil || endNum < 0 || endNum > 255 {
+						return nil, fmt.Errorf("无效的结束部分: %s", endPart)
+					}
+					// 复制起始IP作为结束IP基础，修改最后一个字节
+					endIP = make(net.IP, len(startIP))
+					copy(endIP, startIP)
+					endIP[len(endIP)-1] = byte(endNum)
+				}
+
+				// 遍历生成IP范围内的所有地址
+				for cmp := bytes.Compare(startIP, endIP); cmp <= 0; cmp = bytes.Compare(startIP, endIP) {
+					result = append(result, startIP.String())
+					// 递增IP地址（处理进位）
+					for i := len(startIP) - 1; i >= 0; i-- {
+						startIP[i]++
+						if startIP[i] > 0 {
+							break
+						}
+					}
+				}
+			} else {
+				return nil, fmt.Errorf("IPv6范围解析暂不支持")
+			}
+		} else {
+			// 处理单个IP地址
+			ip := net.ParseIP(segment)
+			if ip == nil {
+				return nil, fmt.Errorf("无效的IP地址: %s", segment)
+			}
+			result = append(result, ip.String())
+		}
+	}
+
+	return result, nil
 }

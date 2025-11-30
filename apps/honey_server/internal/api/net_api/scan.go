@@ -76,6 +76,11 @@ label:
 			logrus.Debugf("已接收节点 %s 的扫描响应", model.NodeModel.Uid)
 			message := res.NetScanOutMessage // 提取扫描响应数据
 			fmt.Printf("网络扫描数据: %v\n", message)
+			// 检测扫描错误标识，返回错误信息
+			if message.ErrMsg != "" {
+				response.FailWithMsg("扫描错误"+message.ErrMsg, c)
+				return
+			}
 			// 检测扫描任务结束标识，退出循环
 			if message.End {
 				break label

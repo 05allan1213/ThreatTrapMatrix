@@ -806,6 +806,8 @@ type NetScanOutMessage struct {
 	Ip            string                 `protobuf:"bytes,3,opt,name=ip,proto3" json:"ip,omitempty"`               // ip
 	Mac           string                 `protobuf:"bytes,4,opt,name=mac,proto3" json:"mac,omitempty"`             // mac地址
 	Manuf         string                 `protobuf:"bytes,5,opt,name=manuf,proto3" json:"manuf,omitempty"`         // mac对应厂商
+	NetID         uint32                 `protobuf:"varint,6,opt,name=netID,proto3" json:"netID,omitempty"`        // 网络id
+	ErrMsg        string                 `protobuf:"bytes,7,opt,name=errMsg,proto3" json:"errMsg,omitempty"`       // 错误信息
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -871,6 +873,20 @@ func (x *NetScanOutMessage) GetMac() string {
 func (x *NetScanOutMessage) GetManuf() string {
 	if x != nil {
 		return x.Manuf
+	}
+	return ""
+}
+
+func (x *NetScanOutMessage) GetNetID() uint32 {
+	if x != nil {
+		return x.NetID
+	}
+	return 0
+}
+
+func (x *NetScanOutMessage) GetErrMsg() string {
+	if x != nil {
+		return x.ErrMsg
 	}
 	return ""
 }
@@ -1077,13 +1093,15 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\x05netID\x18\x04 \x01(\rR\x05netID\"\x15\n" +
 	"\x13NodeRemoveInMessage\"X\n" +
 	"\x16NetworkFlushOutMessage\x12>\n" +
-	"\vnetworkList\x18\x01 \x03(\v2\x1c.node_rpc.networkInfoMessageR\vnetworkList\"y\n" +
+	"\vnetworkList\x18\x01 \x03(\v2\x1c.node_rpc.networkInfoMessageR\vnetworkList\"\xa7\x01\n" +
 	"\x11NetScanOutMessage\x12\x10\n" +
 	"\x03end\x18\x01 \x01(\bR\x03end\x12\x1a\n" +
 	"\bprogress\x18\x02 \x01(\x02R\bprogress\x12\x0e\n" +
 	"\x02ip\x18\x03 \x01(\tR\x02ip\x12\x10\n" +
 	"\x03mac\x18\x04 \x01(\tR\x03mac\x12\x14\n" +
-	"\x05manuf\x18\x05 \x01(\tR\x05manuf\"\x16\n" +
+	"\x05manuf\x18\x05 \x01(\tR\x05manuf\x12\x14\n" +
+	"\x05netID\x18\x06 \x01(\rR\x05netID\x12\x16\n" +
+	"\x06errMsg\x18\a \x01(\tR\x06errMsg\"\x16\n" +
 	"\x14NodeRemoveOutMessage\"\x93\x03\n" +
 	"\vCmdResponse\x12+\n" +
 	"\acmdType\x18\x01 \x01(\x0e2\x11.node_rpc.CmdTypeR\acmdType\x12\x16\n" +
