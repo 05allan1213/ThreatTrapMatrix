@@ -101,3 +101,93 @@ func ParseIPRange(ipRange string) ([]string, error) {
 
 	return result, nil
 }
+
+// IncrementIP 将IP地址加1，支持IPv4和IPv6地址
+func IncrementIP(ip net.IP) net.IP {
+	if ip == nil {
+		return nil
+	}
+
+	// 复制IP地址，避免修改原IP对象
+	newIP := make(net.IP, len(ip))
+	copy(newIP, ip)
+
+	// 处理IPv4地址（32位）
+	if ip4 := newIP.To4(); ip4 != nil {
+		// 从最后一个字节开始逐位递增，遇到非0xFF则停止进位
+		for i := 3; i >= 0; i-- {
+			newIP[i]++
+			if newIP[i] > 0 {
+				break
+			}
+		}
+		return newIP
+	}
+
+	// 处理IPv6地址（128位）
+	// 从最后一个字节开始逐位递增，遇到非0xFF则停止进位
+	for i := len(newIP) - 1; i >= 0; i-- {
+		newIP[i]++
+		if newIP[i] > 0 {
+			break
+		}
+	}
+	return newIP
+}
+
+// DecrementIP 将IP地址减1，支持IPv4和IPv6地址
+func DecrementIP(ip net.IP) net.IP {
+	if ip == nil {
+		return nil
+	}
+
+	// 复制IP地址，避免修改原IP对象
+	newIP := make(net.IP, len(ip))
+	copy(newIP, ip)
+
+	// 处理IPv4地址（32位）
+	if ip4 := newIP.To4(); ip4 != nil {
+		// 从最后一个字节开始逐位递减，遇到非0x00则停止借位
+		for i := 3; i >= 0; i-- {
+			newIP[i]--
+			if newIP[i] < 255 {
+				break
+			}
+		}
+		return newIP
+	}
+
+	// 处理IPv6地址（128位）
+	// 从最后一个字节开始逐位递减，遇到非0x00则停止借位
+	for i := len(newIP) - 1; i >= 0; i-- {
+		newIP[i]--
+		if newIP[i] < 255 {
+			break
+		}
+	}
+	return newIP
+}
+
+// BroadcastIP 计算IPv4 CIDR网段的广播地址
+func BroadcastIP(network *net.IPNet) net.IP {
+	ip := network.IP.To4()
+	if ip == nil {
+		// IPv6无广播地址，返回nil
+		return nil
+	}
+
+	mask := network.Mask
+	result := make(net.IP, len(ip))
+
+	// 按位计算：IP地址 | 子网掩码反码 = 广播地址
+	for i := 0; i < len(ip); i++ {
+		result[i] = ip[i] | ^mask[i]
+	}
+
+	return result
+}
+
+// FormatIPRange 将起始和结束IP地址格式化为"起始IP-结束IP"的字符串
+func FormatIPRange(start, end net.IP) string {
+	return fmt.Sprintf("%s-%s", start, end)
+}

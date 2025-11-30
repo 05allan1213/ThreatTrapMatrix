@@ -11,7 +11,9 @@ import (
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
 	"honey_server/internal/service/grpc_service"
+	"honey_server/internal/utils/ip"
 	"honey_server/internal/utils/response"
+	"net"
 	"sync"
 	"time"
 
@@ -39,6 +41,21 @@ func (NetApi) ScanView(c *gin.Context) {
 	if model.NodeModel.Status != 1 {
 		response.FailWithMsg("节点未运行", c)
 		return
+	}
+
+	// 计算可用IP范围
+	if model.CanUseHoneyIPRange == "" {
+		// 计算起始ip
+		_, ipNet, err := net.ParseCIDR(model.Subnet())
+		if err != nil {
+			response.FailWithMsg("无效的子网格式", c)
+			return
+		}
+
+		// 计算可用IP范围（排除网络地址和广播地址）
+		startIP := ip.IncrementIP(ipNet.IP)
+		endIP := ip.DecrementIP(ip.BroadcastIP(ipNet))
+		model.CanUseHoneyIPRange = ip.FormatIPRange(startIP, endIP)
 	}
 
 	// 获取节点命令通道，用于与节点通信
