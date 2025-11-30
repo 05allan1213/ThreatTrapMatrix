@@ -35,6 +35,7 @@ func Run() {
 	NetRouters(g)         // 网络相关路由
 	HostRouters(g)        // 存活主机相关路由
 	HoneyIPRouters(g)     // 诱捕IP相关路由
+	HoneyPortRouters(g)   // 诱捕转发相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
