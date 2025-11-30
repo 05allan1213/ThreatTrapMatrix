@@ -8,15 +8,20 @@ import (
 	"honey_server/internal/global"
 	"honey_server/internal/middleware"
 	"honey_server/internal/models"
+	"honey_server/internal/utils/ip"
 	"honey_server/internal/utils/response"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
+// 互斥锁，用于控制并发访问
+var mutex sync.Mutex
+
 // EnableView 处理网卡启用的HTTP请求
-func (n *NodeNetworkApi) EnableView(c *gin.Context) {
+func (NodeNetworkApi) EnableView(c *gin.Context) {
 	// 从请求中绑定并获取ID参数
 	cr := middleware.GetBind[models.IDRequest](c)
 
@@ -29,8 +34,8 @@ func (n *NodeNetworkApi) EnableView(c *gin.Context) {
 	}
 
 	// 加锁确保并发安全，防止重复操作
-	n.mutex.Lock()
-	defer n.mutex.Unlock()
+	mutex.Lock()
+	defer mutex.Unlock()
 	// 检查网卡当前状态，已启用则直接返回错误
 	if model.Status == 1 {
 		response.FailWithMsg("网卡已启用，请勿重复启用", c)
@@ -39,31 +44,22 @@ func (n *NodeNetworkApi) EnableView(c *gin.Context) {
 
 	// 使用数据库事务执行启用逻辑，保证数据一致性
 	err = global.DB.Transaction(func(tx *gorm.DB) error {
+		ipRange, err1 := ip.ParseCIDRGetUseIPRange(fmt.Sprintf("%s/%d", model.IP, model.Mask))
+		if err1 != nil {
+			return err1
+		}
 		// 构建网络表记录，关联节点和网卡信息
 		var net = models.NetModel{
-			NodeID:  model.NodeID,
-			Title:   fmt.Sprintf("%s_%s_网络", model.NodeModel.Title, model.Network),
-			Network: model.Network,
-			IP:      model.IP,
-			Mask:    model.Mask,
-			Gateway: model.Gateway,
+			NodeID:             model.NodeID,
+			Title:              fmt.Sprintf("%s_%s_网络", model.NodeModel.Title, model.Network),
+			Network:            model.Network,
+			IP:                 model.IP,
+			Mask:               model.Mask,
+			Gateway:            model.Gateway,
+			CanUseHoneyIPRange: ipRange,
 		}
 		// 插入网络表记录
 		err = tx.Create(&net).Error
-		if err != nil {
-			return err
-		}
-
-		// 构建主机表记录，关联节点和网络信息
-		var host = models.HostModel{
-			NodeID: model.NodeID,
-			NetID:  net.ID,
-			IP:     net.IP,
-			// Mac字段
-			// Manuf字段
-		}
-		// 插入主机表记录
-		err = tx.Create(&host).Error
 		if err != nil {
 			return err
 		}

@@ -95,10 +95,10 @@ func (NetApi) UpdateView(c *gin.Context) {
 	}
 
 	// 更新网络信息到数据库
-	err = global.DB.Model(&model).Updates(models.NetModel{
-		Title:              cr.Title,
-		Gateway:            cr.Gateway,
-		CanUseHoneyIPRange: cr.CanUseHoneyIPRange,
+	err = global.DB.Model(&model).Updates(map[string]any{
+		"title":                  cr.Title,
+		"gateway":                cr.Gateway,
+		"can_use_honey_ip_range": cr.CanUseHoneyIPRange,
 	}).Error
 	if err != nil {
 		response.FailWithMsg("网络信息修改失败", c)
