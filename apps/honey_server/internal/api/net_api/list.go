@@ -41,6 +41,12 @@ func (NetApi) ListView(c *gin.Context) {
 	// 组装响应数据，补充节点关联信息
 	var list = make([]ListResponse, 0)
 	for _, model := range _list {
+		// 获取当前网络扫描进度
+		_progress, ok := netProgressMap.Load(model.ID)
+		if ok {
+			progress := _progress.(float64)
+			model.ScanProgress = progress
+		}
 		list = append(list, ListResponse{
 			NetModel:   model,
 			NodeTitle:  model.NodeModel.Title,  // 从关联节点模型获取名称

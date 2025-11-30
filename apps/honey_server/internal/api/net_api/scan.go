@@ -20,40 +20,40 @@ import (
 	"gorm.io/gorm"
 )
 
-// 全局互斥锁，用于控制同一子网扫描任务的并发执行
-var mutex sync.Mutex
+var mutex sync.Mutex        // 全局互斥锁，控制子网扫描并发执行
+var netProgressMap sync.Map // 存储各子网扫描进度，key为网络ID，value为进度百分比
 
-// ScanView 带并发控制的网络扫描请求处理函数，支持诱捕IP过滤与扫描状态管理
+// ScanView 带进度跟踪的网络扫描请求处理函数，支持扫描状态控制与进度实时更新
 func (NetApi) ScanView(c *gin.Context) {
 	// 获取请求绑定的网络ID参数
 	cr := middleware.GetBind[models.IDRequest](c)
 
 	var model models.NetModel
-	// 查询网络信息并预加载关联的节点数据
+	// 查询网络信息并预加载关联节点数据
 	if err := global.DB.Preload("NodeModel").Take(&model, cr.Id).Error; err != nil {
 		response.FailWithMsg("网络不存在", c)
 		return
 	}
 
-	// 检查节点是否处于运行状态
+	// 检查节点运行状态
 	if model.NodeModel.Status != 1 {
 		response.FailWithMsg("节点未运行", c)
 		return
 	}
 
-	// 获取节点的命令通道，用于与节点通信
+	// 获取节点命令通道，用于与节点通信
 	cmd, ok := grpc_service.GetNodeCommand(model.NodeModel.Uid)
 	if !ok {
 		response.FailWithMsg("节点离线中", c)
 		return
 	}
 
-	// 查询当前网络下的诱捕IP列表，用于扫描时过滤
+	// 查询当前网络下的诱捕IP列表，用于扫描过滤
 	var filterIPList []string
 	global.DB.Model(models.HoneyIpModel{}).Where("net_id = ?", cr.Id).Select("ip").Scan(&filterIPList)
 	fmt.Println("过滤的ip列表", filterIPList)
 
-	// 生成唯一的扫描任务ID
+	// 生成唯一扫描任务ID
 	taskID := fmt.Sprintf("netScan-%d", time.Now().UnixNano())
 	// 构建扫描请求参数
 	req := &node_rpc.CmdRequest{
@@ -61,13 +61,13 @@ func (NetApi) ScanView(c *gin.Context) {
 		TaskID:  taskID,
 		NetScanInMessage: &node_rpc.NetScanInMessage{
 			Network:      model.Network,            // 扫描使用的网络接口
-			IpRange:      model.CanUseHoneyIPRange, // 待扫描的IP范围
-			FilterIPList: filterIPList,             // 需过滤的诱捕IP列表
-			NetID:        uint32(model.ID),         // 关联的网络ID
+			IpRange:      model.CanUseHoneyIPRange, // 待扫描IP范围
+			FilterIPList: filterIPList,             // 过滤的诱捕IP列表
+			NetID:        uint32(model.ID),         // 关联网络ID
 		},
 	}
 
-	// 加锁控制扫描状态，避免同一子网并发扫描
+	// 互斥锁控制，避免同一子网并发扫描
 	mutex.Lock()
 	if model.ScanStatus == 2 {
 		response.FailWithMsg("当前子网正在扫描中", c)
@@ -88,23 +88,19 @@ func (NetApi) ScanView(c *gin.Context) {
 		return
 	}
 
-	// 立即返回响应，告知客户端任务已启动
+	// 立即返回响应，告知客户端任务启动成功
 	response.Ok(map[string]string{
 		"task_id": taskID,
 		"message": "扫描任务已启动，请稍后查询结果",
 	}, "扫描任务已启动", c)
 
-	// 异步协程处理扫描结果，不阻塞HTTP响应
+	// 异步协程处理扫描结果与进度更新
 	go func(nodeUid string, netModel models.NetModel, cmdChan *grpc_service.Command, taskID string) {
 		// 设置异步处理超时时间（5分钟）
 		ctxAsync, cancelAsync := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancelAsync()
-		// 最终将扫描状态重置为"已完成"
-		defer func() {
-			global.DB.Model(&netModel).Update("scan_status", 1)
-		}()
 
-		// 收集有效扫描结果
+		// 收集扫描结果
 		var netScanMsg []*node_rpc.NetScanOutMessage
 	label:
 		for {
@@ -135,9 +131,11 @@ func (NetApi) ScanView(c *gin.Context) {
 					break label
 				}
 
-				// 收集有效主机信息
+				// 收集有效主机信息并更新扫描进度
 				if message.Ip != "" {
 					netScanMsg = append(netScanMsg, message)
+					netProgressMap.Store(uint(message.NetID), float64(message.Progress)) // 存储当前进度
+					fmt.Printf("网络扫描 %s %s %s %.2f\n", message.Ip, message.Mac, message.Manuf, message.Progress)
 				}
 
 			case <-ctxAsync.Done():
@@ -156,8 +154,17 @@ func (NetApi) ScanView(c *gin.Context) {
 	}(model.NodeModel.Uid, model, cmd, taskID)
 }
 
-// processScanResult 对比扫描结果与数据库数据，执行主机信息的增删改操作
+// processScanResult 处理扫描结果，更新主机信息并重置扫描状态
 func processScanResult(netModel models.NetModel, scanMsgs []*node_rpc.NetScanOutMessage) {
+	// 最终更新扫描状态为完成，并清理进度缓存
+	defer func() {
+		global.DB.Model(&netModel).Updates(map[string]any{
+			"scan_progress": 100, // 进度置为100%
+			"scan_status":   1,   // 状态置为已完成
+		})
+		netProgressMap.Delete(netModel.ID) // 移除进度缓存
+	}()
+
 	// 查询当前网络下已存在的主机列表
 	var hostList []models.HostModel
 	if err := global.DB.Find(&hostList, "net_id = ?", netModel.ID).Error; err != nil {
