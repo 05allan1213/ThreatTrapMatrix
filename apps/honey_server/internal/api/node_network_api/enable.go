@@ -32,7 +32,7 @@ func (n *NodeNetworkApi) EnableView(c *gin.Context) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
 	// 检查网卡当前状态，已启用则直接返回错误
-	if model.Status != 1 {
+	if model.Status == 1 {
 		response.FailWithMsg("网卡已启用，请勿重复启用", c)
 		return
 	}

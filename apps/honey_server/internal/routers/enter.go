@@ -32,6 +32,7 @@ func Run() {
 	LogRouters(g)         // 注册日志相关路由
 	NodeRouters(g)        // 节点相关路由
 	NodeNetworkRouters(g) // 节点网卡相关路由
+	NetRouters(g)         // 网络相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr

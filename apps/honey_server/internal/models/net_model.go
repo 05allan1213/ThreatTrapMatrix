@@ -1,5 +1,13 @@
 package models
 
+import (
+	"errors"
+	"fmt"
+	"net"
+
+	"gorm.io/gorm"
+)
+
 // NetModel 网络模型
 type NetModel struct {
 	Model
@@ -15,4 +23,36 @@ type NetModel struct {
 	ScanStatus         int8      `json:"scanStatus"`                    // 扫描状态
 	ScanProgress       float64   `json:"scanProgress"`                  // 扫描进度
 	CanUseHoneyIPRange string    `gorm:"256" json:"canUseHoneyIPRange"` // 能够使用的诱捕ip范围
+}
+
+// Subnet 返回网络模型的子网信息
+func (model NetModel) Subnet() string {
+	return fmt.Sprintf("%s/%d", model.IP, model.Mask)
+}
+
+// InSubnet 判断给定的IP地址是否属于当前网络模型的子网
+func (model NetModel) InSubnet(ip string) bool {
+	_, _net, _ := net.ParseCIDR(model.Subnet())
+	return _net.Contains(net.ParseIP(ip))
+}
+
+func (model NetModel) BeforeDelete(tx *gorm.DB) error {
+	// 校验当前网络下是否存在诱捕IP，存在则禁止删除
+	var count int64
+	tx.Model(&HoneyIpModel{}).Where("net_id = ?", model.ID).Count(&count)
+	if count > 0 {
+		return errors.New("存在诱捕ip，不能删除网络")
+	}
+
+	// 查询关联的节点网卡记录
+	var nodeNet NodeNetworkModel
+	err := tx.Take(&nodeNet, "node_id = ? and network = ?", model.NodeID, model.Network).Error
+	if err != nil {
+		// 无关联网卡记录则直接返回，允许删除
+		return nil
+	}
+
+	// 将关联网卡状态重置为未启用（状态2）
+	tx.Model(&nodeNet).Update("status", 2)
+	return nil
 }
