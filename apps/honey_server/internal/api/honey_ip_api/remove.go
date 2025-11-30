@@ -8,6 +8,7 @@ import (
 	"honey_server/internal/middleware"
 	"honey_server/internal/models"
 	"honey_server/internal/service/grpc_service"
+	"honey_server/internal/service/mq_service"
 	"honey_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
@@ -43,6 +44,19 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 		response.FailWithMsg("节点离线中", c)
 		return
 	}
+
+	// 发送删除IP消息给节点
+	req := mq_service.DeleteIPRequest{
+		LogID: "",
+	}
+	for _, model := range honeyIPList {
+		req.IpList = append(req.IpList, mq_service.IpInfo{
+			HoneyIPID: model.ID,
+			IP:        model.IP,
+			Network:   model.Network,
+		})
+	}
+	mq_service.SendDeleteIPMsg(nodeModel.Uid, req)
 
 	// 更新诱捕IP状态为删除中
 	global.DB.Model(&honeyIPList).Update("status", 4)

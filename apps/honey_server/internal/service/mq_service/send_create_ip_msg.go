@@ -1,6 +1,6 @@
 package mq_service
 
-// File: honey_server/service/mq_service/send_msg.go
+// File: honey_server/service/mq_service/send_create_ip_msg.go
 // Description: 创建诱捕IP消息发送服务，负责将创建IP的请求封装为消息并发送到RabbitMQ交换器
 
 import (
