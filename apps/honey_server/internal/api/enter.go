@@ -5,6 +5,7 @@ package api
 
 import (
 	"honey_server/internal/api/captcha_api"
+	"honey_server/internal/api/honey_ip_api"
 	"honey_server/internal/api/host_api"
 	"honey_server/internal/api/log_api"
 	"honey_server/internal/api/net_api"
@@ -22,6 +23,7 @@ type Api struct {
 	NodeNetworkApi node_network_api.NodeNetworkApi
 	NetApi         net_api.NetApi
 	HostApi        host_api.HostApi
+	HoneyIPApi     honey_ip_api.HoneyIPApi
 }
 
 var App = Api{}

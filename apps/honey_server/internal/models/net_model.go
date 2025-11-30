@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"honey_server/internal/utils/ip"
 	"net"
 
 	"github.com/sirupsen/logrus"
@@ -35,6 +36,11 @@ func (model NetModel) Subnet() string {
 func (model NetModel) InSubnet(ip string) bool {
 	_, _net, _ := net.ParseCIDR(model.Subnet())
 	return _net.Contains(net.ParseIP(ip))
+}
+
+// IpRange 获取网络模型中的IP范围
+func (model NetModel) IpRange() (ipRange []string, err error) {
+	return ip.ParseIPRange(model.CanUseHoneyIPRange)
 }
 
 func (model NetModel) BeforeDelete(tx *gorm.DB) error {
