@@ -30,4 +30,7 @@ func NetRouters(r *gin.RouterGroup) {
 	// DELETE /net - 删除网络
 	// 绑定JSON参数结构体,解析请求体JSON数据到IDListRequest结构体
 	r.DELETE("net", middleware.BindJsonMiddleware[models.IDListRequest], app.RemoveView)
+	// POST /net/scan - 扫描指定网络
+	// 绑定JSON参数结构体,解析请求体JSON数据到IDRequest结构体
+	r.POST("net/scan", middleware.BindJsonMiddleware[models.IDRequest], app.ScanView)
 }

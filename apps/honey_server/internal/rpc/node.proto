@@ -80,7 +80,10 @@ message NetworkFlushInMessage {
 }
 // 扫描网卡请求结构体
 message NetScanInMessage {
-
+  string network = 1; // 网卡名称
+  string ipRange = 2; // 扫描IP范围
+  repeated string filterIPList = 3; // IP过滤列表
+  uint32 netID = 4; // 网络ID
 }
 // 删除节点请求结构体
 message NodeRemoveInMessage {
@@ -92,7 +95,11 @@ message NetworkFlushOutMessage {
 }
 // 扫描网卡响应结构体
 message NetScanOutMessage {
-
+  bool end = 1; // 是否结束
+  float progress = 2; // 扫描进度
+  string ip = 3; // ip
+  string mac = 4; // mac地址
+  string manuf = 5; // mac对应厂商
 }
 // 删除节点响应结构体
 message NodeRemoveOutMessage {

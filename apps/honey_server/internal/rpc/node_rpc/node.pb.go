@@ -650,6 +650,10 @@ func (x *NetworkFlushInMessage) GetFilterNetworkName() []string {
 // 扫描网卡请求结构体
 type NetScanInMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Network       string                 `protobuf:"bytes,1,opt,name=network,proto3" json:"network,omitempty"`           // 网卡名称
+	IpRange       string                 `protobuf:"bytes,2,opt,name=ipRange,proto3" json:"ipRange,omitempty"`           // 扫描IP范围
+	FilterIPList  []string               `protobuf:"bytes,3,rep,name=filterIPList,proto3" json:"filterIPList,omitempty"` // IP过滤列表
+	NetID         uint32                 `protobuf:"varint,4,opt,name=netID,proto3" json:"netID,omitempty"`              // 网络ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -682,6 +686,34 @@ func (x *NetScanInMessage) ProtoReflect() protoreflect.Message {
 // Deprecated: Use NetScanInMessage.ProtoReflect.Descriptor instead.
 func (*NetScanInMessage) Descriptor() ([]byte, []int) {
 	return file_internal_rpc_node_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *NetScanInMessage) GetNetwork() string {
+	if x != nil {
+		return x.Network
+	}
+	return ""
+}
+
+func (x *NetScanInMessage) GetIpRange() string {
+	if x != nil {
+		return x.IpRange
+	}
+	return ""
+}
+
+func (x *NetScanInMessage) GetFilterIPList() []string {
+	if x != nil {
+		return x.FilterIPList
+	}
+	return nil
+}
+
+func (x *NetScanInMessage) GetNetID() uint32 {
+	if x != nil {
+		return x.NetID
+	}
+	return 0
 }
 
 // 删除节点请求结构体
@@ -769,6 +801,11 @@ func (x *NetworkFlushOutMessage) GetNetworkList() []*NetworkInfoMessage {
 // 扫描网卡响应结构体
 type NetScanOutMessage struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	End           bool                   `protobuf:"varint,1,opt,name=end,proto3" json:"end,omitempty"`            // 是否结束
+	Progress      float32                `protobuf:"fixed32,2,opt,name=progress,proto3" json:"progress,omitempty"` // 扫描进度
+	Ip            string                 `protobuf:"bytes,3,opt,name=ip,proto3" json:"ip,omitempty"`               // ip
+	Mac           string                 `protobuf:"bytes,4,opt,name=mac,proto3" json:"mac,omitempty"`             // mac地址
+	Manuf         string                 `protobuf:"bytes,5,opt,name=manuf,proto3" json:"manuf,omitempty"`         // mac对应厂商
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -801,6 +838,41 @@ func (x *NetScanOutMessage) ProtoReflect() protoreflect.Message {
 // Deprecated: Use NetScanOutMessage.ProtoReflect.Descriptor instead.
 func (*NetScanOutMessage) Descriptor() ([]byte, []int) {
 	return file_internal_rpc_node_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *NetScanOutMessage) GetEnd() bool {
+	if x != nil {
+		return x.End
+	}
+	return false
+}
+
+func (x *NetScanOutMessage) GetProgress() float32 {
+	if x != nil {
+		return x.Progress
+	}
+	return 0
+}
+
+func (x *NetScanOutMessage) GetIp() string {
+	if x != nil {
+		return x.Ip
+	}
+	return ""
+}
+
+func (x *NetScanOutMessage) GetMac() string {
+	if x != nil {
+		return x.Mac
+	}
+	return ""
+}
+
+func (x *NetScanOutMessage) GetManuf() string {
+	if x != nil {
+		return x.Manuf
+	}
+	return ""
 }
 
 // 删除节点响应结构体
@@ -997,12 +1069,21 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\x10NetScanInMessage\x18\x04 \x01(\v2\x1a.node_rpc.NetScanInMessageR\x10NetScanInMessage\x12O\n" +
 	"\x13NodeRemoveInMessage\x18\x05 \x01(\v2\x1d.node_rpc.NodeRemoveInMessageR\x13NodeRemoveInMessage\"E\n" +
 	"\x15NetworkFlushInMessage\x12,\n" +
-	"\x11filterNetworkName\x18\x01 \x03(\tR\x11filterNetworkName\"\x12\n" +
-	"\x10NetScanInMessage\"\x15\n" +
+	"\x11filterNetworkName\x18\x01 \x03(\tR\x11filterNetworkName\"\x80\x01\n" +
+	"\x10NetScanInMessage\x12\x18\n" +
+	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x18\n" +
+	"\aipRange\x18\x02 \x01(\tR\aipRange\x12\"\n" +
+	"\ffilterIPList\x18\x03 \x03(\tR\ffilterIPList\x12\x14\n" +
+	"\x05netID\x18\x04 \x01(\rR\x05netID\"\x15\n" +
 	"\x13NodeRemoveInMessage\"X\n" +
 	"\x16NetworkFlushOutMessage\x12>\n" +
-	"\vnetworkList\x18\x01 \x03(\v2\x1c.node_rpc.networkInfoMessageR\vnetworkList\"\x13\n" +
-	"\x11NetScanOutMessage\"\x16\n" +
+	"\vnetworkList\x18\x01 \x03(\v2\x1c.node_rpc.networkInfoMessageR\vnetworkList\"y\n" +
+	"\x11NetScanOutMessage\x12\x10\n" +
+	"\x03end\x18\x01 \x01(\bR\x03end\x12\x1a\n" +
+	"\bprogress\x18\x02 \x01(\x02R\bprogress\x12\x0e\n" +
+	"\x02ip\x18\x03 \x01(\tR\x02ip\x12\x10\n" +
+	"\x03mac\x18\x04 \x01(\tR\x03mac\x12\x14\n" +
+	"\x05manuf\x18\x05 \x01(\tR\x05manuf\"\x16\n" +
 	"\x14NodeRemoveOutMessage\"\x93\x03\n" +
 	"\vCmdResponse\x12+\n" +
 	"\acmdType\x18\x01 \x01(\x0e2\x11.node_rpc.CmdTypeR\acmdType\x12\x16\n" +
