@@ -1,8 +1,8 @@
 package models
 
 import (
-	"image_server/internal/utils/cmd"
 	"fmt"
+	"image_server/internal/utils/cmd"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -30,13 +30,17 @@ func (i *ImageModel) BeforeDelete(tx *gorm.DB) error {
 	command := fmt.Sprintf("docker rmi %s", i.DockerImageID)
 	err := cmd.Cmd(command)
 	if err != nil {
-		return err
+		// 即使删除镜像失败也继续执行，因为可能镜像已经被删除或其他原因
+		logrus.Warnf("删除docker镜像失败 %s: %v", i.DockerImageID, err)
 	}
+	
 	// 删除镜像文件
 	logrus.Infof("删除镜像文件 %s", i.ImagePath)
 	err = os.Remove(i.ImagePath)
 	if err != nil {
-		return err
+		// 文件可能已经不存在，这不应该阻止删除操作
+		logrus.Warnf("删除镜像文件失败 %s: %v", i.ImagePath, err)
 	}
+	
 	return nil
 }
