@@ -23,6 +23,7 @@ const (
 	NodeService_NodeResource_FullMethodName   = "/node_rpc.NodeService/NodeResource"
 	NodeService_Command_FullMethodName        = "/node_rpc.NodeService/Command"
 	NodeService_StatusCreateIP_FullMethodName = "/node_rpc.NodeService/StatusCreateIP"
+	NodeService_StatusDeleteIP_FullMethodName = "/node_rpc.NodeService/StatusDeleteIP"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -39,6 +40,8 @@ type NodeServiceClient interface {
 	Command(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CmdResponse, CmdRequest], error)
 	// 节点上报创建IP的回调
 	StatusCreateIP(ctx context.Context, in *StatusCreateIPRequest, opts ...grpc.CallOption) (*BaseResponse, error)
+	// 节点上报删除IP的回调
+	StatusDeleteIP(ctx context.Context, in *StatusDeleteIPRequest, opts ...grpc.CallOption) (*BaseResponse, error)
 }
 
 type nodeServiceClient struct {
@@ -92,6 +95,16 @@ func (c *nodeServiceClient) StatusCreateIP(ctx context.Context, in *StatusCreate
 	return out, nil
 }
 
+func (c *nodeServiceClient) StatusDeleteIP(ctx context.Context, in *StatusDeleteIPRequest, opts ...grpc.CallOption) (*BaseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BaseResponse)
+	err := c.cc.Invoke(ctx, NodeService_StatusDeleteIP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility.
@@ -106,6 +119,8 @@ type NodeServiceServer interface {
 	Command(grpc.BidiStreamingServer[CmdResponse, CmdRequest]) error
 	// 节点上报创建IP的回调
 	StatusCreateIP(context.Context, *StatusCreateIPRequest) (*BaseResponse, error)
+	// 节点上报删除IP的回调
+	StatusDeleteIP(context.Context, *StatusDeleteIPRequest) (*BaseResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -127,6 +142,9 @@ func (UnimplementedNodeServiceServer) Command(grpc.BidiStreamingServer[CmdRespon
 }
 func (UnimplementedNodeServiceServer) StatusCreateIP(context.Context, *StatusCreateIPRequest) (*BaseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StatusCreateIP not implemented")
+}
+func (UnimplementedNodeServiceServer) StatusDeleteIP(context.Context, *StatusDeleteIPRequest) (*BaseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StatusDeleteIP not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 func (UnimplementedNodeServiceServer) testEmbeddedByValue()                     {}
@@ -210,6 +228,24 @@ func _NodeService_StatusCreateIP_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_StatusDeleteIP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusDeleteIPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).StatusDeleteIP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_StatusDeleteIP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).StatusDeleteIP(ctx, req.(*StatusDeleteIPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +264,10 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StatusCreateIP",
 			Handler:    _NodeService_StatusCreateIP_Handler,
+		},
+		{
+			MethodName: "StatusDeleteIP",
+			Handler:    _NodeService_StatusDeleteIP_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

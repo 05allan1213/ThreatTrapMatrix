@@ -14,6 +14,8 @@ service NodeService {
   rpc Command (stream CmdResponse) returns (stream CmdRequest) {}
   // 节点上报创建IP的回调
   rpc StatusCreateIP(StatusCreateIPRequest)returns (BaseResponse) {}
+  // 节点上报删除IP的回调
+  rpc StatusDeleteIP(StatusDeleteIPRequest)returns (BaseResponse) {}
 }
 // 基础响应结构体
 message BaseResponse{
@@ -127,6 +129,10 @@ message StatusCreateIPRequest {
   string errMsg = 2; // 错误信息
   string network = 3; // 网卡名称
   string mac = 4; // mac地址
+}
+// 删除IP状态回调结构体
+message StatusDeleteIPRequest {
+  repeated uint32 honeyIPIDList = 1; // 诱捕ipID列表
 }
 
 // protoc --go_out=. --go-grpc_out=. *.proto

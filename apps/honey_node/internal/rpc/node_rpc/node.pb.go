@@ -1098,6 +1098,51 @@ func (x *StatusCreateIPRequest) GetMac() string {
 	return ""
 }
 
+// 删除IP状态回调结构体
+type StatusDeleteIPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	HoneyIPIDList []uint32               `protobuf:"varint,1,rep,packed,name=honeyIPIDList,proto3" json:"honeyIPIDList,omitempty"` // 诱捕ipID列表
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StatusDeleteIPRequest) Reset() {
+	*x = StatusDeleteIPRequest{}
+	mi := &file_internal_rpc_node_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusDeleteIPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusDeleteIPRequest) ProtoMessage() {}
+
+func (x *StatusDeleteIPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_rpc_node_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusDeleteIPRequest.ProtoReflect.Descriptor instead.
+func (*StatusDeleteIPRequest) Descriptor() ([]byte, []int) {
+	return file_internal_rpc_node_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *StatusDeleteIPRequest) GetHoneyIPIDList() []uint32 {
+	if x != nil {
+		return x.HoneyIPIDList
+	}
+	return nil
+}
+
 var File_internal_rpc_node_proto protoreflect.FileDescriptor
 
 const file_internal_rpc_node_proto_rawDesc = "" +
@@ -1185,16 +1230,19 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\thoneyIPID\x18\x01 \x01(\rR\thoneyIPID\x12\x16\n" +
 	"\x06errMsg\x18\x02 \x01(\tR\x06errMsg\x12\x18\n" +
 	"\anetwork\x18\x03 \x01(\tR\anetwork\x12\x10\n" +
-	"\x03mac\x18\x04 \x01(\tR\x03mac*M\n" +
+	"\x03mac\x18\x04 \x01(\tR\x03mac\"=\n" +
+	"\x15StatusDeleteIPRequest\x12$\n" +
+	"\rhoneyIPIDList\x18\x01 \x03(\rR\rhoneyIPIDList*M\n" +
 	"\aCmdType\x12\x17\n" +
 	"\x13cmdNetworkFlushType\x10\x00\x12\x12\n" +
 	"\x0ecmdNetScanType\x10\x01\x12\x15\n" +
-	"\x11cmdNodeRemoveType\x10\x022\xa2\x02\n" +
+	"\x11cmdNodeRemoveType\x10\x022\xef\x02\n" +
 	"\vNodeService\x12?\n" +
 	"\bRegister\x12\x19.node_rpc.RegisterRequest\x1a\x16.node_rpc.BaseResponse\"\x00\x12G\n" +
 	"\fNodeResource\x12\x1d.node_rpc.NodeResourceRequest\x1a\x16.node_rpc.BaseResponse\"\x00\x12<\n" +
 	"\aCommand\x12\x15.node_rpc.CmdResponse\x1a\x14.node_rpc.CmdRequest\"\x00(\x010\x01\x12K\n" +
-	"\x0eStatusCreateIP\x12\x1f.node_rpc.StatusCreateIPRequest\x1a\x16.node_rpc.BaseResponse\"\x00B\vZ\t/node_rpcb\x06proto3"
+	"\x0eStatusCreateIP\x12\x1f.node_rpc.StatusCreateIPRequest\x1a\x16.node_rpc.BaseResponse\"\x00\x12K\n" +
+	"\x0eStatusDeleteIP\x12\x1f.node_rpc.StatusDeleteIPRequest\x1a\x16.node_rpc.BaseResponse\"\x00B\vZ\t/node_rpcb\x06proto3"
 
 var (
 	file_internal_rpc_node_proto_rawDescOnce sync.Once
@@ -1209,7 +1257,7 @@ func file_internal_rpc_node_proto_rawDescGZIP() []byte {
 }
 
 var file_internal_rpc_node_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_internal_rpc_node_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_internal_rpc_node_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_internal_rpc_node_proto_goTypes = []any{
 	(CmdType)(0),                   // 0: node_rpc.CmdType
 	(*BaseResponse)(nil),           // 1: node_rpc.BaseResponse
@@ -1227,6 +1275,7 @@ var file_internal_rpc_node_proto_goTypes = []any{
 	(*NodeRemoveOutMessage)(nil),   // 13: node_rpc.NodeRemoveOutMessage
 	(*CmdResponse)(nil),            // 14: node_rpc.CmdResponse
 	(*StatusCreateIPRequest)(nil),  // 15: node_rpc.StatusCreateIPRequest
+	(*StatusDeleteIPRequest)(nil),  // 16: node_rpc.StatusDeleteIPRequest
 }
 var file_internal_rpc_node_proto_depIdxs = []int32{
 	4,  // 0: node_rpc.RegisterRequest.systemInfo:type_name -> node_rpc.systemInfoMessage
@@ -1246,12 +1295,14 @@ var file_internal_rpc_node_proto_depIdxs = []int32{
 	3,  // 14: node_rpc.NodeService.NodeResource:input_type -> node_rpc.NodeResourceRequest
 	14, // 15: node_rpc.NodeService.Command:input_type -> node_rpc.CmdResponse
 	15, // 16: node_rpc.NodeService.StatusCreateIP:input_type -> node_rpc.StatusCreateIPRequest
-	1,  // 17: node_rpc.NodeService.Register:output_type -> node_rpc.BaseResponse
-	1,  // 18: node_rpc.NodeService.NodeResource:output_type -> node_rpc.BaseResponse
-	7,  // 19: node_rpc.NodeService.Command:output_type -> node_rpc.CmdRequest
-	1,  // 20: node_rpc.NodeService.StatusCreateIP:output_type -> node_rpc.BaseResponse
-	17, // [17:21] is the sub-list for method output_type
-	13, // [13:17] is the sub-list for method input_type
+	16, // 17: node_rpc.NodeService.StatusDeleteIP:input_type -> node_rpc.StatusDeleteIPRequest
+	1,  // 18: node_rpc.NodeService.Register:output_type -> node_rpc.BaseResponse
+	1,  // 19: node_rpc.NodeService.NodeResource:output_type -> node_rpc.BaseResponse
+	7,  // 20: node_rpc.NodeService.Command:output_type -> node_rpc.CmdRequest
+	1,  // 21: node_rpc.NodeService.StatusCreateIP:output_type -> node_rpc.BaseResponse
+	1,  // 22: node_rpc.NodeService.StatusDeleteIP:output_type -> node_rpc.BaseResponse
+	18, // [18:23] is the sub-list for method output_type
+	13, // [13:18] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name
 	13, // [13:13] is the sub-list for extension extendee
 	0,  // [0:13] is the sub-list for field type_name
@@ -1268,7 +1319,7 @@ func file_internal_rpc_node_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_rpc_node_proto_rawDesc), len(file_internal_rpc_node_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
