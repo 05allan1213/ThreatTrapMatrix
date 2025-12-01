@@ -1,0 +1,2 @@
+alert http any any -> any any (msg:"使用 curl 请求"; flow:established,to_server; content:"curl"; http_user_agent; classtype:web-application-attack; sid:600033; priority:10; rev:1; metadata: level 2;)
+alert icmp any any -> any any (itype:8; msg:"ping请求检测";  priority: 3;sid:2023040702;metadata: level 1;)
