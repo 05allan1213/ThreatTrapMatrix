@@ -24,6 +24,7 @@ const (
 	NodeService_Command_FullMethodName        = "/node_rpc.NodeService/Command"
 	NodeService_StatusCreateIP_FullMethodName = "/node_rpc.NodeService/StatusCreateIP"
 	NodeService_StatusDeleteIP_FullMethodName = "/node_rpc.NodeService/StatusDeleteIP"
+	NodeService_Tunnel_FullMethodName         = "/node_rpc.NodeService/Tunnel"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -42,6 +43,8 @@ type NodeServiceClient interface {
 	StatusCreateIP(ctx context.Context, in *StatusCreateIPRequest, opts ...grpc.CallOption) (*BaseResponse, error)
 	// 节点上报删除IP的回调
 	StatusDeleteIP(ctx context.Context, in *StatusDeleteIPRequest, opts ...grpc.CallOption) (*BaseResponse, error)
+	// 端口转发通道
+	Tunnel(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[TunnelData, TunnelData], error)
 }
 
 type nodeServiceClient struct {
@@ -105,6 +108,19 @@ func (c *nodeServiceClient) StatusDeleteIP(ctx context.Context, in *StatusDelete
 	return out, nil
 }
 
+func (c *nodeServiceClient) Tunnel(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[TunnelData, TunnelData], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &NodeService_ServiceDesc.Streams[1], NodeService_Tunnel_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[TunnelData, TunnelData]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NodeService_TunnelClient = grpc.BidiStreamingClient[TunnelData, TunnelData]
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility.
@@ -121,6 +137,8 @@ type NodeServiceServer interface {
 	StatusCreateIP(context.Context, *StatusCreateIPRequest) (*BaseResponse, error)
 	// 节点上报删除IP的回调
 	StatusDeleteIP(context.Context, *StatusDeleteIPRequest) (*BaseResponse, error)
+	// 端口转发通道
+	Tunnel(grpc.BidiStreamingServer[TunnelData, TunnelData]) error
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -145,6 +163,9 @@ func (UnimplementedNodeServiceServer) StatusCreateIP(context.Context, *StatusCre
 }
 func (UnimplementedNodeServiceServer) StatusDeleteIP(context.Context, *StatusDeleteIPRequest) (*BaseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StatusDeleteIP not implemented")
+}
+func (UnimplementedNodeServiceServer) Tunnel(grpc.BidiStreamingServer[TunnelData, TunnelData]) error {
+	return status.Error(codes.Unimplemented, "method Tunnel not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 func (UnimplementedNodeServiceServer) testEmbeddedByValue()                     {}
@@ -246,6 +267,13 @@ func _NodeService_StatusDeleteIP_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_Tunnel_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(NodeServiceServer).Tunnel(&grpc.GenericServerStream[TunnelData, TunnelData]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NodeService_TunnelServer = grpc.BidiStreamingServer[TunnelData, TunnelData]
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -274,6 +302,12 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Command",
 			Handler:       _NodeService_Command_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "Tunnel",
+			Handler:       _NodeService_Tunnel_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

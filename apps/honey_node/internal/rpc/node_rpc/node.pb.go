@@ -1143,6 +1143,59 @@ func (x *StatusDeleteIPRequest) GetHoneyIPIDList() []uint32 {
 	return nil
 }
 
+// 传输的数据块
+type TunnelData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Chunk         []byte                 `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`     // 数据块
+	Address       string                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"` // 目标地址
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TunnelData) Reset() {
+	*x = TunnelData{}
+	mi := &file_internal_rpc_node_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TunnelData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TunnelData) ProtoMessage() {}
+
+func (x *TunnelData) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_rpc_node_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TunnelData.ProtoReflect.Descriptor instead.
+func (*TunnelData) Descriptor() ([]byte, []int) {
+	return file_internal_rpc_node_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *TunnelData) GetChunk() []byte {
+	if x != nil {
+		return x.Chunk
+	}
+	return nil
+}
+
+func (x *TunnelData) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
 var File_internal_rpc_node_proto protoreflect.FileDescriptor
 
 const file_internal_rpc_node_proto_rawDesc = "" +
@@ -1232,17 +1285,22 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\anetwork\x18\x03 \x01(\tR\anetwork\x12\x10\n" +
 	"\x03mac\x18\x04 \x01(\tR\x03mac\"=\n" +
 	"\x15StatusDeleteIPRequest\x12$\n" +
-	"\rhoneyIPIDList\x18\x01 \x03(\rR\rhoneyIPIDList*M\n" +
+	"\rhoneyIPIDList\x18\x01 \x03(\rR\rhoneyIPIDList\"<\n" +
+	"\n" +
+	"TunnelData\x12\x14\n" +
+	"\x05chunk\x18\x01 \x01(\fR\x05chunk\x12\x18\n" +
+	"\aaddress\x18\x02 \x01(\tR\aaddress*M\n" +
 	"\aCmdType\x12\x17\n" +
 	"\x13cmdNetworkFlushType\x10\x00\x12\x12\n" +
 	"\x0ecmdNetScanType\x10\x01\x12\x15\n" +
-	"\x11cmdNodeRemoveType\x10\x022\xef\x02\n" +
+	"\x11cmdNodeRemoveType\x10\x022\xab\x03\n" +
 	"\vNodeService\x12?\n" +
 	"\bRegister\x12\x19.node_rpc.RegisterRequest\x1a\x16.node_rpc.BaseResponse\"\x00\x12G\n" +
 	"\fNodeResource\x12\x1d.node_rpc.NodeResourceRequest\x1a\x16.node_rpc.BaseResponse\"\x00\x12<\n" +
 	"\aCommand\x12\x15.node_rpc.CmdResponse\x1a\x14.node_rpc.CmdRequest\"\x00(\x010\x01\x12K\n" +
 	"\x0eStatusCreateIP\x12\x1f.node_rpc.StatusCreateIPRequest\x1a\x16.node_rpc.BaseResponse\"\x00\x12K\n" +
-	"\x0eStatusDeleteIP\x12\x1f.node_rpc.StatusDeleteIPRequest\x1a\x16.node_rpc.BaseResponse\"\x00B\vZ\t/node_rpcb\x06proto3"
+	"\x0eStatusDeleteIP\x12\x1f.node_rpc.StatusDeleteIPRequest\x1a\x16.node_rpc.BaseResponse\"\x00\x12:\n" +
+	"\x06Tunnel\x12\x14.node_rpc.TunnelData\x1a\x14.node_rpc.TunnelData\"\x00(\x010\x01B\vZ\t/node_rpcb\x06proto3"
 
 var (
 	file_internal_rpc_node_proto_rawDescOnce sync.Once
@@ -1257,7 +1315,7 @@ func file_internal_rpc_node_proto_rawDescGZIP() []byte {
 }
 
 var file_internal_rpc_node_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_internal_rpc_node_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_internal_rpc_node_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_internal_rpc_node_proto_goTypes = []any{
 	(CmdType)(0),                   // 0: node_rpc.CmdType
 	(*BaseResponse)(nil),           // 1: node_rpc.BaseResponse
@@ -1276,6 +1334,7 @@ var file_internal_rpc_node_proto_goTypes = []any{
 	(*CmdResponse)(nil),            // 14: node_rpc.CmdResponse
 	(*StatusCreateIPRequest)(nil),  // 15: node_rpc.StatusCreateIPRequest
 	(*StatusDeleteIPRequest)(nil),  // 16: node_rpc.StatusDeleteIPRequest
+	(*TunnelData)(nil),             // 17: node_rpc.TunnelData
 }
 var file_internal_rpc_node_proto_depIdxs = []int32{
 	4,  // 0: node_rpc.RegisterRequest.systemInfo:type_name -> node_rpc.systemInfoMessage
@@ -1296,13 +1355,15 @@ var file_internal_rpc_node_proto_depIdxs = []int32{
 	14, // 15: node_rpc.NodeService.Command:input_type -> node_rpc.CmdResponse
 	15, // 16: node_rpc.NodeService.StatusCreateIP:input_type -> node_rpc.StatusCreateIPRequest
 	16, // 17: node_rpc.NodeService.StatusDeleteIP:input_type -> node_rpc.StatusDeleteIPRequest
-	1,  // 18: node_rpc.NodeService.Register:output_type -> node_rpc.BaseResponse
-	1,  // 19: node_rpc.NodeService.NodeResource:output_type -> node_rpc.BaseResponse
-	7,  // 20: node_rpc.NodeService.Command:output_type -> node_rpc.CmdRequest
-	1,  // 21: node_rpc.NodeService.StatusCreateIP:output_type -> node_rpc.BaseResponse
-	1,  // 22: node_rpc.NodeService.StatusDeleteIP:output_type -> node_rpc.BaseResponse
-	18, // [18:23] is the sub-list for method output_type
-	13, // [13:18] is the sub-list for method input_type
+	17, // 18: node_rpc.NodeService.Tunnel:input_type -> node_rpc.TunnelData
+	1,  // 19: node_rpc.NodeService.Register:output_type -> node_rpc.BaseResponse
+	1,  // 20: node_rpc.NodeService.NodeResource:output_type -> node_rpc.BaseResponse
+	7,  // 21: node_rpc.NodeService.Command:output_type -> node_rpc.CmdRequest
+	1,  // 22: node_rpc.NodeService.StatusCreateIP:output_type -> node_rpc.BaseResponse
+	1,  // 23: node_rpc.NodeService.StatusDeleteIP:output_type -> node_rpc.BaseResponse
+	17, // 24: node_rpc.NodeService.Tunnel:output_type -> node_rpc.TunnelData
+	19, // [19:25] is the sub-list for method output_type
+	13, // [13:19] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name
 	13, // [13:13] is the sub-list for extension extendee
 	0,  // [0:13] is the sub-list for field type_name
@@ -1319,7 +1380,7 @@ func file_internal_rpc_node_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_rpc_node_proto_rawDesc), len(file_internal_rpc_node_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   16,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

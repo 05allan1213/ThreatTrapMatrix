@@ -16,6 +16,8 @@ service NodeService {
   rpc StatusCreateIP(StatusCreateIPRequest)returns (BaseResponse) {}
   // 节点上报删除IP的回调
   rpc StatusDeleteIP(StatusDeleteIPRequest)returns (BaseResponse) {}
+  // 端口转发通道
+  rpc Tunnel(stream TunnelData) returns (stream TunnelData) {};
 }
 // 基础响应结构体
 message BaseResponse{
@@ -134,6 +136,10 @@ message StatusCreateIPRequest {
 message StatusDeleteIPRequest {
   repeated uint32 honeyIPIDList = 1; // 诱捕ipID列表
 }
-
+// 传输的数据块
+message TunnelData {
+  bytes chunk = 1;  // 数据块
+  string address = 2; // 目标地址
+}
 // protoc --go_out=. --go-grpc_out=. *.proto
 // 在rpc目录下执行
