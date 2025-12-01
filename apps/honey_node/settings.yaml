@@ -27,3 +27,9 @@ mq: # rabbitMQ
   clientCertificate: # 客户端的证书
   clientKey:  # 客户端的私钥
   caCertificate:  # ca的证书
+
+db: # SQLite数据库配置
+  db_name: "gorm.db" #  数据库名称
+  maxIdleConns: 10 # 最大空闲连接数
+  maxOpenConns: 100 # 最大连接数
+  connMaxLifetime: 10000 # 连接最大生命周期

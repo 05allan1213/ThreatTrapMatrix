@@ -6,6 +6,7 @@ package port_service
 import (
 	"context"
 	"honey_node/internal/global"
+	"honey_node/internal/models"
 	"honey_node/internal/rpc/node_rpc"
 	"io"
 	"net"
@@ -122,14 +123,20 @@ func handleConnection(client node_rpc.NodeServiceClient, localConn net.Conn, tar
 
 // CloseIpTunnel 关闭指定IP上的所有端口监听及隧道
 func CloseIpTunnel(ip string) {
-	// 遍历全局监听存储，匹配指定IP的所有监听实例
+	// 遍历所有TunnelStore中的隧道
 	tunnelStore.Range(func(key, value any) bool {
 		localAddr := key.(string)
-		if strings.HasPrefix(localAddr, ip) { // 匹配以指定IP开头的监听地址
+		// 判断当前隧道的localAddr是否以指定IP开头
+		if strings.HasPrefix(localAddr, ip) {
+			var model models.PortModel
+			global.DB.Find(&model, "local_addr = ?", localAddr)
+			if model.ID != 0 {
+				global.DB.Delete(&model)
+			}
 			logrus.Infof("清除%s上的全部服务", ip)
 			listener := value.(net.Listener)
 			listener.Close() // 关闭监听实例，终止端口服务
 		}
-		return true // 继续遍历剩余条目
+		return true
 	})
 }

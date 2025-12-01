@@ -50,7 +50,7 @@ func RegisterCommand() {
 func runBaseCommand() {
 	// 数据库表结构迁移命令
 	if Options.DB {
-		// Migrate()
+		Migrate()
 		os.Exit(0)
 	}
 	// 版本信息打印命令

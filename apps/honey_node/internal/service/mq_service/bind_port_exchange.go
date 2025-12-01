@@ -6,6 +6,8 @@ package mq_service
 import (
 	"encoding/json"
 	"fmt"
+	"honey_node/internal/global"
+	"honey_node/internal/models"
 	"honey_node/internal/service/port_service"
 
 	"github.com/sirupsen/logrus"
@@ -49,6 +51,10 @@ func BindPortExChange(msg string) error {
 
 	for _, port := range req.PortList {
 		// 起端口监听，每个端口映射独立协程处理，避免阻塞
+		global.DB.Create(&models.PortModel{
+			TargetAddr: port.TargetAddr(),
+			LocalAddr:  port.LocalAddr(),
+		})
 		go func(port PortInfo) {
 			err := port_service.Tunnel(port.LocalAddr(), port.TargetAddr())
 			if err != nil {

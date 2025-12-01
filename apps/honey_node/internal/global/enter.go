@@ -9,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
+	"gorm.io/gorm"
 )
 
 // 全局变量声明区
@@ -17,6 +18,7 @@ var (
 	Log        *logrus.Entry              // 全局日志实例
 	GrpcClient node_rpc.NodeServiceClient // 全局gRPC客户端实例
 	Queue      *amqp.Channel              // 全局队列实例
+	DB         *gorm.DB                   // 全局数据库实例
 )
 
 var (

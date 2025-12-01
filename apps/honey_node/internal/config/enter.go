@@ -13,6 +13,7 @@ type Config struct {
 	System            System   `yaml:"system"`            // 系统配置信息
 	FilterNetworkList []string `yaml:"filterNetworkList"` // 网卡过滤列表
 	MQ                MQ       `yaml:"mq"`                // rabbitMQ配置信息
+	DB                DB       `yaml:"db"`                // 数据库配置信息
 }
 
 // Logger 日志配置结构体
@@ -61,4 +62,12 @@ func (m MQ) Addr() string {
 		m.Host,
 		m.Port,
 	)
+}
+
+// DB SQLite数据库配置结构体
+type DB struct {
+	DbName          string `yaml:"db_name"`         // 数据库名称
+	MaxIdleConns    int    `yaml:"maxIdleConns"`    // 最大空闲连接数
+	MaxOpenConns    int    `yaml:"maxOpenConns"`    // 最大连接数
+	ConnMaxLifetime int    `yaml:"connMaxLifetime"` // 连接最大生命周期（秒）
 }
