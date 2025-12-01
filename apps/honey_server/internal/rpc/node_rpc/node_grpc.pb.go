@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NodeService_Register_FullMethodName     = "/node_rpc.NodeService/Register"
-	NodeService_NodeResource_FullMethodName = "/node_rpc.NodeService/NodeResource"
-	NodeService_Command_FullMethodName      = "/node_rpc.NodeService/Command"
+	NodeService_Register_FullMethodName       = "/node_rpc.NodeService/Register"
+	NodeService_NodeResource_FullMethodName   = "/node_rpc.NodeService/NodeResource"
+	NodeService_Command_FullMethodName        = "/node_rpc.NodeService/Command"
+	NodeService_StatusCreateIP_FullMethodName = "/node_rpc.NodeService/StatusCreateIP"
 )
 
 // NodeServiceClient is the client API for NodeService service.
@@ -36,6 +37,8 @@ type NodeServiceClient interface {
 	NodeResource(ctx context.Context, in *NodeResourceRequest, opts ...grpc.CallOption) (*BaseResponse, error)
 	// 管理下发命令到节点运行
 	Command(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CmdResponse, CmdRequest], error)
+	// 节点上报创建IP的回调
+	StatusCreateIP(ctx context.Context, in *StatusCreateIPRequest, opts ...grpc.CallOption) (*BaseResponse, error)
 }
 
 type nodeServiceClient struct {
@@ -79,6 +82,16 @@ func (c *nodeServiceClient) Command(ctx context.Context, opts ...grpc.CallOption
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type NodeService_CommandClient = grpc.BidiStreamingClient[CmdResponse, CmdRequest]
 
+func (c *nodeServiceClient) StatusCreateIP(ctx context.Context, in *StatusCreateIPRequest, opts ...grpc.CallOption) (*BaseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BaseResponse)
+	err := c.cc.Invoke(ctx, NodeService_StatusCreateIP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NodeServiceServer is the server API for NodeService service.
 // All implementations must embed UnimplementedNodeServiceServer
 // for forward compatibility.
@@ -91,6 +104,8 @@ type NodeServiceServer interface {
 	NodeResource(context.Context, *NodeResourceRequest) (*BaseResponse, error)
 	// 管理下发命令到节点运行
 	Command(grpc.BidiStreamingServer[CmdResponse, CmdRequest]) error
+	// 节点上报创建IP的回调
+	StatusCreateIP(context.Context, *StatusCreateIPRequest) (*BaseResponse, error)
 	mustEmbedUnimplementedNodeServiceServer()
 }
 
@@ -109,6 +124,9 @@ func (UnimplementedNodeServiceServer) NodeResource(context.Context, *NodeResourc
 }
 func (UnimplementedNodeServiceServer) Command(grpc.BidiStreamingServer[CmdResponse, CmdRequest]) error {
 	return status.Error(codes.Unimplemented, "method Command not implemented")
+}
+func (UnimplementedNodeServiceServer) StatusCreateIP(context.Context, *StatusCreateIPRequest) (*BaseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StatusCreateIP not implemented")
 }
 func (UnimplementedNodeServiceServer) mustEmbedUnimplementedNodeServiceServer() {}
 func (UnimplementedNodeServiceServer) testEmbeddedByValue()                     {}
@@ -174,6 +192,24 @@ func _NodeService_Command_Handler(srv interface{}, stream grpc.ServerStream) err
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type NodeService_CommandServer = grpc.BidiStreamingServer[CmdResponse, CmdRequest]
 
+func _NodeService_StatusCreateIP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusCreateIPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).StatusCreateIP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_StatusCreateIP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).StatusCreateIP(ctx, req.(*StatusCreateIPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NodeService_ServiceDesc is the grpc.ServiceDesc for NodeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -188,6 +224,10 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NodeResource",
 			Handler:    _NodeService_NodeResource_Handler,
+		},
+		{
+			MethodName: "StatusCreateIP",
+			Handler:    _NodeService_StatusCreateIP_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
