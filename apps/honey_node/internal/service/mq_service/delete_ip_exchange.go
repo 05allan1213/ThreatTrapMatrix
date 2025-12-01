@@ -25,6 +25,7 @@ type IpInfo struct {
 	HoneyIPID uint   `json:"honeyIpID"` // 诱捕ipID（关联数据库主键）
 	IP        string `json:"ip"`        // 待删除的诱捕IP地址
 	Network   string `json:"network"`   // 对应的虚拟网络接口名称（如hy_123）
+	IsTan     bool   `json:"isTan"`     // 是否是探针ip
 }
 
 // DeleteIpExChange 处理删除诱捕IP的MQ消息，执行虚拟接口删除命令并上报删除状态
@@ -45,7 +46,11 @@ func DeleteIpExChange(msg string) error {
 	var idList []uint32
 	for _, info := range req.IpList {
 		// 执行系统命令删除对应的虚拟网络接口（如hy_123）
-		cmd.Cmd(fmt.Sprintf("ip link del %s", info.Network))
+		if !info.IsTan {
+			cmd.Cmd(fmt.Sprintf("ip link del %s", info.Network))
+		} else {
+			logrus.Infof("这是探针 %v", info)
+		}
 		// 将HoneyIPID转换为gRPC要求的uint32类型并加入列表
 		idList = append(idList, uint32(info.HoneyIPID))
 	}

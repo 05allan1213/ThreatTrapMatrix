@@ -18,6 +18,7 @@ type CreateIPRequest struct {
 	Mask      int8   `json:"mask"`      // 子网掩码位数（如24）
 	Network   string `json:"network"`   // 绑定的物理网卡名称
 	LogID     string `json:"logID"`     // 操作日志ID（用于追踪操作链路）
+	IsTan     bool   `json:"isTan"`     // 是否是探针ip
 }
 
 // SendCreateIPMsg 发送创建诱捕IP的消息到RabbitMQ

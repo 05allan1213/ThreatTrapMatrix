@@ -22,6 +22,7 @@ type IpInfo struct {
 	HoneyIPID uint   `json:"honeyIpID"` // 诱捕ipID（关联数据库主键）
 	IP        string `json:"ip"`        // 要删除的诱捕IP地址
 	Network   string `json:"network"`   // 该IP绑定的物理网卡名称
+	IsTan     bool   `json:"isTan"`     // 是否是探针ip
 }
 
 // SendDeleteIPMsg 发送批量删除诱捕IP的消息到RabbitMQ

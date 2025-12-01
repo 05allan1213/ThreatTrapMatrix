@@ -24,6 +24,7 @@ type CreateIPRequest struct {
 	Mask      int8   `json:"mask"`      // 子网掩码位数（如24）
 	Network   string `json:"network"`   // 绑定的物理网卡名称
 	LogID     string `json:"logID"`     // 操作日志ID（用于追踪操作链路）
+	IsTan     bool   `json:"isTan"`     // 是否是探针ip
 }
 
 // CreateIpExChange 处理创建诱捕IP的MQ消息，包含ARP预检测、macvlan配置、资源清理及状态上报
@@ -33,6 +34,12 @@ func CreateIpExChange(msg string) error {
 	if err := json.Unmarshal([]byte(msg), &req); err != nil {
 		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
 		return nil // 解析失败返回nil，避免消息重复投递
+	}
+
+	// 探针ip处理
+	if req.IsTan {
+		mac, _ := getMACAddress(req.Network)
+		return reportStatus(req.HoneyIPID, req.Network, mac, "")
 	}
 
 	// 记录处理开始日志（包含全链路追踪字段）

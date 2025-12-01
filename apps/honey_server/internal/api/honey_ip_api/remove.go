@@ -21,7 +21,7 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 
 	// 查询待删除的诱捕IP列表，并预加载关联的节点信息
 	var honeyIPList []models.HoneyIpModel
-	global.DB.Preload("NodeModel").Find(&honeyIPList, "id in ?", cr.IdList)
+	global.DB.Preload("NodeModel").Preload("NetModel").Find(&honeyIPList, "id in ?", cr.IdList)
 
 	// 检查是否存在指定的诱捕IP记录
 	if len(honeyIPList) == 0 {
@@ -50,10 +50,15 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 		LogID: "",
 	}
 	for _, model := range honeyIPList {
+		var isTan bool
+		if model.NetModel.IP == model.IP {
+			isTan = true
+		}
 		req.IpList = append(req.IpList, mq_service.IpInfo{
 			HoneyIPID: model.ID,
 			IP:        model.IP,
 			Network:   model.Network,
+			IsTan:     isTan,
 		})
 	}
 	mq_service.SendDeleteIPMsg(nodeModel.Uid, req)
