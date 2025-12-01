@@ -44,15 +44,22 @@ func DeleteIpExChange(msg string) error {
 
 	// 收集待上报的诱捕IPID列表（用于通知服务端删除数据库记录）
 	var idList []uint32
+	var linkNameList []string
 	for _, info := range req.IpList {
 		// 执行系统命令删除对应的虚拟网络接口（如hy_123）
 		if !info.IsTan {
 			cmd.Cmd(fmt.Sprintf("ip link del %s", info.Network))
+			linkNameList = append(linkNameList, info.Network)
 		} else {
 			logrus.Infof("这是探针 %v", info)
 		}
 		// 将HoneyIPID转换为gRPC要求的uint32类型并加入列表
 		idList = append(idList, uint32(info.HoneyIPID))
+	}
+
+	// 删除数据库中的数据
+	if len(linkNameList) > 0 {
+		global.DB.Delete(&linkNameList)
 	}
 
 	// 上报删除状态到服务端（通知服务端删除数据库记录）

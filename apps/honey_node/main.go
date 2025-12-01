@@ -6,6 +6,7 @@ import (
 	"honey_node/internal/global"
 	"honey_node/internal/service/command"
 	"honey_node/internal/service/cron_service"
+	"honey_node/internal/service/ip_service"
 	"honey_node/internal/service/mq_service"
 	"honey_node/internal/service/port_service"
 
@@ -52,7 +53,10 @@ func main() {
 	// 启动rabbitMQ消费者
 	mq_service.Run()
 
-	// 加载tunnel
+	// 加载诱捕ip
+	ip_service.IPLoad()
+
+	// 加载端口转发
 	port_service.LoadTunnel()
 
 	// 阻塞主协程，保持程序运行

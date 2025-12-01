@@ -15,6 +15,7 @@ func Migrate() {
 	// 自动迁移指定的模型结构体到数据库，生成或更新数据表结构
 	err := global.DB.AutoMigrate(
 		&models.PortModel{},
+		&models.IpModel{},
 	)
 	if err != nil {
 		logrus.Fatalf("表结构迁移失败 %s", err)
