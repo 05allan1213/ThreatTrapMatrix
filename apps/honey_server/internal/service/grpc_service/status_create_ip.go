@@ -33,9 +33,10 @@ func (NodeService) StatusCreateIP(ctx context.Context, request *node_rpc.StatusC
 
 	// 更新数据库中诱捕IP的状态、MAC地址、绑定的网络接口等信息
 	global.DB.Model(&honeyIPModel).Updates(models.HoneyIpModel{
-		Mac:     request.Mac,     // 节点上报的虚拟接口MAC地址
-		Network: request.Network, // 绑定的物理网络接口名称
-		Status:  status,          // 创建结果状态（2成功/3失败）
+		Mac:      request.Mac,     // 节点上报的虚拟接口MAC地址
+		Network:  request.Network, // 绑定的物理网络接口名称
+		Status:   status,          // 创建结果状态（2成功/3失败）
+		ErrorMsg: request.ErrMsg,  // 错误信息
 	})
 
 	return pd, nil
