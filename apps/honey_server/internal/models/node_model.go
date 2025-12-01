@@ -9,8 +9,8 @@ import (
 type NodeModel struct {
 	Model
 	Title        string         `gorm:"size:32" json:"title"`              // 节点名称
-	Uid          string         `gorm:"size:64" json:"uid"`                // 节点uid
-	IP           string         `gorm:"size:32" json:"IP"`                 // 节点ip
+	Uid          string         `gorm:"size:64;index:idx_uid" json:"uid"`  // 节点uid
+	IP           string         `gorm:"size:32" json:"ip"`                 // 节点ip
 	Mac          string         `gorm:"size:64" json:"mac"`                // 节点mac
 	Status       int8           `json:"status"`                            // 节点状态
 	NetCount     int            `json:"netCount"`                          // 网络数

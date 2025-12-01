@@ -13,7 +13,7 @@ import (
 // NetModel 网络模型
 type NetModel struct {
 	Model
-	NodeID             uint      `json:"nodeID"`                             // 归属节点ID
+	NodeID             uint      `gorm:"index:idx_node_id" json:"nodeID"`    // 归属节点ID
 	NodeModel          NodeModel `gorm:"foreignKey:NodeID" json:"-"`         // 归属节点
 	Title              string    `gorm:"size:32" json:"title"`               // 网络名称
 	Network            string    `gorm:"size:32" json:"network"`             // 网卡名称
