@@ -4,7 +4,7 @@ logger: # 日志器
   level: info # 日志级别
 
 system: # 系统路由
-  grpcManageAddr: "127.0.0.1:8082" # gRPC管理服务监听地址
+  grpcManageAddr: "192.168.5.130:8082" # gRPC管理服务监听地址
   network: ens33 # 网卡名称
   uid: dde9b8cc-08b4-4f17-8c8e-209e0504a2eb # 节点唯一标识（UUID）
 
@@ -19,14 +19,14 @@ mq: # rabbitMQ
   user: admin # 用户名
   password: password # 密码
   host: 192.168.5.130 # 主机地址
-  port: 5672 # 端口
+  port: 5671 # 端口
   createIpExchangeName: createIpExchange # 创建IP的交换机名称
   deleteIpExchangeName: deleteIpExchangeName # 删除IP的交换机名称
   bindPortExchangeName: bindPortExchangeName # 绑定端口的交换机名称
-  ssl: false # 是否使用SSL
-  clientCertificate: # 客户端的证书
-  clientKey:  # 客户端的私钥
-  caCertificate:  # ca的证书
+  ssl: true # 是否使用SSL
+  clientCertificate: mq_cert/client_certificate.pem # 客户端的证书
+  clientKey: mq_cert/client_key.pem  # 客户端的私钥
+  caCertificate: mq_cert/ca_certificate.pem  # ca的证书
 
 db: # SQLite数据库配置
   db_name: "gorm.db" #  数据库名称

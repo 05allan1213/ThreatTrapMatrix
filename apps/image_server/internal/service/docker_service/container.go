@@ -4,8 +4,8 @@ package docker_service
 // Description: Docker容器服务工具，基于Docker SDK实现容器创建、配置及启动，支持IP地址合法性校验
 
 import (
-	"image_server/internal/global"
 	"context"
+	"image_server/internal/global"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
@@ -22,6 +22,9 @@ func RunContainer(containerName, networkName, ip, image string) (containerID str
 	hostConfig := &container.HostConfig{
 		AutoRemove:  false,                              // 容器退出后不自动删除
 		NetworkMode: container.NetworkMode(networkName), // 关联指定Docker网络
+		RestartPolicy: container.RestartPolicy{
+			Name: "always", // 容器退出后自动重启
+		},
 	}
 
 	// 构建容器网络配置（指定静态IP地址）

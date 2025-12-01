@@ -2,6 +2,7 @@ services:
   rabbitmq:
     image: rabbitmq:3.9-management  # 使用带有管理插件的RabbitMQ镜像
     container_name: rabbitmq  # 容器名称
+    restart: always # 容器重启策略
     ports:
       - "5672:5672"  # RabbitMQ的AMQP端口
       - "15672:15672"  # RabbitMQ的管理界面端口
