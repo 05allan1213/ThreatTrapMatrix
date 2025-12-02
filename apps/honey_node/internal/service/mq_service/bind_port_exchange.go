@@ -9,6 +9,7 @@ import (
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/service/port_service"
+	"net"
 
 	"github.com/sirupsen/logrus"
 )
@@ -38,6 +39,42 @@ func (p PortInfo) TargetAddr() string {
 	return fmt.Sprintf("%s:%d", p.DestIP, p.DestPort)
 }
 
+// isLocalAddress 检查指定的IP地址是否在本地系统中存在
+func isLocalAddress(ip string) bool {
+	// 获取所有网络接口
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		logrus.Errorf("获取网络接口失败: %v", err)
+		return false
+	}
+
+	// 遍历所有网络接口
+	for _, iface := range interfaces {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+
+		// 检查每个地址
+		for _, addr := range addrs {
+			var ipAddr net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ipAddr = v.IP
+			case *net.IPAddr:
+				ipAddr = v.IP
+			}
+
+			// 如果找到匹配的IP地址，返回true
+			if ipAddr != nil && ipAddr.String() == ip {
+				return true
+			}
+		}
+	}
+	
+	return false
+}
+
 // BindPortExChange 处理端口绑定消息，解析后执行端口隧道创建逻辑
 func BindPortExChange(msg string) error {
 	logrus.Infof("端口绑定消息 %#v", msg)
@@ -50,6 +87,12 @@ func BindPortExChange(msg string) error {
 	port_service.CloseIpTunnel(req.IP)
 
 	for _, port := range req.PortList {
+		// 检查本地是否存在该IP地址
+		if !isLocalAddress(port.IP) {
+			logrus.Warnf("本地不存在IP地址 %s，跳过端口绑定", port.IP)
+			continue
+		}
+		
 		// 起端口监听，每个端口映射独立协程处理，避免阻塞
 		global.DB.Create(&models.PortModel{
 			TargetAddr: port.TargetAddr(),

@@ -25,7 +25,13 @@ func Tunnel(localAddr, targetAddr string) (err error) {
 	listener, err := net.Listen("tcp", localAddr)
 	if err != nil {
 		logrus.Errorf("创建本地监听失败: %v", err)
-		return
+		// 删除数据库中对应的记录
+		var model models.PortModel
+		global.DB.Where("local_addr = ?", localAddr).First(&model)
+		if model.ID != 0 {
+			global.DB.Delete(&model)
+		}
+		return err
 	}
 	logrus.Infof("本地监听启动，地址: %s", localAddr)
 	logrus.Infof("目标地址: %s", targetAddr)

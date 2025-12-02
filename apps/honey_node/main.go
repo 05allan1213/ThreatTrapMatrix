@@ -9,6 +9,7 @@ import (
 	"honey_node/internal/service/ip_service"
 	"honey_node/internal/service/mq_service"
 	"honey_node/internal/service/port_service"
+	"honey_node/internal/service/suricata_service"
 
 	"github.com/sirupsen/logrus"
 )
@@ -43,6 +44,9 @@ func main() {
 
 	// 初始化rabbitMQ连接
 	global.Queue = core.InitMQ()
+
+	// 启动suricata服务
+	go suricata_service.Run()
 
 	// 启动命令处理服务（接收并处理服务端下发的命令）
 	nodeClient.StartCommandHandling()

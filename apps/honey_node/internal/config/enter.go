@@ -28,6 +28,7 @@ type System struct {
 	GrpcManageAddr string `yaml:"grpcManageAddr"` // gRPC管理服务监听地址
 	Network        string `yaml:"network"`        // 网卡
 	Uid            string `yaml:"uid"`            // 节点uid
+	EvePath        string `yaml:"evePath"`        // eve文件路径
 }
 
 // rabbitMQ 配置结构体
