@@ -6,7 +6,10 @@ package suricata_service
 import (
 	"encoding/json"
 	"honey_node/internal/global"
+	"honey_node/internal/service/mq_service"
 	"io"
+	"strconv"
+	"time"
 
 	"github.com/hpcloud/tail"
 	"github.com/sirupsen/logrus"
@@ -96,5 +99,46 @@ func Run() {
 		}
 		// 输出告警关键信息：规则描述、源IP、目标IP:端口
 		logrus.Infof("%s %s => %s:%d", alert.Alert.Signature, alert.SrcIp, alert.DestIp, alert.DestPort)
+
+		// 解析告警级别：从metadata.level中提取，处理多级别及转换异常场景
+		var level int8
+		levelList := alert.Alert.Metadata.Level
+		if len(levelList) > 0 {
+			// 存在多个级别时记录日志，便于排查数据异常
+			if len(levelList) > 1 {
+				logrus.Infof("存在level多个的情况 %v", levelList)
+			}
+			// 将第一个级别字符串转换为整数（业务约定取首个级别）
+			l, err := strconv.Atoi(levelList[0])
+			if err != nil {
+				logrus.Errorf("level转换失败 %s", err)
+				level = 1 // 转换失败时设置默认级别为1
+			} else {
+				level = int8(l) // 转换为int8类型适配消息结构体
+			}
+		}
+
+		// 时间格式转换：将Suricata日志的UTC时间格式转为业务标准格式
+		layout := "2006-01-02T15:04:05.999999Z0700" // Suricata日志原始时间格式（带时区）
+		ti, err := time.Parse(layout, alert.Timestamp)
+		if err != nil {
+			logrus.Errorf("解析时间时出错: %s", err)
+			return // 时间解析失败则终止当前告警处理，避免发送无效数据
+		}
+		timeStamp := ti.Format(time.DateTime) // 转换为业务标准格式：2006-01-02 15:04:05
+
+		// 构造标准告警消息结构体，调用MQ服务发送至告警队列
+		mq_service.SendAlertMsg(mq_service.AlertMsgType{
+			NodeUid:          cfg.Uid,                     // 节点唯一标识（从配置读取）
+			SrcIp:            alert.SrcIp,                 // 攻击源IP（取自Suricata告警数据）
+			SrcPort:          alert.SrcPort,               // 攻击源端口（取自Suricata告警数据）
+			DestIp:           alert.DestIp,                // 攻击目标IP（取自Suricata告警数据）
+			DestPort:         alert.DestPort,              // 攻击目标端口（取自Suricata告警数据）
+			Signature:        alert.Alert.Signature,       // 告警规则描述（取自Suricata告警数据）
+			HttpResponseBody: alert.Http.HttpResponseBody, // HTTP响应体（仅HTTP类告警有值）
+			Payload:          alert.Payload,               // 数据包负载内容（取自Suricata告警数据）
+			Level:            level,                       // 告警级别（已处理后的整数级别）
+			Timestamp:        timeStamp,                   // 标准化后的告警时间
+		})
 	}
 }

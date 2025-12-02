@@ -77,52 +77,84 @@ func handleConnection(client node_rpc.NodeServiceClient, localConn net.Conn, tar
 		return
 	}
 
+	// 用于等待两个goroutine完成的WaitGroup
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	// 启动协程处理RPC服务端到本地连接的数据转发
 	go func() {
-		for {
-			resp, err := stream.Recv()
-			if err == io.EOF { // 流关闭时退出
-				break
-			}
-			if err != nil {
-				logrus.Errorf("接收gRPC服务器数据失败: %v", err)
-				break
-			}
+		defer wg.Done()
+		defer cancel() // 一旦此goroutine结束，取消上下文
 
-			// 将RPC接收的数据写入本地客户端连接
-			_, err = localConn.Write(resp.Chunk)
-			if err != nil {
-				logrus.Errorf("写入本地连接失败: %v", err)
-				break
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				resp, err := stream.Recv()
+				if err == io.EOF { // 流关闭时退出
+					return
+				}
+				if err != nil {
+					// 只有在不是context取消的情况下才记录错误
+					if ctx.Err() == nil {
+						logrus.Errorf("接收gRPC服务器数据失败: %v", err)
+					}
+					return
+				}
+
+				// 将RPC接收的数据写入本地客户端连接
+				_, err = localConn.Write(resp.Chunk)
+				if err != nil {
+					if ctx.Err() == nil {
+						logrus.Errorf("写入本地连接失败: %v", err)
+					}
+					return
+				}
 			}
 		}
-		cancel() // 数据转发异常时取消上下文
 	}()
 
 	// 处理本地连接到RPC服务端的数据转发
-	buffer := make([]byte, 4096) // 4KB缓冲区用于数据读取
-	for {
-		n, err := localConn.Read(buffer)
-		if err != nil {
-			if err == io.EOF {
-				logrus.Infof("本地连接已关闭")
-			} else {
-				logrus.Errorf("从本地连接读取失败: %v", err)
+	go func() {
+		defer wg.Done()
+		defer cancel() // 一旦此goroutine结束，取消上下文
+
+		buffer := make([]byte, 4096) // 4KB缓冲区用于数据读取
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				n, err := localConn.Read(buffer)
+				if err != nil {
+					if err == io.EOF {
+						logrus.Infof("本地连接已关闭")
+					} else {
+						if ctx.Err() == nil {
+							logrus.Errorf("从本地连接读取失败: %v", err)
+						}
+					}
+					return
+				}
+
+				// 将本地读取的数据通过RPC发送到目标服务
+				err = stream.Send(&node_rpc.TunnelData{
+					Chunk:   buffer[:n],
+					Address: targetAddr,
+				})
+				if err != nil {
+					if ctx.Err() == nil {
+						logrus.Errorf("发送数据到gRPC服务器失败: %v", err)
+					}
+					return
+				}
 			}
-			break
 		}
+	}()
 
-		// 将本地读取的数据通过RPC发送到目标服务
-		err = stream.Send(&node_rpc.TunnelData{
-			Chunk:   buffer[:n],
-			Address: targetAddr,
-		})
-		if err != nil {
-			logrus.Errorf("发送数据到gRPC服务器失败: %v", err)
-			break
-		}
-	}
-
+	// 等待两个goroutine都完成后，再关闭stream
+	wg.Wait()
 	// 主动关闭RPC发送流
 	stream.CloseSend()
 }

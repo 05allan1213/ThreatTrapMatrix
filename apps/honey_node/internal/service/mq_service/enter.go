@@ -13,6 +13,19 @@ import (
 // Run 启动所有RabbitMQ消费者协程
 func Run() {
 	cfg := global.Config.MQ
+	// 声明队列
+	_, err := global.Queue.QueueDeclare(
+		cfg.AlertTopic, // 队列名称
+		false,          // 持久性
+		false,          // 自动删除
+		false,          // 排他性
+		false,          // 非阻塞
+		nil,            // 其他参数
+	)
+	if err != nil {
+		logrus.Fatalf("声明队列失败: %v", err)
+		return
+	}
 	// 启动创建IP交换器的消费者协程
 	go register(cfg.CreateIpExchangeName, CreateIpExChange)
 	// 启动删除IP交换器的消费者协程

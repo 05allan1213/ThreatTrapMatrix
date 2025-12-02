@@ -28,6 +28,7 @@ mq: # rabbitMQ
   clientCertificate: mq_cert/client_certificate.pem # 客户端的证书
   clientKey: mq_cert/client_key.pem  # 客户端的私钥
   caCertificate: mq_cert/ca_certificate.pem  # ca的证书
+  alertTopic: alertTopic # 告警Topic名称
 
 db: # SQLite数据库配置
   db_name: "gorm.db" #  数据库名称
