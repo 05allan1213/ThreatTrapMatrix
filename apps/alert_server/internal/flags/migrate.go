@@ -5,6 +5,7 @@ package flags
 
 import (
 	"alert_server/internal/global"
+	"alert_server/internal/models"
 
 	"github.com/sirupsen/logrus"
 )
@@ -12,7 +13,9 @@ import (
 // Migrate 执行数据库表结构自动迁移
 func Migrate() {
 	// 自动迁移指定的模型结构体到数据库，生成或更新数据表结构
-	err := global.DB.AutoMigrate()
+	err := global.DB.AutoMigrate(
+		&models.WhiteIPModel{},
+	)
 	if err != nil {
 		logrus.Fatalf("表结构迁移失败 %s", err)
 	}
