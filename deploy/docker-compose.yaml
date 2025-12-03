@@ -17,6 +17,20 @@ services:
     networks:
       honey_network:
         ipv4_address: 10.4.0.8
+  es:
+    image: "elasticsearch:7.12.0"
+    restart: always
+    privileged: true
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - 9200:9200
+    volumes:
+      - ./es/data:/usr/share/elasticsearch/data
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.7
 networks:
   honey_network:
     driver: bridge
