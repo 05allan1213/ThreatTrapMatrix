@@ -1,7 +1,7 @@
 package index_api
 
 // File: alert_server/api/index_api/src_ip_agg.go
-// Description: 首页攻击源IP聚合统计API接口层，为首页提供攻击源IP排行展示
+// Description: 攻击源IP聚合统计API接口层，为首页提供攻击源IP排行展示
 
 import (
 	"alert_server/internal/core"

@@ -21,5 +21,6 @@ func IndexRouter(r *gin.RouterGroup) {
 	r.GET("index/service_agg", app.ServiceAggView)
 	// GET /index/date_agg: 时间聚合接口，返回指定时间段内攻击次数
 	r.GET("index/date_agg", app.DateAggView)
-
+	// GET /index/attack_count: 告警服务总告警次数接口，返回告警总次数
+	r.GET("index/attack_count", app.AttackCountView)
 }

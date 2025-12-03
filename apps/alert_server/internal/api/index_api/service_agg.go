@@ -1,7 +1,7 @@
 package index_api
 
 // File: alert_server/api/index_api/service_agg.go
-// Description: 首页虚拟服务攻击聚合统计API接口,为首页提供虚拟服务被攻击次数排行展示
+// Description: 虚拟服务攻击聚合统计API接口,为首页提供虚拟服务被攻击次数排行展示
 
 import (
 	"alert_server/internal/es_models"
