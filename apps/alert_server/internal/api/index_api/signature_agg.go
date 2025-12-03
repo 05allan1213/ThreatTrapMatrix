@@ -1,6 +1,6 @@
 package index_api
 
-// File: alert_server/api/alert_api/signature_agg.go
+// File: alert_server/api/index_api/signature_agg.go
 // Description: 告警攻击类型聚合统计API接口层，为首页提供攻击类型排行展示
 
 import (

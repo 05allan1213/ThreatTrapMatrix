@@ -13,8 +13,10 @@ import (
 func IndexRouter(r *gin.RouterGroup) {
 	app := api.App.IndexApi // 首页API接口实例
 
-	// GET /index/signature_agg: 首页攻击类型Top5聚合统计接口，返回出现频次最高的5种攻击类型及对应攻击次数
+	// GET /index/signature_agg: 攻击类型Top5聚合统计接口，返回出现频次最高的5种攻击类型及对应攻击次数
 	r.GET("index/signature_agg", app.SignatureAggView)
 	// GET /index/src_ip_agg: 源ipTop5聚合统计接口，返回出现频次最高的5个源IP及对应攻击次数
 	r.GET("index/src_ip_agg", app.SrcIpAggView)
+	// GET /index/service_agg: 虚拟服务Top5聚合统计接口，返回出现频次最高的5种虚拟服务及对应攻击次数
+	r.GET("index/service_agg", app.ServiceAggView)
 }
