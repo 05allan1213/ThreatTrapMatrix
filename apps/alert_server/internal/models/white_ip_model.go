@@ -1,5 +1,6 @@
 package models
 
+// WhiteIPModel 白名单ip模型
 type WhiteIPModel struct {
 	Model
 	IP     string `gorm:"size:32" json:"ip"`     // 白名单ip

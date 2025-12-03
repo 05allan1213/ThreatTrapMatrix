@@ -5,6 +5,7 @@ import (
 	"alert_server/internal/flags"
 	"alert_server/internal/global"
 	"alert_server/internal/routers"
+	"alert_server/internal/service/mq_service"
 )
 
 func main() {
@@ -17,5 +18,6 @@ func main() {
 	global.ES = core.ConnectEs()         // 初始化ElasticSearch客户端
 	global.Queue = core.InitMQ()         // 初始化消息队列
 	flags.Run()                          // 运行命令行参数
+	mq_service.Run()                     // 启动rabbitMQ服务
 	routers.Run()                        // 启动路由
 }

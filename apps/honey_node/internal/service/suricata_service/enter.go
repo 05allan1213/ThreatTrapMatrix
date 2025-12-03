@@ -129,16 +129,16 @@ func Run() {
 
 		// 构造标准告警消息结构体，调用MQ服务发送至告警队列
 		mq_service.SendAlertMsg(mq_service.AlertMsgType{
-			NodeUid:          cfg.Uid,                     // 节点唯一标识（从配置读取）
-			SrcIp:            alert.SrcIp,                 // 攻击源IP（取自Suricata告警数据）
-			SrcPort:          alert.SrcPort,               // 攻击源端口（取自Suricata告警数据）
-			DestIp:           alert.DestIp,                // 攻击目标IP（取自Suricata告警数据）
-			DestPort:         alert.DestPort,              // 攻击目标端口（取自Suricata告警数据）
-			Signature:        alert.Alert.Signature,       // 告警规则描述（取自Suricata告警数据）
-			HttpResponseBody: alert.Http.HttpResponseBody, // HTTP响应体（仅HTTP类告警有值）
-			Payload:          alert.Payload,               // 数据包负载内容（取自Suricata告警数据）
-			Level:            level,                       // 告警级别（已处理后的整数级别）
-			Timestamp:        timeStamp,                   // 标准化后的告警时间
+			NodeUid:   cfg.Uid,                     // 节点唯一标识（从配置读取）
+			SrcIp:     alert.SrcIp,                 // 攻击源IP（取自Suricata告警数据）
+			SrcPort:   alert.SrcPort,               // 攻击源端口（取自Suricata告警数据）
+			DestIp:    alert.DestIp,                // 攻击目标IP（取自Suricata告警数据）
+			DestPort:  alert.DestPort,              // 攻击目标端口（取自Suricata告警数据）
+			Signature: alert.Alert.Signature,       // 告警规则描述（取自Suricata告警数据）
+			Body:      alert.Http.HttpResponseBody, // HTTP响应体（仅HTTP类告警有值）
+			Payload:   alert.Payload,               // 数据包负载内容（取自Suricata告警数据）
+			Level:     level,                       // 告警级别（已处理后的整数级别）
+			Timestamp: timeStamp,                   // 标准化后的告警时间
 		})
 	}
 }

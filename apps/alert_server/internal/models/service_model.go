@@ -1,5 +1,6 @@
 package models
 
+// ServiceModel 虚拟服务模型
 type ServiceModel struct {
 	Model
 	Title         string `json:"title"`         // 镜像名称

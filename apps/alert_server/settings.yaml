@@ -52,3 +52,4 @@ es: # elasticsearch
 
 alert: # 告警
   alertIndex: alert_index #  告警索引
+  alertTopic: alertTopic # 告警Topic

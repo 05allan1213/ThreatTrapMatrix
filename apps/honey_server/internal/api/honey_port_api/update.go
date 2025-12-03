@@ -101,6 +101,7 @@ func (HoneyPortApi) UpdateView(c *gin.Context) {
 		if _, exists := existingPorts[reqPort.Port]; !exists {
 			newPorts = append(newPorts, models.HoneyPortModel{
 				HoneyIpID: cr.HoneyIPID,
+				IP:        honeyIPModel.IP,
 				Port:      reqPort.Port,
 				ServiceID: reqPort.ServiceID,
 				DstIP:     service.IP,   // 从服务配置获取目标IP
