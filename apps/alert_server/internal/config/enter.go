@@ -15,6 +15,7 @@ type Config struct {
 	WhiteList []string `yaml:"whiteList"` // 路由白名单
 	MQ        MQ       `yaml:"mq"`        // rabbitMQ配置信息
 	ES        ES       `yaml:"es"`        // elasticSearch配置信息
+	Alert     Alert    `yaml:"alert"`     // 告警配置信息
 }
 
 // DB 数据库连接配置结构体
@@ -106,4 +107,9 @@ type ES struct {
 	Addr     string `yaml:"addr"`     // ElasticSearch地址
 	Username string `yaml:"username"` // ElasticSearch用户名
 	Password string `yaml:"password"` // ElasticSearch密码
+}
+
+// Alert 配置结构体
+type Alert struct {
+	AlertIndex string `yaml:"alertIndex"` // 告警索引名称
 }

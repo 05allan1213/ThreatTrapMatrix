@@ -1,0 +1,43 @@
+{
+  "mappings": {
+    "properties": {
+      "timestamp": {
+        "type": "date",
+        "null_value": "null",
+        "format": "[yyyy-MM-dd HH:mm:ss]"
+      },
+      "signature": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "srcIp": {
+        "type": "keyword"
+      },
+      "srcPort": {
+        "type": "integer"
+      },
+      "destIp": {
+        "type": "keyword"
+      },
+      "destPort": {
+        "type": "integer"
+      },
+      "level": {
+        "type": "integer"
+      },
+      "payload": {
+        "type": "text"
+      },
+      "body": {
+        "type": "text"
+      },
+      "nodeUid": {
+        "type": "keyword"
+      }
+    }
+  }
+}

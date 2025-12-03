@@ -45,7 +45,10 @@ mq: # rabbitMQ
   clientKey:  # 客户端的私钥
   caCertificate:  # ca的证书
 
-es:
+es: # elasticsearch
   addr: http://10.4.0.7:9200 # elasticsearch地址
   username: # 用户名
   password: # 密码
+
+alert: # 告警
+  alertIndex: alert_index #  告警索引
