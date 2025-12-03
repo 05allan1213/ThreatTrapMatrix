@@ -28,6 +28,7 @@ func Run() {
 	// 路由注册
 	WhiteIpRouter(g) // 白名单ip相关路由
 	AlertRouter(g)   // 告警相关路由
+	IndexRouter(g)   // 首页相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
