@@ -4,6 +4,7 @@ package mq_service
 // Description: MQ告警消息消费模块，负责监听告警队列、解析消息、白名单过滤及虚拟服务信息关联
 
 import (
+	"alert_server/internal/core"
 	"alert_server/internal/es_models"
 	"alert_server/internal/global"
 	"alert_server/internal/models"
@@ -60,6 +61,9 @@ func RevAlertMq() {
 			data.ServiceID = hpModel.ServiceID
 			data.ServiceName = hpModel.ServiceModel.Title
 		}
+
+		addr := core.GetIpAddr(data.SrcIp)
+		data.Addr = addr
 
 		// es告警信息入库
 		response, err1 := global.ES.Index().Index(data.Index()).BodyJson(data).Do(context.Background())

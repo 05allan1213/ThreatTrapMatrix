@@ -25,6 +25,9 @@
       "srcIp": {
         "type": "keyword"
       },
+      "addr": {
+        "type": "keyword"
+      },
       "srcPort": {
         "type": "integer"
       },

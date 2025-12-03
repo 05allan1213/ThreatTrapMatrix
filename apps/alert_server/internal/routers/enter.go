@@ -26,7 +26,8 @@ func Run() {
 	g.Use(middleware2.LogMiddleware, middleware2.AuthMiddleware) // 系统内部必须登录才能继续使用
 
 	// 路由注册
-	WhiteIpRouter(g) // 白名单管理路由
+	WhiteIpRouter(g) // 白名单ip相关路由
+	AlertRouter(g)   // 告警相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr

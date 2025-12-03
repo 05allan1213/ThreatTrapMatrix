@@ -14,6 +14,7 @@ type AlertModel struct {
 	NodeUid     string `json:"nodeUid"`     // 节点唯一标识
 	SrcIp       string `json:"srcIp"`       // 攻击源IP地址
 	SrcPort     int    `json:"srcPort"`     // 攻击源端口
+	Addr        string `json:"addr"`        // 攻击地址
 	DestIp      string `json:"destIp"`      // 攻击目标IP地址
 	DestPort    int    `json:"destPort"`    // 攻击目标端口
 	Timestamp   string `json:"timestamp"`   // 告警发生时间
