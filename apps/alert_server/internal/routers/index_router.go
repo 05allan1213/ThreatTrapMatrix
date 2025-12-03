@@ -19,4 +19,7 @@ func IndexRouter(r *gin.RouterGroup) {
 	r.GET("index/src_ip_agg", app.SrcIpAggView)
 	// GET /index/service_agg: 虚拟服务Top5聚合统计接口，返回出现频次最高的5种虚拟服务及对应攻击次数
 	r.GET("index/service_agg", app.ServiceAggView)
+	// GET /index/date_agg: 时间聚合接口，返回指定时间段内攻击次数
+	r.GET("index/date_agg", app.DateAggView)
+
 }
