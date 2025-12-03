@@ -15,4 +15,6 @@ func IndexRouter(r *gin.RouterGroup) {
 
 	// GET /index/signature_agg: 首页攻击类型Top5聚合统计接口，返回出现频次最高的5种攻击类型及对应攻击次数
 	r.GET("index/signature_agg", app.SignatureAggView)
+	// GET /index/src_ip_agg: 源ipTop5聚合统计接口，返回出现频次最高的5个源IP及对应攻击次数
+	r.GET("index/src_ip_agg", app.SrcIpAggView)
 }
