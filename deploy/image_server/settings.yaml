@@ -1,0 +1,38 @@
+db: # MySQL
+  db_name: "honey_db" # 数据库名称
+  host: "82.157.155.26" # 数据库主机地址
+  port: 3306  # 数据库端口号
+  user: "ayp"  # 数据库用户名
+  password: "801026qwe"  # 数据库密码
+  maxIdleConns: 10 # 最大空闲连接数
+  maxOpenConns: 100 # 最大连接数
+  connMaxLifetime: 10000 # 连接最大生命周期
+
+logger: # 日志器
+  format: json # 日志格式 [json, text]
+  appName: image_server # 应用名称
+  level: info # 日志级别
+
+redis: # Redis
+  addr: 82.157.155.26:6379 # Redis地址
+  password: # Redis密码
+  db: 1 # Redis数据库索引
+
+system: # 系统路由
+  mode: debug # 运行模式 [debug, release, test]
+  webAddr: ":8080" # web的运行地址
+
+jwt: # JWT
+  expires: 8640000 # token过期时间 (100天)
+  issuer: 05allan1213 # token签发者
+  secret: a5y3p2t6y3p2 # token密钥
+
+whiteList: # 路由白名单
+  - /image_server/login # 登录
+  - /image_server/captcha # 验证码
+  - /image_server/site # 站点信息
+
+vsNet: # 虚拟网络
+  name: honey-hy # 虚拟网络名称
+  prefix: hy- # 虚拟网络前缀
+  net: 10.2.0.0/24 # 虚拟网络地址
