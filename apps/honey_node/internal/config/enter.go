@@ -33,18 +33,20 @@ type System struct {
 
 // rabbitMQ 配置结构体
 type MQ struct {
-	User                 string `yaml:"user"`                 // 用户名
-	Password             string `yaml:"password"`             // 密码
-	Host                 string `yaml:"host"`                 // 主机地址
-	Port                 int    `yaml:"port"`                 // 端口号
-	CreateIpExchangeName string `yaml:"createIpExchangeName"` // 创建IP交换机名称
-	DeleteIpExchangeName string `yaml:"deleteIpExchangeName"` // 删除IP交换机名称
-	BindPortExchangeName string `yaml:"bindPortExchangeName"` // 绑定端口交换机名称
-	Ssl                  bool   `yaml:"ssl"`                  // 是否使用SSL
-	ClientCertificate    string `yaml:"clientCertificate"`    // 客户端证书
-	ClientKey            string `yaml:"clientKey"`            // 客户端密钥
-	CaCertificate        string `yaml:"caCertificate"`        // CA证书
-	AlertTopic           string `yaml:"alertTopic"`           // 告警Topic名称
+	User                    string `yaml:"user"`                    // 用户名
+	Password                string `yaml:"password"`                // 密码
+	Host                    string `yaml:"host"`                    // 主机地址
+	Port                    int    `yaml:"port"`                    // 端口号
+	CreateIpExchangeName    string `yaml:"createIpExchangeName"`    // 创建IP交换机名称
+	DeleteIpExchangeName    string `yaml:"deleteIpExchangeName"`    // 删除IP交换机名称
+	BindPortExchangeName    string `yaml:"bindPortExchangeName"`    // 绑定端口交换机名称
+	BatchDeployExchangeName string `yaml:"batchDeployExchangeName"` // 批量部署交换机名称
+	Ssl                     bool   `yaml:"ssl"`                     // 是否使用SSL
+	ClientCertificate       string `yaml:"clientCertificate"`       // 客户端证书
+	ClientKey               string `yaml:"clientKey"`               // 客户端密钥
+	CaCertificate           string `yaml:"caCertificate"`           // CA证书
+	AlertTopic              string `yaml:"alertTopic"`              // 告警Topic名称
+	BatchDeployStatusTopic  string `yaml:"batchDeployStatusTopic"`  // 批量部署上报状态的topic
 }
 
 // Addr 获取rabbitMQ地址

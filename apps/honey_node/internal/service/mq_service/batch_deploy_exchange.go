@@ -33,16 +33,6 @@ type DeployIp struct {
 	PortList []PortInfo `json:"portList"` // 该IP关联的端口转发配置列表
 }
 
-// BatchDeployResponse 批量部署结果响应结构体
-type BatchDeployResponse struct {
-	NetID    uint    `json:"netID"`    // 子网ID
-	IP       string  `json:"ip"`       // 部署的IP地址
-	Mac      string  `json:"mac"`      // IP绑定的MAC地址
-	LinkName string  `json:"linkName"` // 网络接口名称
-	ErrorMsg string  `json:"errorMsg"` // 部署失败时的错误信息
-	Progress float64 `json:"progress"` // 部署进度（1-100的小数）
-}
-
 // BatchDeployExChange 批量部署MQ消息处理函数
 func BatchDeployExChange(msg string) error {
 	// 解析MQ消息为批量部署请求结构体
@@ -52,8 +42,6 @@ func BatchDeployExChange(msg string) error {
 		return nil // 保持原有逻辑，解析失败时返回nil
 	}
 
-	// 初始化部署失败结果列表
-	var errList []BatchDeployResponse
 	// 协程池控制：限制并发数为100
 	var maxChan = make(chan struct{}, 100)
 	// 等待组：用于等待所有IP创建协程执行完成
@@ -89,19 +77,20 @@ func BatchDeployExChange(msg string) error {
 				Network:  req.Network,
 			})
 
-			// 初始化部署响应数据
-			res := BatchDeployResponse{
+			// 初始化部署状态请求数据
+			res := DeployStatusRequest{
 				NetID:    req.NetID,
 				IP:       info.Ip,
 				Mac:      mac,
 				LinkName: linkName,
+				LogID:    req.LogID,
 				Progress: float64((index / allCount) * 100), // 计算当前部署进度
 			}
 
 			// IP配置失败时记录错误信息
 			if err != nil {
 				res.ErrorMsg = err.Error()
-				errList = append(errList, res)
+				SendDeployStatusMsg(res)
 				return
 			}
 
@@ -114,7 +103,8 @@ func BatchDeployExChange(msg string) error {
 				Mac:      mac,
 			})
 
-			// 待补充逻辑：上报成功部署的IP信息
+			// 上报成功部署的IP信息
+			SendDeployStatusMsg(res)
 		}(ip, &wait)
 
 		// 异步汇总当前IP的端口转发配置到全局列表
