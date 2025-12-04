@@ -64,8 +64,8 @@ func BatchDeployExChange(msg string) error {
 			defer func() {
 				<-maxChan
 				wait.Done()
-				atomic.AddInt64(&index, 1)
 			}()
+			atomic.AddInt64(&index, 1)
 
 			// 生成随机网络接口名称（前缀hy_+6位不重复随机字符串）
 			linkName := fmt.Sprintf("hy_%s", random.RandStrV2(6))

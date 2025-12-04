@@ -78,6 +78,7 @@ type MQ struct {
 	ClientKey               string `yaml:"clientKey"`               // 客户端密钥
 	CaCertificate           string `yaml:"caCertificate"`           // CA证书
 	BatchDeployExchangeName string `yaml:"batchDeployExchangeName"` // 批量部署交换机名称
+	BatchDeployStatusTopic  string `yaml:"batchDeployStatusTopic"`  // 批量部署上报状态的topic
 }
 
 // Addr 获取rabbitMQ地址
