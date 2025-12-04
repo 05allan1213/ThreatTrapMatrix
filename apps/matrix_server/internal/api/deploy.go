@@ -5,10 +5,12 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"matrix_server/internal/global"
 	"matrix_server/internal/middleware"
 	"matrix_server/internal/models"
+	"matrix_server/internal/service/mq_service"
 	"matrix_server/internal/utils/response"
 	"time"
 
@@ -16,6 +18,7 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // IpInfo 单个部署IP的信息结构体
@@ -120,8 +123,18 @@ func (Api) DeployView(c *gin.Context) {
 		honeIpMap[honeyModel.IP] = true
 	}
 
-	// 初始化下发部署的请求列表、待创建的诱捕IP列表、待创建的诱捕端口列表
-	var list []DispatchDeployRequest
+	// 获取请求上下文的日志信息，提取日志ID用于部署追踪
+	log := middleware.GetLog(c)
+	logID := log.Data["logID"].(string)
+
+	// 初始化MQ批量部署指令数据结构体
+	var batchDeployData = mq_service.BatchDeployRequest{
+		NetID:   cr.NetID,
+		LogID:   logID,
+		Network: model.Network,
+	}
+
+	// 初始化待入库的诱捕IP列表、待入库的诱捕端口列表
 	var createHoneyIpList []models.HoneyIpModel
 	var createHoneyPortList []models.HoneyPortModel
 
@@ -162,8 +175,8 @@ func (Api) DeployView(c *gin.Context) {
 			return
 		}
 
-		// 解析主机模板的端口列表，构建端口转发配置
-		var portList []PortInfo
+		// 解析主机模板的端口列表，构建MQ下发的端口转发配置
+		var portList []mq_service.PortInfo
 		for _, port := range hostTemplateModel.PortList {
 			// 校验端口关联的虚拟服务是否存在
 			service, ok1 := serviceMap[port.ServiceID]
@@ -174,11 +187,11 @@ func (Api) DeployView(c *gin.Context) {
 				return
 			}
 
-			// 构建端口转发配置信息
-			portList = append(portList, PortInfo{
-				Ip:       info.Ip,
+			// 构建MQ下发的端口转发配置信息
+			portList = append(portList, mq_service.PortInfo{
+				IP:       info.Ip,
 				Port:     port.Port,
-				DestIp:   service.IP,
+				DestIP:   service.IP,
 				DestPort: service.Port,
 			})
 
@@ -195,9 +208,18 @@ func (Api) DeployView(c *gin.Context) {
 			})
 		}
 
-		// 构建下发至节点的部署请求数据
-		list = append(list, DispatchDeployRequest{
-			Ip: info.Ip,
+		// 判断当前IP是否为探针IP（与子网IP一致则为探针IP）
+		var isTan bool
+		if model.IP == info.Ip {
+			isTan = true
+		}
+
+		// 组装MQ批量部署指令中的IP配置数据
+		batchDeployData.IPList = append(batchDeployData.IPList, mq_service.DeployIp{
+			Ip:       info.Ip,
+			IsTan:    isTan,
+			Mask:     model.Mask,
+			PortList: portList,
 		})
 
 		// 构建待入库的诱捕IP数据
@@ -232,29 +254,43 @@ func (Api) DeployView(c *gin.Context) {
 		return
 	}
 
-	// 批量创建诱捕IP数据，状态设为创建中
-	err = global.DB.Create(&createHoneyIpList).Error
+	// 数据库事务：批量创建诱捕IP/端口数据，并下发MQ部署指令
+	// 事务内任一操作失败则全部回滚
+	err = global.DB.Transaction(func(tx *gorm.DB) error {
+		// 批量创建诱捕IP数据，状态设为创建中
+		err = global.DB.Create(&createHoneyIpList).Error
+		if err != nil {
+			return errors.New("批量部署失败")
+		}
+		logrus.Infof("批量部署%d诱捕ip", len(createHoneyIpList))
+
+		// 批量创建诱捕端口转发数据（如有）
+		if len(createHoneyPortList) > 0 {
+			err = global.DB.Create(&createHoneyPortList).Error
+			if err != nil {
+				return errors.New("批量部署失败")
+			}
+			logrus.Infof("批量部署%d诱捕转发", len(createHoneyPortList))
+		}
+
+		// 下发批量部署指令到MQ队列，指定目标节点UID
+		err = mq_service.SendBatchDeployMsg(node.Uid, batchDeployData)
+		if err != nil {
+			return errors.New("部署消息下发失败")
+		}
+		return nil
+	})
+
+	// 处理事务执行失败的情况
 	if err != nil {
-		response.FailWithMsg("批量部署失败", c)
+		logrus.Errorf("部署失败 %s", err)
+		response.FailWithError(err, c)
 		return
 	}
-	logrus.Infof("批量部署%d诱捕ip", len(createHoneyIpList))
 
-	// 批量创建诱捕端口转发数据（如有）
-	if len(createHoneyPortList) > 0 {
-		err = global.DB.Create(&createHoneyPortList).Error
-		if err != nil {
-			response.FailWithMsg("批量部署失败", c)
-			return
-		}
-		logrus.Infof("批量部署%d诱捕转发", len(createHoneyPortList))
-	}
+	// 待优化点：若待部署IP数量过多，需拆分MQ消息分批下发
 
-	// 待补充逻辑：组装部署数据并下发至MQ（一次批量部署仅下发一条消息）
-	// 待优化点：若待部署IP数量过多，需拆分消息分批下发
-
-	// 构建响应数据并返回成功结果
-	data := DeployResponse{}
-	response.OkWithData(data, c)
+	// 返回部署指令下发成功响应
+	response.OkWithMsg("批量部署成功，正在部署中", c)
 	return
 }

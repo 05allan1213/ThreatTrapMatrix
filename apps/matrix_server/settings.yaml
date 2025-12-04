@@ -41,3 +41,4 @@ mq: # rabbitMQ
   clientCertificate: # 客户端的证书
   clientKey:  # 客户端的私钥
   caCertificate:  # ca的证书
+  batchDeployExchangeName: batchDeployExchangeName # 批量部署的交换机名称
