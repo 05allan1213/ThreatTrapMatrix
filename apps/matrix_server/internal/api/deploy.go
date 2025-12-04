@@ -4,13 +4,17 @@ package api
 // Description: 实现诱捕IP批量部署API接口
 
 import (
+	"context"
 	"fmt"
 	"matrix_server/internal/global"
 	"matrix_server/internal/middleware"
 	"matrix_server/internal/models"
 	"matrix_server/internal/utils/response"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,7 +51,7 @@ type PortInfo struct {
 
 // DeployView 诱捕IP批量部署接口处理函数
 func (Api) DeployView(c *gin.Context) {
-	// 绑定并解析部署请求参数
+	// 绑定并解析前端传入的部署请求参数
 	cr := middleware.GetBind[DeployRequest](c)
 	// 校验待部署IP列表不能为空
 	if len(cr.List) == 0 {
@@ -63,7 +67,7 @@ func (Api) DeployView(c *gin.Context) {
 		return
 	}
 
-	// 1. 校验节点是否在线
+	// 1. 校验子网关联的节点是否在线
 	node := model.NodeModel
 	if node.Status != 1 {
 		response.FailWithMsg("节点离线", c)
@@ -78,7 +82,7 @@ func (Api) DeployView(c *gin.Context) {
 		}
 	}
 
-	// 查询主机模板列表，并构建模板ID到模板信息的映射
+	// 查询主机模板列表，并构建模板ID到模板信息的映射表
 	var hostTemplateList []models.HostTemplateModel
 	global.DB.Find(&hostTemplateList, "id in ?", hostTemplateIDList)
 	var hostTemplateMap = map[uint]models.HostTemplateModel{}
@@ -92,7 +96,7 @@ func (Api) DeployView(c *gin.Context) {
 		}
 	}
 
-	// 查询服务列表，并构建服务ID到服务信息的映射
+	// 查询服务列表，并构建服务ID到服务信息的映射表
 	var serviceList []models.ServiceModel
 	global.DB.Find(&serviceList, "id in ?", serviceIDList)
 	var serviceMap = map[uint]models.ServiceModel{}
@@ -121,7 +125,18 @@ func (Api) DeployView(c *gin.Context) {
 	var createHoneyIpList []models.HoneyIpModel
 	var createHoneyPortList []models.HoneyPortModel
 
-	// 2. 校验主机模板合法性，并逐行处理待部署IP信息
+	// 构建Redis中部署中IP的缓存key，用于校验IP是否正在部署
+	key := fmt.Sprintf("deploy_create_%d", cr.NetID)
+	// 从Redis获取当前子网下所有部署中的IP状态
+	maps := global.Redis.HGetAll(context.Background(), key).Val()
+	var creatingMap = map[string]bool{}
+	for k, s2 := range maps {
+		if s2 == "1" {
+			creatingMap[k] = true // 标记该IP处于部署中状态
+		}
+	}
+
+	// 2. 逐行校验待部署IP及关联主机模板的合法性
 	for _, info := range cr.List {
 		// 校验主机模板是否存在
 		hostTemplateModel, ok := hostTemplateMap[info.HostTemplateID]
@@ -141,12 +156,16 @@ func (Api) DeployView(c *gin.Context) {
 			return
 		}
 
-		// 4. 待补充校验：IP不能是部署中/删除中的IP
+		// 4. 校验IP合法性：不能是正在部署中/删除中的IP
+		if creatingMap[info.Ip] {
+			response.FailWithMsg(fmt.Sprintf("%s 正在部署中", info.Ip), c)
+			return
+		}
 
 		// 解析主机模板的端口列表，构建端口转发配置
 		var portList []PortInfo
 		for _, port := range hostTemplateModel.PortList {
-			// 校验端口关联的服务是否存在
+			// 校验端口关联的虚拟服务是否存在
 			service, ok1 := serviceMap[port.ServiceID]
 			if !ok1 {
 				response.FailWithMsg(
@@ -172,11 +191,11 @@ func (Api) DeployView(c *gin.Context) {
 				Port:      port.Port,
 				DstIP:     service.IP,
 				DstPort:   service.Port,
-				Status:    1,
+				Status:    1, // 状态标记为创建中
 			})
 		}
 
-		// 构建下发部署的请求数据
+		// 构建下发至节点的部署请求数据
 		list = append(list, DispatchDeployRequest{
 			Ip: info.Ip,
 		})
@@ -186,13 +205,32 @@ func (Api) DeployView(c *gin.Context) {
 			NodeID: model.NodeID,
 			NetID:  cr.NetID,
 			IP:     info.Ip,
-			Status: 1,
+			Status: 1, // 状态标记为创建中
 		})
+
+		// 将当前IP标记为部署中状态，写入Redis缓存
+		global.Redis.HSet(context.Background(), key, info.Ip, true)
 	}
 
-	// 5. 待补充逻辑：判断子网是否正在部署中
-	// 待补充逻辑：分布式锁，锁住当前子网防止并发部署
-	// 待补充逻辑：组装IP+端口转发数据
+	// 5. 分布式锁控制：防止同一子网并发部署
+	// 创建redsync的Redis连接池
+	pool := goredis.NewPool(global.Redis)
+	// 初始化redsync实例
+	rs := redsync.New(pool)
+	// 构建子网部署锁的key
+	mutexname := fmt.Sprintf("deploy_create_lock_%d", cr.NetID)
+	// 创建基于该key的互斥锁，配置过期时间、重试次数和重试间隔
+	mutex := rs.NewMutex(mutexname,
+		redsync.WithExpiry(20*time.Minute),           // 锁过期时间20分钟，防止死锁
+		redsync.WithTries(1),                         // 仅重试1次
+		redsync.WithRetryDelay(500*time.Millisecond), // 重试间隔500毫秒
+	)
+
+	// 尝试获取分布式锁
+	if err1 := mutex.Lock(); err1 != nil {
+		response.FailWithMsg("当前子网正在部署中", c)
+		return
+	}
 
 	// 批量创建诱捕IP数据，状态设为创建中
 	err = global.DB.Create(&createHoneyIpList).Error
@@ -212,7 +250,7 @@ func (Api) DeployView(c *gin.Context) {
 		logrus.Infof("批量部署%d诱捕转发", len(createHoneyPortList))
 	}
 
-	// 待补充逻辑：组装部署数据，下发到MQ（一次批量部署仅下发一条消息）
+	// 待补充逻辑：组装部署数据并下发至MQ（一次批量部署仅下发一条消息）
 	// 待优化点：若待部署IP数量过多，需拆分消息分批下发
 
 	// 构建响应数据并返回成功结果
