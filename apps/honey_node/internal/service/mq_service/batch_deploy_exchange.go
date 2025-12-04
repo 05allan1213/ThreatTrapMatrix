@@ -49,9 +49,11 @@ func BatchDeployExChange(msg string) error {
 	// 汇总所有待创建的端口转发配置
 	var portList []PortInfo
 	// 原子计数器：记录已完成部署的IP数量（保证并发安全）
-	var index int64
+	var completedCount int64
 	// 总部署IP数量，用于计算部署进度
 	var allCount = int64(len(req.IPList))
+	// 互斥锁：用于保护进度上报数据
+	var mutex = sync.Mutex{}
 
 	// 第一步：批量创建诱捕IP配置并持久化数据
 	for _, ip := range req.IPList {
@@ -65,7 +67,6 @@ func BatchDeployExChange(msg string) error {
 				<-maxChan
 				wait.Done()
 			}()
-			atomic.AddInt64(&index, 1)
 
 			// 生成随机网络接口名称（前缀hy_+6位不重复随机字符串）
 			linkName := fmt.Sprintf("hy_%s", random.RandStrV2(6))
@@ -76,7 +77,9 @@ func BatchDeployExChange(msg string) error {
 				LinkName: linkName,
 				Network:  req.Network,
 			})
-
+			mutex.Lock()
+			// 获取当前已完成的IP数量
+			currentCompletedCount := atomic.AddInt64(&completedCount, 1)
 			// 初始化部署状态请求数据
 			res := DeployStatusRequest{
 				NetID:    req.NetID,
@@ -84,7 +87,7 @@ func BatchDeployExChange(msg string) error {
 				Mac:      mac,
 				LinkName: linkName,
 				LogID:    req.LogID,
-				Progress: float64((index / allCount) * 100), // 计算当前部署进度
+				Progress: (float64(currentCompletedCount) / float64(allCount)) * 100, // 计算当前部署进度
 			}
 
 			// IP配置失败时记录错误信息
@@ -105,6 +108,7 @@ func BatchDeployExChange(msg string) error {
 
 			// 上报成功部署的IP信息
 			SendDeployStatusMsg(res)
+			mutex.Unlock()
 		}(ip, &wait)
 
 		// 异步汇总当前IP的端口转发配置到全局列表

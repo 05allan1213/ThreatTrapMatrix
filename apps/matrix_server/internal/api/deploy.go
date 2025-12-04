@@ -251,6 +251,7 @@ func (Api) DeployView(c *gin.Context) {
 	// 尝试获取分布式锁
 	if err1 := mutex.Lock(); err1 != nil {
 		response.FailWithMsg("当前子网正在部署中", c)
+		global.Redis.Del(context.Background(), key)
 		return
 	}
 
@@ -285,6 +286,7 @@ func (Api) DeployView(c *gin.Context) {
 	if err != nil {
 		logrus.Errorf("部署失败 %s", err)
 		response.FailWithError(err, c)
+		global.Redis.Del(context.Background(), key)
 		return
 	}
 

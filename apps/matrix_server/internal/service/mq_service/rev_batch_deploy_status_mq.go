@@ -1,18 +1,16 @@
 package mq_service
 
-// File: matrix_server/service/mq_service/rev_alert_mq.go
+// File: matrix_server/service/mq_service/rev_batch_deploy_status_mq.go
 // Description: 实现批量部署状态MQ消息的消费逻辑，处理节点上报的部署状态数据，更新诱捕IP记录状态，并在部署完成时释放子网分布式锁
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"matrix_server/internal/global"
 	"matrix_server/internal/models"
-	"time"
 
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/sirupsen/logrus"
 )
 
@@ -54,6 +52,7 @@ func RevBatchDeployStatusMq() {
 			logrus.Errorf("消息格式解析失败 %s %s", err, d.Body)
 			continue // 解析失败跳过当前消息
 		}
+		logrus.Infof("收到批量部署回调 %s", d.Body)
 
 		// 查询该子网下对应IP的诱捕IP记录
 		var honeyIp models.HoneyIpModel
@@ -83,21 +82,11 @@ func RevBatchDeployStatusMq() {
 
 		// 部署进度为100表示当前子网部署完成，释放分布式锁
 		if data.Progress == 100 {
-			logrus.Infof("子网%d部署完成，开始释放分布式锁", data.NetID)
-			// 创建redsync的Redis连接池
-			pool := goredis.NewPool(global.Redis)
-			// 初始化redsync实例
-			rs := redsync.New(pool)
 			// 构建子网部署锁的key（与部署时的锁key保持一致）
 			mutexname := fmt.Sprintf("deploy_create_lock_%d", data.NetID)
-			// 创建基于该key的互斥锁（配置与部署时一致）
-			mutex := rs.NewMutex(mutexname,
-				redsync.WithExpiry(20*time.Minute),           // 锁过期时间20分钟
-				redsync.WithTries(1),                         // 重试次数1次
-				redsync.WithRetryDelay(500*time.Millisecond), // 重试间隔500毫秒
-			)
-			// 释放子网部署的分布式锁
-			mutex.Unlock()
+			global.Redis.Del(context.Background(), mutexname)
+			key := fmt.Sprintf("deploy_create_%d", data.NetID)
+			global.Redis.Del(context.Background(), key)
 			logrus.Infof("子网%d部署完成，分布式锁已解锁", data.NetID)
 		}
 	}
