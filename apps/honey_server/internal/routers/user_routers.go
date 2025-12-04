@@ -6,7 +6,7 @@ package routers
 import (
 	"honey_server/internal/api"
 	user_api2 "honey_server/internal/api/user_api"
-	middleware2 "honey_server/internal/middleware"
+	"honey_server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,18 +16,18 @@ func UserRouters(r *gin.RouterGroup) {
 	// POST /login - 用户登录接口
 	// 使用JSON参数绑定中间件解析登录请求参数
 	app := api.App.UserApi
-	r.POST("login", middleware2.BindJsonMiddleware[user_api2.LoginRequest], app.LoginView)
+	r.POST("login", middleware.BindJsonMiddleware[user_api2.LoginRequest], app.LoginView)
 	// POST /users - 创建用户接口
 	// 使用JSON参数绑定中间件解析创建用户请求参数
-	r.POST("users", middleware2.AdminMiddleware, middleware2.BindJsonMiddleware[user_api2.CreateRequest], app.CreateView)
+	r.POST("users", middleware.AdminMiddleware, middleware.BindJsonMiddleware[user_api2.CreateRequest], app.CreateView)
 	// GET /users - 用户列表查询接口
 	// 使用Query参数绑定中间件解析用户列表查询请求参数
-	r.GET("users", middleware2.BindQueryMiddleware[user_api2.UserListRequest], app.UserListView)
+	r.GET("users", middleware.BindQueryMiddleware[user_api2.UserListRequest], app.UserListView)
 	// POST /logout - 用户注销接口
 	r.POST("logout", app.UserLogoutView)
 	// DELETE /users - 用户删除接口
 	// 使用JSON参数绑定中间件解析删除用户请求参数
-	r.DELETE("users", middleware2.BindJsonMiddleware[user_api2.UserRemoveRequest], app.UserRemoveView)
+	r.DELETE("users", middleware.BindJsonMiddleware[user_api2.UserRemoveRequest], app.UserRemoveView)
 	// GET /users/info - 用户信息查询接口
-	r.GET("users/info", middleware2.AuthMiddleware, app.UserInfoView)
+	r.GET("users/info", middleware.AuthMiddleware, app.UserInfoView)
 }

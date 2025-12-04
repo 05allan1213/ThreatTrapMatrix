@@ -4,11 +4,11 @@ package log_api
 // Description: 日志模块API接口定义，提供日志列表查询、日志删除等HTTP接口处理逻辑
 
 import (
-	middleware2 "honey_server/internal/middleware"
+	"fmt"
+	"honey_server/internal/middleware"
 	models2 "honey_server/internal/models"
 	common_service2 "honey_server/internal/service/common_service"
 	"honey_server/internal/utils/response"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,7 +27,7 @@ type LogListRequest struct {
 // LogListView 日志列表查询接口处理方法
 func (LogApi) LogListView(c *gin.Context) {
 	// 获取并绑定请求参数
-	cr := middleware2.GetBind[LogListRequest](c)
+	cr := middleware.GetBind[LogListRequest](c)
 	// 调用公共服务查询日志列表，支持按用户名模糊搜索，按创建时间降序排序
 	list, count, _ := common_service2.QueryList(models2.LogModel{
 		Type: cr.Type,
@@ -45,9 +45,9 @@ func (LogApi) LogListView(c *gin.Context) {
 // RemoveView 日志删除接口处理方法
 func (LogApi) RemoveView(c *gin.Context) {
 	// 获取并绑定ID列表请求参数
-	cr := middleware2.GetBind[models2.IDListRequest](c)
+	cr := middleware.GetBind[models2.IDListRequest](c)
 	// 获取上下文日志实例
-	log := middleware2.GetLog(c)
+	log := middleware.GetLog(c)
 	// 调用公共服务执行日志删除操作（物理删除）
 	successCount, err := common_service2.Remove(models2.LogModel{}, common_service2.RemoveRequest{
 		IDList:   cr.IdList, // 待删除的日志ID列表

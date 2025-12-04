@@ -4,11 +4,11 @@ package user_api
 // Description: 用户批量删除API接口
 
 import (
-	middleware2 "honey_server/internal/middleware"
+	"fmt"
+	"honey_server/internal/middleware"
 	"honey_server/internal/models"
 	"honey_server/internal/service/common_service"
 	"honey_server/internal/utils/response"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,9 +21,9 @@ type UserRemoveRequest struct {
 // UserRemoveView 批量删除用户接口处理函数
 func (UserApi) UserRemoveView(c *gin.Context) {
 	// 获取绑定的批量删除请求参数
-	cr := middleware2.GetBind[UserRemoveRequest](c)
+	cr := middleware.GetBind[UserRemoveRequest](c)
 	// 获取上下文日志实例
-	log := middleware2.GetLog(c)
+	log := middleware.GetLog(c)
 	// 调用通用服务进行批量删除
 	successCount, err := common_service.Remove(models.UserModel{}, common_service.RemoveRequest{
 		IDList: cr.IDList,

@@ -4,10 +4,10 @@ package user_api
 // Description: 用户创建API接口
 
 import (
-	middleware2 "honey_server/internal/middleware"
+	"fmt"
+	"honey_server/internal/middleware"
 	user_service2 "honey_server/internal/service/user_service"
 	"honey_server/internal/utils/response"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,10 +22,10 @@ type CreateRequest struct {
 // CreateView 创建用户接口处理函数
 func (UserApi) CreateView(c *gin.Context) {
 	// 获取绑定的创建用户请求参数
-	cr := middleware2.GetBind[CreateRequest](c)
+	cr := middleware.GetBind[CreateRequest](c)
 
 	// 获取上下文日志实例
-	log := middleware2.GetLog(c)
+	log := middleware.GetLog(c)
 	// 初始化用户服务
 	us := user_service2.NewUserService(log)
 	// 调用服务层创建用户方法

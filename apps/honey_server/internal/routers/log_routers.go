@@ -6,7 +6,7 @@ package routers
 import (
 	"honey_server/internal/api"
 	"honey_server/internal/api/log_api"
-	middleware2 "honey_server/internal/middleware"
+	"honey_server/internal/middleware"
 	"honey_server/internal/models"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +18,7 @@ func LogRouters(r *gin.RouterGroup) {
 	// 获取日志API接口实例
 	app := api.App.LogApi
 	// GET /logs: 日志列表查询接口，需管理员权限，绑定日志列表查询参数
-	r.GET("logs", middleware2.AdminMiddleware, middleware2.BindQueryMiddleware[log_api.LogListRequest], app.LogListView)
+	r.GET("logs", middleware.AdminMiddleware, middleware.BindQueryMiddleware[log_api.LogListRequest], app.LogListView)
 	// DELETE /logs: 日志批量删除接口，需管理员权限，绑定ID列表参数
-	r.DELETE("logs", middleware2.AdminMiddleware, middleware2.BindJsonMiddleware[models.IDListRequest], app.RemoveView)
+	r.DELETE("logs", middleware.AdminMiddleware, middleware.BindJsonMiddleware[models.IDListRequest], app.RemoveView)
 }

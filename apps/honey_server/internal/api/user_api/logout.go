@@ -4,7 +4,7 @@ package user_api
 // Description: 用户注销API接口
 
 import (
-	middleware2 "honey_server/internal/middleware"
+	"honey_server/internal/middleware"
 	"honey_server/internal/utils/response"
 	"time"
 
@@ -16,9 +16,9 @@ func (UserApi) UserLogoutView(c *gin.Context) {
 	// 从请求头获取用户Token
 	token := c.GetHeader("token")
 	// 获取上下文日志实例
-	log := middleware2.GetLog(c)
+	log := middleware.GetLog(c)
 	// 获取已解析的JWT认证信息
-	auth := middleware2.GetAuth(c)
+	auth := middleware.GetAuth(c)
 	// 将Token过期时间戳转换为时间对象
 	expiresAt := time.Unix(auth.ExpiresAt, 0)
 

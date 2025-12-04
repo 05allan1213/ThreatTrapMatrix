@@ -5,7 +5,7 @@ package routers
 
 import (
 	"alert_server/internal/global"
-	middleware2 "alert_server/internal/middleware"
+	"alert_server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -23,7 +23,7 @@ func Run() {
 
 	// 创建API根路由分组
 	g := r.Group("alert_server")
-	g.Use(middleware2.LogMiddleware, middleware2.AuthMiddleware) // 系统内部必须登录才能继续使用
+	g.Use(middleware.LogMiddleware, middleware.AuthMiddleware) // 系统内部必须登录才能继续使用
 
 	// 路由注册
 	WhiteIpRouter(g) // 白名单ip相关路由

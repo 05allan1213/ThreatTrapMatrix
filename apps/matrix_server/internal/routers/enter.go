@@ -4,8 +4,9 @@ package routers
 // Description: 路由模块，负责初始化Gin引擎、注册API路由并启动HTTP服务
 
 import (
+	"matrix_server/internal/api"
 	"matrix_server/internal/global"
-	middleware2 "matrix_server/internal/middleware"
+	"matrix_server/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -24,9 +25,9 @@ func Run() {
 	r.Static("uploads", "uploads")
 	// 创建API根路由分组
 	g := r.Group("matrix_server")
-	g.Use(middleware2.LogMiddleware, middleware2.AuthMiddleware) // 系统内部必须登录才能继续使用
-
-	// 路由注册
+	g.Use(middleware.LogMiddleware, middleware.AuthMiddleware) // 系统内部必须登录才能继续使用
+	// GET /net/ip_list
+	g.GET("net/ip_list", middleware.BindQueryMiddleware[api.NetIpListRequest], api.App.NetIpListView)
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
