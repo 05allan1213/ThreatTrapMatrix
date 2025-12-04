@@ -28,6 +28,7 @@ func Run() {
 	g.Use(middleware.LogMiddleware, middleware.AuthMiddleware) // 系统内部必须登录才能继续使用
 	// GET /net/ip_list
 	g.GET("net/ip_list", middleware.BindQueryMiddleware[api.NetIpListRequest], api.App.NetIpListView)
+	g.POST("deploy", middleware.BindJsonMiddleware[api.DeployRequest], api.App.DeployView)
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr

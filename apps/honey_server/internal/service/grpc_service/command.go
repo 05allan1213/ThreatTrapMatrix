@@ -5,6 +5,8 @@ package grpc_service
 
 import (
 	"errors"
+	"honey_server/internal/global"
+	"honey_server/internal/models"
 	"io"
 	"sync"
 	"time"
@@ -64,6 +66,17 @@ func (s NodeService) Command(stream node_rpc.NodeService_CommandServer) error {
 
 	logrus.Infof("Node %s connected", nodeID)
 
+	// 修改节点状态
+	var model models.NodeModel
+	err := global.DB.Take(&model, "uid = ?", nodeID).Error
+	if err != nil {
+		logrus.Errorf("节点不存在")
+		return nil
+	}
+	if model.Status != 1 {
+		global.DB.Model(&model).Update("status", 1)
+	}
+
 	// 启动发送和接收协程（需等待两个协程退出）
 	cmd.wg.Add(2)
 	go cmd.sendLoop()
@@ -85,6 +98,8 @@ func (s NodeService) Command(stream node_rpc.NodeService_CommandServer) error {
 	mapMutex.Unlock()
 
 	logrus.Infof("Node %s disconnected", nodeID)
+	// 修改节点状态
+	global.DB.Model(&model).Update("status", 2)
 	return nil
 }
 

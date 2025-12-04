@@ -12,7 +12,7 @@ type NodeModel struct {
 	Uid          string         `gorm:"size:64;index:idx_uid" json:"uid"`  // 节点uid
 	IP           string         `gorm:"size:32" json:"ip"`                 // 节点ip
 	Mac          string         `gorm:"size:64" json:"mac"`                // 节点mac
-	Status       int8           `json:"status"`                            // 节点状态
+	Status       int8           `json:"status"`                            // 节点状态 1 运行中
 	NetCount     int            `json:"netCount"`                          // 网络数
 	HoneyIPCount int            `json:"honeyIPCount"`                      // 诱捕ip数
 	Resource     NodeResource   `gorm:"serializer:json" json:"resource"`   // 节点资源占用
