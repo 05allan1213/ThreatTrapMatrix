@@ -4,9 +4,11 @@ package mq_service
 // Description: 初始化MQ相关资源，声明批量部署状态主题队列，并异步启动部署状态消息的消费协程
 
 import (
+	"encoding/json"
 	"matrix_server/internal/global"
 
 	"github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 )
 
 // Run 初始化MQ队列并启动消费协程
@@ -60,4 +62,31 @@ func Run() {
 	go RevBatchUpdateDeployStatusMq()
 	// 异步启动批量删除部署状态消息的消费协程
 	go RevBatchRemoveDeployStatusMq()
+}
+
+// SendExchangeMessage 通用MQ消息发送函数
+func SendExchangeMessage(exchangeName, nodeID string, req any) (err error) {
+	// 将结构化请求数据序列化为JSON字节数据
+	byteData, _ := json.Marshal(req)
+
+	// 向RabbitMQ发布消息
+	err = global.Queue.Publish(
+		exchangeName, // 目标交换机名称
+		nodeID,       // 路由键（节点ID）
+		false,        // mandatory：是否强制要求消息路由到队列
+		false,        // immediate：是否要求立即投递消息（
+		amqp.Publishing{
+			ContentType: "text/plain", // 消息内容类型为纯文本（JSON格式）
+			Body:        byteData,     // 消息体：JSON序列化后的请求数据
+		})
+
+	// 消息发布失败时记录错误日志
+	if err != nil {
+		logrus.Errorf("%s 消息发送失败 %s %s", exchangeName, err, string(byteData))
+		return
+	}
+
+	// 消息发布成功时记录日志
+	logrus.Infof("%s 消息发送成功 %s", exchangeName, string(byteData))
+	return
 }

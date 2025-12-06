@@ -4,11 +4,7 @@ package mq_service
 // Description: 实现批量部署指令的MQ发送功能，用于将子网诱捕IP批量部署指令下发至指定节点的MQ队列
 
 import (
-	"encoding/json"
 	"matrix_server/internal/global"
-
-	"github.com/sirupsen/logrus"
-	"github.com/streadway/amqp"
 )
 
 // BatchDeployRequest 批量部署指令发送请求结构体
@@ -37,27 +33,5 @@ type PortInfo struct {
 
 // SendBatchDeployMsg 发送批量部署指令到MQ队列
 func SendBatchDeployMsg(nodeUID string, req BatchDeployRequest) (err error) {
-	// 将批量部署指令序列化为JSON字节数组
-	byteData, _ := json.Marshal(req)
-	// 获取全局配置中的MQ配置信息
-	cfg := global.Config.MQ
-
-	// 发布批量部署指令到MQ交换机
-	err = global.Queue.Publish(
-		cfg.BatchDeployExchangeName, // exchange：批量部署专用交换机名称
-		nodeUID,                     // routing key：目标节点UID，用于精准路由到对应节点
-		false,                       // mandatory：不强制要求消息必须路由到队列
-		false,                       // immediate：不要求立即投递
-		amqp.Publishing{
-			ContentType: "text/plain", // 消息内容类型
-			Body:        byteData,     // 消息体：序列化后的批量部署指令
-		})
-
-	// 处理消息发送失败的情况
-	if err != nil {
-		logrus.Errorf("消息发送失败 %s %s", err, string(byteData))
-		return err
-	}
-	logrus.Infof("消息发送成功 %s", string(byteData))
-	return
+	return SendExchangeMessage(global.Config.MQ.BatchDeployExchangeName, nodeUID, req)
 }
