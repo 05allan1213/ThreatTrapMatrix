@@ -4,13 +4,13 @@ package api
 // Description: 实现子网IP部署删除API接口
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"matrix_server/internal/global"
 	"matrix_server/internal/middleware"
 	"matrix_server/internal/models"
 	"matrix_server/internal/service/mq_service"
+	"matrix_server/internal/service/redis_service/net_progress"
 	"matrix_server/internal/utils/response"
 	"time"
 
@@ -69,8 +69,6 @@ func (Api) RemoveDeployView(c *gin.Context) {
 		LogID: logID,
 		TanIp: model.IP,
 	}
-	// 构建Redis存储部署状态的Key
-	key := fmt.Sprintf("deploy_create_%d", cr.NetID)
 
 	// 2. 组装IP列表并写入Redis记录部署状态
 	for _, ipModel := range honeyIpList {
@@ -78,8 +76,6 @@ func (Api) RemoveDeployView(c *gin.Context) {
 			Ip:       ipModel.IP,
 			LinkName: ipModel.Network,
 		})
-		// 将IP部署状态写入Redis哈希表
-		global.Redis.HSet(context.Background(), key, ipModel.IP, true)
 	}
 
 	// 3. 校验子网部署状态并加分布式锁，防止并发部署操作
@@ -100,8 +96,6 @@ func (Api) RemoveDeployView(c *gin.Context) {
 	// 尝试获取分布式锁
 	if err1 := mutex.Lock(); err1 != nil {
 		response.FailWithMsg("当前子网正在部署中", c)
-		// 释放Redis中该子网的部署状态记录
-		global.Redis.Del(context.Background(), key)
 		return
 	}
 
@@ -114,6 +108,15 @@ func (Api) RemoveDeployView(c *gin.Context) {
 		}
 		// 记录批量删除部署的IP数量日志
 		logrus.Infof("批量删除部署%d诱捕ip", len(honeyIpList))
+		// 创建Redis中该子网的部署状态记录
+		err = net_progress.Set(cr.NetID, net_progress.NetDeployInfo{
+			Type:     3,
+			AllCount: int64(len(batchDeployData.IPList)),
+		})
+		if err != nil {
+			logrus.Errorf("设置操作进度失败 %s", err)
+			return errors.New("设置操作进度失败")
+		}
 		// 向MQ下发批量删除部署请求消息
 		err = mq_service.SendBatchRemoveDeployMsg(node.Uid, batchDeployData)
 		if err != nil {
@@ -125,8 +128,6 @@ func (Api) RemoveDeployView(c *gin.Context) {
 		// 记录部署失败日志
 		logrus.Errorf("部署失败 %s", err)
 		response.FailWithError(err, c)
-		// 释放Redis中该子网的部署状态记录
-		global.Redis.Del(context.Background(), key)
 		return
 	}
 

@@ -4,13 +4,13 @@ package api
 // Description: 实现诱捕IP部署配置的更新API接口
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"matrix_server/internal/global"
 	"matrix_server/internal/middleware"
 	"matrix_server/internal/models"
 	"matrix_server/internal/service/mq_service"
+	"matrix_server/internal/service/redis_service/net_progress"
 	"matrix_server/internal/utils/response"
 	"time"
 
@@ -103,8 +103,6 @@ func (Api) UpdateDeployView(c *gin.Context) {
 	// updateHoneyIpModelList: 待更新IP记录列表（模板变更后需更新IP记录）
 	var updateHoneyIpModelList []*models.HoneyIpModel
 
-	key := fmt.Sprintf("deploy_create_%d", cr.NetID)
-
 	// ---------------------- 步骤3：筛选模板变更的IP，构建端口增删列表 ----------------------
 	for _, info := range cr.List {
 		// 校验主机模板是否存在
@@ -169,7 +167,6 @@ func (Api) UpdateDeployView(c *gin.Context) {
 				Status:    1, // 状态1：创建中
 			})
 		}
-		global.Redis.HSet(context.Background(), key, info.Ip, true)
 	}
 	if len(data.PortList) == 0 {
 		response.FailWithMsg("没有需要部署的操作", c)
@@ -193,7 +190,6 @@ func (Api) UpdateDeployView(c *gin.Context) {
 	// 尝试获取分布式锁（获取失败说明子网正在执行其他操作）
 	if err1 := mutex.Lock(); err1 != nil {
 		response.FailWithMsg("当前子网正在部署中", c)
-		global.Redis.Del(context.Background(), key)
 		return
 	}
 
@@ -223,7 +219,15 @@ func (Api) UpdateDeployView(c *gin.Context) {
 			}
 			logrus.Infof("创建端口记录 %d 个", len(createPortList))
 		}
-
+		// 设置操作进度
+		err = net_progress.Set(cr.NetID, net_progress.NetDeployInfo{
+			Type:     2,
+			AllCount: int64(len(data.IpList)),
+		})
+		if err != nil {
+			logrus.Errorf("设置操作进度失败 %s", err)
+			return errors.New("设置操作进度失败")
+		}
 		// 下发批量更新部署指令到MQ队列（指定目标节点UID）
 		err = mq_service.SendBatchUpdateDeployMsg(node.Uid, data)
 		if err != nil {
@@ -236,7 +240,6 @@ func (Api) UpdateDeployView(c *gin.Context) {
 	if err != nil {
 		logrus.Errorf("部署失败 %s", err)
 		response.FailWithError(err, c)
-		global.Redis.Del(context.Background(), key)
 		return
 	}
 
