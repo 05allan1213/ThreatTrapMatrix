@@ -17,5 +17,5 @@ type BatchUpdateDeployRequest struct {
 
 // SendBatchUpdateDeployMsg 发送批量更新部署指令到MQ队列
 func SendBatchUpdateDeployMsg(nodeUID string, req BatchUpdateDeployRequest) (err error) {
-	return SendExchangeMessage(global.Config.MQ.BatchUpdateDeployExchangeName, nodeUID, req)
+	return sendExchangeMessage(global.Config.MQ.BatchUpdateDeployExchangeName, nodeUID, req)
 }

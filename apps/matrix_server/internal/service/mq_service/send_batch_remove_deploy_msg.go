@@ -23,5 +23,5 @@ type RemoveDeployIp struct {
 
 // SendBatchRemoveDeployMsg 发送批量删除部署的MQ消息
 func SendBatchRemoveDeployMsg(nodeUID string, req BatchRemoveDeployRequest) (err error) {
-	return SendExchangeMessage(global.Config.MQ.BatchRemoveDeployExchangeName, nodeUID, req)
+	return sendExchangeMessage(global.Config.MQ.BatchRemoveDeployExchangeName, nodeUID, req)
 }

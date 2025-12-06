@@ -33,5 +33,5 @@ type PortInfo struct {
 
 // SendBatchDeployMsg 发送批量部署指令到MQ队列
 func SendBatchDeployMsg(nodeUID string, req BatchDeployRequest) (err error) {
-	return SendExchangeMessage(global.Config.MQ.BatchDeployExchangeName, nodeUID, req)
+	return sendExchangeMessage(global.Config.MQ.BatchDeployExchangeName, nodeUID, req)
 }
