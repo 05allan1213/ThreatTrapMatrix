@@ -63,6 +63,16 @@ services:
     networks:
       honey_network:
         ipv4_address: 10.4.0.10
+  ws_server:
+    image: ws_server:v1.0.1
+    restart: always
+    ports:
+      - "8085:8085"
+    volumes:
+      - ./ws_server/settings.yaml:/app/settings.yaml
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.9
 networks:
   honey_network:
     driver: bridge

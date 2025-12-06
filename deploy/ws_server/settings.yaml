@@ -1,0 +1,24 @@
+logger: # 日志器
+  format: json # 日志格式 [json, text]
+  appName: ws_server # 应用名称
+  level: info # 日志级别
+
+system: # 系统路由
+  mode: debug # 运行模式 [debug, release, test]
+  webAddr: ":8085" # web的运行地址
+
+jwt: # JWT
+  expires: 8640000 # token过期时间 (100天)
+  issuer: 05allan1213 # token签发者
+  secret: a5y3p2t6y3p2 # token密钥
+
+mq: # rabbitMQ
+  user: admin # 用户名
+  password: password # 密码
+  host: 10.4.0.8 # 主机地址
+  port: 5672 # 端口
+  ssl: false # 是否使用SSL
+  clientCertificate: # 客户端的证书
+  clientKey:  # 客户端的私钥
+  caCertificate:  # ca的证书
+  wsTopic: wsTopic # WebSocket的Topic名称
