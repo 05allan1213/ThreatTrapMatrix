@@ -4,6 +4,7 @@ package api
 // Description: 实现诱捕IP部署配置的更新API接口
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"matrix_server/internal/global"
@@ -102,6 +103,8 @@ func (Api) UpdateDeployView(c *gin.Context) {
 	// updateHoneyIpModelList: 待更新IP记录列表（模板变更后需更新IP记录）
 	var updateHoneyIpModelList []*models.HoneyIpModel
 
+	key := fmt.Sprintf("deploy_create_%d", cr.NetID)
+
 	// ---------------------- 步骤3：筛选模板变更的IP，构建端口增删列表 ----------------------
 	for _, info := range cr.List {
 		// 校验主机模板是否存在
@@ -127,7 +130,6 @@ func (Api) UpdateDeployView(c *gin.Context) {
 		// 将模板变更的IP加入MQ更新列表
 		data.IpList = append(data.IpList, info.Ip)
 
-		var portList []mq_service.PortInfo
 		// 收集当前IP的旧端口记录（待删除）
 		for _, portModel := range honeyIPModel.PortList {
 			deletePortList = append(deletePortList, portModel)
@@ -148,7 +150,7 @@ func (Api) UpdateDeployView(c *gin.Context) {
 				return
 			}
 			// 构建MQ下发的端口转发配置
-			portList = append(portList, mq_service.PortInfo{
+			data.PortList = append(data.PortList, mq_service.PortInfo{
 				IP:       info.Ip,
 				Port:     port.Port,
 				DestIP:   service.IP,
@@ -167,9 +169,11 @@ func (Api) UpdateDeployView(c *gin.Context) {
 				Status:    1, // 状态1：创建中
 			})
 		}
-
-		// 将新端口配置加入MQ更新指令
-		data.PortList = portList
+		global.Redis.HSet(context.Background(), key, info.Ip, true)
+	}
+	if len(data.PortList) == 0 {
+		response.FailWithMsg("没有需要部署的操作", c)
+		return
 	}
 
 	// ---------------------- 步骤4：分布式锁控制子网并发操作 ----------------------
@@ -189,6 +193,7 @@ func (Api) UpdateDeployView(c *gin.Context) {
 	// 尝试获取分布式锁（获取失败说明子网正在执行其他操作）
 	if err1 := mutex.Lock(); err1 != nil {
 		response.FailWithMsg("当前子网正在部署中", c)
+		global.Redis.Del(context.Background(), key)
 		return
 	}
 
@@ -231,6 +236,7 @@ func (Api) UpdateDeployView(c *gin.Context) {
 	if err != nil {
 		logrus.Errorf("部署失败 %s", err)
 		response.FailWithError(err, c)
+		global.Redis.Del(context.Background(), key)
 		return
 	}
 
