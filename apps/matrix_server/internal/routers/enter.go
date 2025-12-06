@@ -32,6 +32,8 @@ func Run() {
 	g.POST("deploy", middleware.BindJsonMiddleware[api.DeployRequest], api.App.DeployView)
 	// PUT /deploy : 批量部署更新
 	g.PUT("deploy", middleware.BindJsonMiddleware[api.DeployRequest], api.App.UpdateDeployView)
+	// DELETE /deploy : 批量部署删除
+	g.DELETE("deploy", middleware.BindJsonMiddleware[api.RemoveDeployRequest], api.App.RemoveDeployView)
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr

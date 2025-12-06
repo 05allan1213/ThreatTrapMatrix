@@ -16,6 +16,8 @@ func RegisterExChange() {
 	exchangeDeclare(cfg.BatchDeployExchangeName)
 	// 声明批量更新部署交换器
 	exchangeDeclare(cfg.BatchUpdateDeployExchangeName)
+	// 声明批量删除部署交换器
+	exchangeDeclare(cfg.BatchRemoveDeployExchangeName)
 }
 
 // exchangeDeclare 声明单个RabbitMQ交换器

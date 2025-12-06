@@ -16,7 +16,6 @@ func main() {
 	global.DB = core.GetDB()             // 获取MySQL数据库实例
 	global.Redis = core.GetRedisClient() // 获取Redis实例
 	global.Queue = core.InitMQ()         // 初始化消息队列
-	mq_service.RegisterExChange()        // 注册交换机
 	mq_service.Run()                     // 启动MQ服务
 	flags.Run()                          // 运行命令行参数
 	routers.Run()                        // 启动路由

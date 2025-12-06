@@ -58,6 +58,6 @@ func SendBatchDeployMsg(nodeUID string, req BatchDeployRequest) (err error) {
 		logrus.Errorf("消息发送失败 %s %s", err, string(byteData))
 		return err
 	}
-
+	logrus.Infof("消息发送成功 %s", string(byteData))
 	return
 }

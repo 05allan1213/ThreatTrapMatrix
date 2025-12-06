@@ -39,6 +39,9 @@ func Run() {
 		return
 	}
 
+	// 注册交换器
+	RegisterExChange()
+
 	// 异步启动批量部署状态消息的消费协程
 	go RevBatchDeployStatusMq()
 	// 异步启动批量更新部署状态消息的消费协程
