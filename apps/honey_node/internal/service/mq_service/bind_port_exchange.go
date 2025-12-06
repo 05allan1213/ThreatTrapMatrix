@@ -5,7 +5,6 @@ package mq_service
 
 import (
 	"encoding/json"
-	"fmt"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/service/port_service"
@@ -16,27 +15,9 @@ import (
 
 // BindPortRequest 端口绑定请求结构体，接收MQ传递的端口绑定参数
 type BindPortRequest struct {
-	IP       string     `json:"ip"`       // 目标IP地址
-	PortList []PortInfo `json:"portList"` // 端口映射列表
-	LogID    string     `json:"logID"`    // 日志id，用于链路追踪
-}
-
-// PortInfo 端口映射信息结构体，包含本地监听和目标地址信息
-type PortInfo struct {
-	IP       string `json:"ip"`       // 本地监听IP
-	Port     int    `json:"port"`     // 本地监听端口
-	DestIP   string `json:"destIP"`   // 目标服务IP
-	DestPort int    `json:"destPort"` // 目标服务端口
-}
-
-// LocalAddr 拼接本地监听地址（IP:Port）
-func (p PortInfo) LocalAddr() string {
-	return fmt.Sprintf("%s:%d", p.IP, p.Port)
-}
-
-// TargetAddr 拼接目标服务地址（DestIP:DestPort）
-func (p PortInfo) TargetAddr() string {
-	return fmt.Sprintf("%s:%d", p.DestIP, p.DestPort)
+	IP       string            `json:"ip"`       // 目标IP地址
+	PortList []models.PortInfo `json:"portList"` // 端口映射列表
+	LogID    string            `json:"logID"`    // 日志id，用于链路追踪
 }
 
 // isLocalAddress 检查指定的IP地址是否在本地系统中存在
@@ -71,7 +52,7 @@ func isLocalAddress(ip string) bool {
 			}
 		}
 	}
-	
+
 	return false
 }
 
@@ -92,13 +73,13 @@ func BindPortExChange(msg string) error {
 			logrus.Warnf("本地不存在IP地址 %s，跳过端口绑定", port.IP)
 			continue
 		}
-		
+
 		// 起端口监听，每个端口映射独立协程处理，避免阻塞
 		global.DB.Create(&models.PortModel{
 			TargetAddr: port.TargetAddr(),
 			LocalAddr:  port.LocalAddr(),
 		})
-		go func(port PortInfo) {
+		go func(port models.PortInfo) {
 			err := port_service.Tunnel(port.LocalAddr(), port.TargetAddr())
 			if err != nil {
 				logrus.Errorf("端口绑定失败 %s", err)
