@@ -58,7 +58,7 @@ func (Api) DeployView(c *gin.Context) {
 	cr := middleware.GetBind[DeployRequest](c)
 	// 校验待部署IP列表不能为空
 	if len(cr.List) == 0 {
-		response.FailWithMsg("至少需要选择一个ip进行部署", c)
+		response.FailWithMsg("需要选择一个ip进行部署", c)
 		return
 	}
 
@@ -218,10 +218,11 @@ func (Api) DeployView(c *gin.Context) {
 
 		// 构建待入库的诱捕IP数据
 		createHoneyIpList = append(createHoneyIpList, models.HoneyIpModel{
-			NodeID: model.NodeID,
-			NetID:  cr.NetID,
-			IP:     info.Ip,
-			Status: 1, // 状态标记为创建中
+			NodeID:         model.NodeID,
+			NetID:          cr.NetID,
+			IP:             info.Ip,
+			HostTemplateID: info.HostTemplateID,
+			Status:         1, // 状态标记为创建中
 		})
 
 		// 将当前IP标记为部署中状态，写入Redis缓存
@@ -234,7 +235,7 @@ func (Api) DeployView(c *gin.Context) {
 	// 初始化redsync实例
 	rs := redsync.New(pool)
 	// 构建子网部署锁的key
-	mutexname := fmt.Sprintf("deploy_create_lock_%d", cr.NetID)
+	mutexname := fmt.Sprintf("deploy_action_lock_%d", cr.NetID)
 	// 创建基于该key的互斥锁，配置过期时间、重试次数和重试间隔
 	mutex := rs.NewMutex(mutexname,
 		redsync.WithExpiry(20*time.Minute),           // 锁过期时间20分钟，防止死锁
@@ -252,20 +253,29 @@ func (Api) DeployView(c *gin.Context) {
 	// 数据库事务：批量创建诱捕IP/端口数据，并下发MQ部署指令
 	// 事务内任一操作失败则全部回滚
 	err = global.DB.Transaction(func(tx *gorm.DB) error {
+		var honeyIpToIDMap = map[string]uint{}
 		// 批量创建诱捕IP数据，状态设为创建中
 		err = global.DB.Create(&createHoneyIpList).Error
 		if err != nil {
 			return errors.New("批量部署失败")
 		}
-		logrus.Infof("批量部署%d诱捕ip", len(createHoneyIpList))
+		logrus.Infof("批量部署%d个诱捕ip", len(createHoneyIpList))
 
 		// 批量创建诱捕端口转发数据（如有）
 		if len(createHoneyPortList) > 0 {
-			err = global.DB.Create(&createHoneyPortList).Error
+			for _, ipModel := range createHoneyIpList {
+				honeyIpToIDMap[ipModel.IP] = ipModel.ID
+			}
+			var createPortList []models.HoneyPortModel
+			for _, portModel := range createHoneyPortList {
+				portModel.HoneyIpID = honeyIpToIDMap[portModel.IP]
+				createPortList = append(createPortList, portModel)
+			}
+			err = global.DB.Create(&createPortList).Error
 			if err != nil {
 				return errors.New("批量部署失败")
 			}
-			logrus.Infof("批量部署%d诱捕转发", len(createHoneyPortList))
+			logrus.Infof("批量部署%d个诱捕转发", len(createHoneyPortList))
 		}
 
 		// 下发批量部署指令到MQ队列，指定目标节点UID

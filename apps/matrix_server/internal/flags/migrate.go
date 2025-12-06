@@ -5,7 +5,7 @@ package flags
 
 import (
 	"matrix_server/internal/global"
-	models2 "matrix_server/internal/models"
+	"matrix_server/internal/models"
 
 	"github.com/sirupsen/logrus"
 )
@@ -14,18 +14,18 @@ import (
 func Migrate() {
 	// 自动迁移指定的模型结构体到数据库，生成或更新数据表结构
 	err := global.DB.AutoMigrate(
-		&models2.HoneyIpModel{},
-		&models2.HoneyPortModel{},
-		&models2.HostModel{},
-		&models2.HostTemplateModel{},
-		&models2.ImageModel{},
-		&models2.LogModel{},
-		&models2.MatrixTemplateModel{},
-		&models2.NetModel{},
-		&models2.NodeModel{},
-		&models2.NodeNetworkModel{},
-		&models2.ServiceModel{},
-		&models2.UserModel{},
+		&models.HoneyIpModel{},
+		&models.HoneyPortModel{},
+		&models.HostModel{},
+		&models.HostTemplateModel{},
+		&models.ImageModel{},
+		&models.LogModel{},
+		&models.MatrixTemplateModel{},
+		&models.NetModel{},
+		&models.NodeModel{},
+		&models.NodeNetworkModel{},
+		&models.ServiceModel{},
+		&models.UserModel{},
 	)
 	if err != nil {
 		logrus.Fatalf("表结构迁移失败 %s", err)

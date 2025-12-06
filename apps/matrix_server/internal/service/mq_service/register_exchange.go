@@ -11,13 +11,11 @@ import (
 
 // RegisterExChange 注册系统所需的所有RabbitMQ交换器
 func RegisterExChange() {
-	// cfg := global.Config.MQ
-	// // 声明创建诱捕IP的交换器
-	// exchangeDeclare(cfg.CreateIpExchangeName)
-	// // 声明删除诱捕IP的交换器
-	// exchangeDeclare(cfg.DeleteIpExchangeName)
-	// // 声明绑定端口的交换器
-	// exchangeDeclare(cfg.BindPortExchangeName)
+	cfg := global.Config.MQ
+	// 声明批量部署交换器
+	exchangeDeclare(cfg.BatchDeployExchangeName)
+	// 声明批量更新部署交换器
+	exchangeDeclare(cfg.BatchUpdateDeployExchangeName)
 }
 
 // exchangeDeclare 声明单个RabbitMQ交换器

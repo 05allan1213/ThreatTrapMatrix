@@ -6,7 +6,7 @@ package log_api
 import (
 	"fmt"
 	"honey_server/internal/middleware"
-	models2 "honey_server/internal/models"
+	"honey_server/internal/models"
 	common_service2 "honey_server/internal/service/common_service"
 	"honey_server/internal/utils/response"
 
@@ -18,10 +18,10 @@ type LogApi struct{}
 
 // LogListRequest 日志列表查询请求参数结构体
 type LogListRequest struct {
-	models2.PageInfo        // 分页信息（包含Page、PageSize字段）
-	Type             int8   `form:"type"` // 日志类型：1-登录日志
-	IP               string `form:"ip"` // 日志关联IP地址
-	Addr             string `form:"addr"` // 日志关联地址信息
+	models.PageInfo        // 分页信息（包含Page、PageSize字段）
+	Type            int8   `form:"type"` // 日志类型：1-登录日志
+	IP              string `form:"ip"` // 日志关联IP地址
+	Addr            string `form:"addr"` // 日志关联地址信息
 }
 
 // LogListView 日志列表查询接口处理方法
@@ -29,7 +29,7 @@ func (LogApi) LogListView(c *gin.Context) {
 	// 获取并绑定请求参数
 	cr := middleware.GetBind[LogListRequest](c)
 	// 调用公共服务查询日志列表，支持按用户名模糊搜索，按创建时间降序排序
-	list, count, _ := common_service2.QueryList(models2.LogModel{
+	list, count, _ := common_service2.QueryList(models.LogModel{
 		Type: cr.Type,
 		IP:   cr.IP,
 		Addr: cr.Addr,
@@ -45,11 +45,11 @@ func (LogApi) LogListView(c *gin.Context) {
 // RemoveView 日志删除接口处理方法
 func (LogApi) RemoveView(c *gin.Context) {
 	// 获取并绑定ID列表请求参数
-	cr := middleware.GetBind[models2.IDListRequest](c)
+	cr := middleware.GetBind[models.IDListRequest](c)
 	// 获取上下文日志实例
 	log := middleware.GetLog(c)
 	// 调用公共服务执行日志删除操作（物理删除）
-	successCount, err := common_service2.Remove(models2.LogModel{}, common_service2.RemoveRequest{
+	successCount, err := common_service2.Remove(models.LogModel{}, common_service2.RemoveRequest{
 		IDList:   cr.IdList, // 待删除的日志ID列表
 		Log:      log,       // 操作日志实例
 		Msg:      "日志",    // 操作对象描述

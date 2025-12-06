@@ -26,9 +26,12 @@ func Run() {
 	// 创建API根路由分组
 	g := r.Group("matrix_server")
 	g.Use(middleware.LogMiddleware, middleware.AuthMiddleware) // 系统内部必须登录才能继续使用
-	// GET /net/ip_list
+	// GET /net/ip_list : 获取网络IP列表
 	g.GET("net/ip_list", middleware.BindQueryMiddleware[api.NetIpListRequest], api.App.NetIpListView)
+	// POST /deploy : 批量部署
 	g.POST("deploy", middleware.BindJsonMiddleware[api.DeployRequest], api.App.DeployView)
+	// PUT /deploy : 批量部署更新
+	g.PUT("deploy", middleware.BindJsonMiddleware[api.DeployRequest], api.App.UpdateDeployView)
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr

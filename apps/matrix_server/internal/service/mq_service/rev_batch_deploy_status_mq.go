@@ -103,7 +103,7 @@ func RevBatchDeployStatusMq() {
 		// 如何计算，当前子网部署完了？
 		if remainingQuantity == 0 {
 			// 构建子网部署锁的key（与部署时的锁key保持一致）
-			mutexname := fmt.Sprintf("deploy_create_lock_%d", data.NetID)
+			mutexname := fmt.Sprintf("deploy_action_lock_%d", data.NetID)
 			global.Redis.Del(context.Background(), mutexname)
 			key := fmt.Sprintf("deploy_create_%d", data.NetID)
 			global.Redis.Del(context.Background(), key)
