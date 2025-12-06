@@ -42,6 +42,7 @@ type NetIpListResponse struct {
 	TotalPages         int         `json:"totalPages"`         // 分页总页数
 	Title              string      `json:"title"`              // 子网名称
 	Subnet             string      `json:"subnet"`             // 子网网段
+	IsAction           bool        `json:"isAction"`           // 当前子网是否正在执行操作
 	List               []NetIpInfo `json:"list"`               // 分页后的IP列表数据
 }
 
@@ -157,6 +158,12 @@ func (Api) NetIpListView(c *gin.Context) {
 	data.TotalPages = totalPages
 	data.Title = model.Title     // 子网名称
 	data.Subnet = model.Subnet() // 子网网段
+
+	// 判断当前子网是否正在执行操作
+	err = global.Redis.Get(context.Background(), fmt.Sprintf("deploy_action_lock_%d", cr.NetID)).Err()
+	if err == nil {
+		data.IsAction = true
+	}
 
 	// 返回成功响应及查询结果
 	response.OkWithData(data, c)

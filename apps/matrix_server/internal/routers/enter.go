@@ -7,6 +7,7 @@ import (
 	"matrix_server/internal/api"
 	"matrix_server/internal/global"
 	"matrix_server/internal/middleware"
+	"matrix_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -34,6 +35,8 @@ func Run() {
 	g.PUT("deploy", middleware.BindJsonMiddleware[api.DeployRequest], api.App.UpdateDeployView)
 	// DELETE /deploy : 批量部署删除
 	g.DELETE("deploy", middleware.BindJsonMiddleware[api.RemoveDeployRequest], api.App.RemoveDeployView)
+	// GET /deploy/progress/:id : 获取部署进度
+	g.GET("deploy/progress/:id", middleware.BindUriMiddleware[models.IDRequest], api.App.NetProgressView)
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
