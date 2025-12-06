@@ -31,16 +31,6 @@ services:
     networks:
       honey_network:
         ipv4_address: 10.4.0.7
-  alert_server:
-    image: alert_server:v1.0.1
-    restart: always
-    ports:
-      - "8083:8083"
-    volumes:
-      - ./alert_server/settings.yaml:/app/settings.yaml
-    networks:
-      honey_network:
-        ipv4_address: 10.4.0.11
   image_server:
     image: image_server:v1.0.1
     restart: always
@@ -52,6 +42,27 @@ services:
     networks:
       honey_network:
         ipv4_address: 10.4.0.12
+  alert_server:
+    image: alert_server:v1.0.1
+    restart: always
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./alert_server/settings.yaml:/app/settings.yaml
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.11
+  matrix_server:
+    image: matrix_server:v1.0.1
+    restart: always
+    ports:
+      - "8084:8084"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./matrix_server/settings.yaml:/app/settings.yaml
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.10
 networks:
   honey_network:
     driver: bridge
