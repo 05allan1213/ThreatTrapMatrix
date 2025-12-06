@@ -44,6 +44,13 @@ func init() {
 
 // RegisterCommand 注册业务相关命令
 func RegisterCommand() {
+	// 注册任务列表命令
+	tk := taskService{}
+	registerCommand("task", "list", "任务列表", tk.List)
+
+	// 注册IP列表命令
+	is := ipService{}
+	registerCommand("ip", "list", "ip列表", is.List)
 }
 
 // runBaseCommand 执行基础命令

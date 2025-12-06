@@ -69,6 +69,6 @@ func (nc *NodeClient) Register() error {
 		return fmt.Errorf("注册请求失败: %v", err)
 	}
 
-	logrus.Infof("节点注册成功，上报信息: %+v", req)
+	logrus.Infof("节点注册成功")
 	return nil
 }

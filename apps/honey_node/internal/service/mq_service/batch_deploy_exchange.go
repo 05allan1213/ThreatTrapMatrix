@@ -13,6 +13,7 @@ import (
 	"honey_node/internal/utils/random"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -43,8 +44,8 @@ func BatchDeployExChange(msg string) error {
 
 	// 异步执行批量部署核心逻辑（非阻塞，避免阻塞MQ消费流程）
 	go func(req models.BatchDeployRequest, taskID string) {
-		// 协程池控制：限制IP创建的并发数为100，防止资源耗尽
-		var maxChan = make(chan struct{}, 100)
+		// 协程池控制：控制并发数
+		var maxChan = make(chan struct{}, 1)
 		// 等待组：用于等待所有IP创建协程执行完成
 		var wait sync.WaitGroup
 		// 汇总所有待创建的端口转发配置
@@ -78,7 +79,7 @@ func BatchDeployExChange(msg string) error {
 					LinkName: linkName,
 					Network:  req.Network,
 				})
-
+				time.Sleep(1 * time.Second)
 				// 加锁保证进度计算和状态上报的原子性
 				mutex.Lock()
 				// 原子更新已完成部署的IP数量，避免并发计数错误

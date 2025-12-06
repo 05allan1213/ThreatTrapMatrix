@@ -4,6 +4,7 @@ import "fmt"
 
 // TaskModel 任务模型
 type TaskModel struct {
+	Model
 	TaskID          string              `json:"taskID"`                       // 任务ID
 	Type            int8                `json:"type"`                         // 任务类型 1 批量部署
 	BatchDeployData *BatchDeployRequest `gorm:"serializer:json" json:"value"` // 批量部署参数 值 json字符串
