@@ -37,6 +37,8 @@ func Run() {
 	g.DELETE("deploy", middleware.BindJsonMiddleware[api.RemoveDeployRequest], api.App.RemoveDeployView)
 	// GET /deploy/progress/:id : 获取部署进度
 	g.GET("deploy/progress/:id", middleware.BindUriMiddleware[models.IDRequest], api.App.NetProgressView)
+	// GET /deploy/detail : 获取子网ip详情
+	g.GET("deploy/detail", middleware.BindQueryMiddleware[api.DetailRequest], api.App.DetailView)
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
