@@ -5,10 +5,11 @@ import "fmt"
 // TaskModel 任务模型
 type TaskModel struct {
 	Model
-	TaskID          string              `json:"taskID"`                       // 任务ID
-	Type            int8                `json:"type"`                         // 任务类型 1 批量部署
-	BatchDeployData *BatchDeployRequest `gorm:"serializer:json" json:"value"` // 批量部署参数 值 json字符串
-	Status          int8                `json:"status"`                       // 任务状态 0 运行中 1 运行完成
+	TaskID                string                    `json:"taskID"`                                       // 任务ID
+	Type                  int8                      `json:"type"`                                         // 任务类型 1 批量部署
+	BatchDeployData       *BatchDeployRequest       `gorm:"serializer:json" json:"batchDeployData"`       // 批量部署参数 值 json字符串
+	BatchUpdateDeployData *BatchUpdateDeployRequest `gorm:"serializer:json" json:"BatchUpdateDeployData"` // 批量更新部署参数 值 json字符串
+	Status                int8                      `json:"status"`                                       // 任务状态 0 运行中 1 运行完成
 }
 
 // BatchDeployRequest MQ消费的批量部署请求结构体
@@ -18,6 +19,14 @@ type BatchDeployRequest struct {
 	Network string     `json:"network"` // 网卡名称
 	TanIp   string     `json:"tanIp"`   // 探针IP
 	IPList  []DeployIp `json:"ipList"`  // 待部署IP列表
+}
+
+// BatchUpdateDeployRequest MQ消费的批量更新部署请求结构体
+type BatchUpdateDeployRequest struct {
+	NetID    uint       `json:"netID"`    // 子网ID
+	LogID    string     `json:"logID"`    // 日志ID
+	IpList   []string   `json:"ipList"`   // 待更新IP列表
+	PortList []PortInfo `json:"portList"` // 待更新端口列表
 }
 
 // DeployIp 单IP部署配置信息结构体

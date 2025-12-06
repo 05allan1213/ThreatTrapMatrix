@@ -177,6 +177,7 @@ func DeployTask(req models.BatchDeployRequest, taskID string) {
 			// 待补充逻辑：仅通知失败的端口绑定信息给服务端
 		}(info)
 	}
+	logrus.Infof("批量部署完成")
 
 	// 第三步：更新批量部署任务状态为执行完成
 	var taskModel models.TaskModel

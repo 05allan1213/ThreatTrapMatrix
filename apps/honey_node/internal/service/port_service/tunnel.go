@@ -38,19 +38,21 @@ func Tunnel(localAddr, targetAddr string) (err error) {
 	tunnelStore.Store(localAddr, listener) // 将监听实例存入全局存储
 
 	// 持续接受客户端连接
-	for {
-		clientConn, err := listener.Accept()
-		if err != nil {
-			if strings.Contains(err.Error(), "closed") { // 监听被主动关闭时退出循环
+	go func() {
+		for {
+			clientConn, err := listener.Accept()
+			if err != nil {
+				if strings.Contains(err.Error(), "closed") {
+					break
+				}
+				logrus.Errorf("接受客户端连接失败: %v", err)
 				break
 			}
-			logrus.Errorf("接受客户端连接失败: %v", err)
-			break
-		}
 
-		// 为每个新连接启动独立协程处理，避免阻塞主监听循环
-		go handleConnection(global.GrpcClient, clientConn, targetAddr)
-	}
+			// 为每个连接创建一个goroutine处理
+			go handleConnection(global.GrpcClient, clientConn, targetAddr)
+		}
+	}()
 	return nil
 }
 
