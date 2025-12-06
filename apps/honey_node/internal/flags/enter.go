@@ -17,6 +17,7 @@ type FlagOptions struct {
 	File    string // 配置文件路径参数
 	Version bool   // 版本信息打印开关
 	DB      bool   // 数据库表结构迁移开关
+	Clear   bool   // 清空数据开关
 	Menu    string // 功能菜单参数
 	Type    string // 功能子类型参数
 	Value   string // 功能参数值
@@ -33,6 +34,7 @@ func init() {
 	flag.BoolVar(&Options.Version, "vv", false, "打印当前版本")
 	flag.BoolVar(&Options.Help, "h", false, "帮助信息")
 	flag.BoolVar(&Options.DB, "db", false, "迁移表结构")
+	flag.BoolVar(&Options.Clear, "c", false, "快速清空数据")
 	flag.StringVar(&Options.Menu, "m", "", "菜单 user")
 	flag.StringVar(&Options.Type, "t", "", "类型 create list")
 	flag.StringVar(&Options.Value, "v", "", "值")
@@ -64,6 +66,10 @@ func runBaseCommand() {
 	if Options.Version {
 		logrus.Infof("当前版本: %s  commit: %s, buildTime: %s",
 			global.Version, global.Commit, global.BuildTime)
+		os.Exit(0)
+	}
+	if Options.Clear {
+		Clear()
 		os.Exit(0)
 	}
 }
