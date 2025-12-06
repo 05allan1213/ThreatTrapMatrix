@@ -4,8 +4,8 @@ package api
 // Description: WebSocket通信API接口
 
 import (
-	"fmt"
 	"net/http"
+	"ws_server/internal/service/ws_service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -31,21 +31,20 @@ func (Api) WsView(c *gin.Context) {
 		logrus.Errorf("ws升级失败 %s", err)
 		return
 	}
-	logrus.Infof("客户端连接成功 %s", conn.RemoteAddr())
+	addr := conn.RemoteAddr()
+	logrus.Infof("客户端连接成功 %s", addr)
+	ws_service.AddWs(conn)
 
 	// 2. 循环读取客户端消息，维持长连接
 	for {
 		// 读取客户端消息：t为消息类型（文本/二进制等），p为消息内容，err为读取错误
-		t, p, err := conn.ReadMessage()
+		_, _, err := conn.ReadMessage()
 		if err != nil {
 			break // 读取失败（如客户端断开），退出循环
 		}
-		// 回复echo消息：将客户端消息包装后以文本类型返回
-		conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("你说的是：%s吗？", string(p))))
-		fmt.Println(t, string(p)) // 控制台打印消息类型和内容（调试用）
 	}
 
 	// 3. 连接清理：关闭WS连接，记录断开日志
-	defer conn.Close()                                   // 延迟关闭连接，确保最终执行
-	logrus.Infof("客户端断开连接 %s", conn.RemoteAddr()) // 修正原日志文案，准确描述连接状态
+	logrus.Infof("客户端断开连接 %s", addr)
+	ws_service.RemoveWs(addr.String())
 }

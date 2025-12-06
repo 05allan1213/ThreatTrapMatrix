@@ -4,15 +4,12 @@ package mq_service
 // Description: MQ通用消费者注册模块，基于泛型实现通用的消息消费逻辑，自动完成消息队列监听、JSON反序列化及自定义处理函数调用，适配任意结构化消息格式
 
 import (
-	"encoding/json"
 	"log"
 	"ws_server/internal/global"
-
-	"github.com/sirupsen/logrus"
 )
 
 // registerConsumer 通用MQ消费者注册函数
-func registerConsumer[T any](queueName string, fun func(msg T)) {
+func registerConsumer(queueName string, fun func(msg []byte)) {
 	// 注册MQ消费者，监听指定队列
 	msgs, err := global.Queue.Consume(
 		queueName, // 消费的目标队列名称
@@ -30,18 +27,6 @@ func registerConsumer[T any](queueName string, fun func(msg T)) {
 
 	// 循环监听并处理队列消息
 	for d := range msgs {
-		// 初始化泛型类型变量，用于接收反序列化后的消息数据
-		var data T
-		// 将消息体JSON数据反序列化为泛型T类型
-		err = json.Unmarshal(d.Body, &data)
-		if err != nil {
-			// 反序列化失败时记录错误日志，跳过当前消息
-			logrus.Errorf("json解析失败 %s %s", err, string(d.Body))
-			continue
-		}
-		// 记录消息接收日志（含队列名和消息内容）
-		logrus.Infof("%s 接收回调消息 %s", queueName, string(d.Body))
-		// 调用自定义处理函数处理解析后的消息数据
-		fun(data)
+		fun(d.Body)
 	}
 }
