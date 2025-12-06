@@ -38,6 +38,18 @@ func Run() {
 		logrus.Fatalf("声明队列失败: %v", err)
 		return
 	}
+	_, err = global.Queue.QueueDeclare(
+		cfg.BatchRemoveDeployStatusTopic, // 队列名称
+		false,                            // 持久性
+		false,                            // 自动删除
+		false,                            // 排他性
+		false,                            // 非阻塞
+		nil,                              // 其他参数
+	)
+	if err != nil {
+		logrus.Fatalf("声明队列失败: %v", err)
+		return
+	}
 
 	// 注册交换器
 	RegisterExChange()
@@ -46,4 +58,6 @@ func Run() {
 	go RevBatchDeployStatusMq()
 	// 异步启动批量更新部署状态消息的消费协程
 	go RevBatchUpdateDeployStatusMq()
+	// 异步启动批量删除部署状态消息的消费协程
+	go RevBatchRemoveDeployStatusMq()
 }

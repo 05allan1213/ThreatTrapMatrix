@@ -62,6 +62,7 @@ func RemoveDeployTask(req models.BatchRemoveDeployRequest, taskID string) {
 			// 接口删除失败时记录错误信息
 			res.ErrorMsg = err.Error()
 		}
+		global.DB.Delete(&models.IpModel{}, "ip = ?", s.Ip)
 		// 发送当前IP的删除部署状态消息
 		SendRemoveDeployStatusMsg(res)
 	}
