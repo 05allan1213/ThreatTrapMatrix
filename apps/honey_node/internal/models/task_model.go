@@ -8,7 +8,8 @@ type TaskModel struct {
 	TaskID                string                    `json:"taskID"`                                       // 任务ID
 	Type                  int8                      `json:"type"`                                         // 任务类型 1 批量部署
 	BatchDeployData       *BatchDeployRequest       `gorm:"serializer:json" json:"batchDeployData"`       // 批量部署参数 值 json字符串
-	BatchUpdateDeployData *BatchUpdateDeployRequest `gorm:"serializer:json" json:"BatchUpdateDeployData"` // 批量更新部署参数 值 json字符串
+	BatchUpdateDeployData *BatchUpdateDeployRequest `gorm:"serializer:json" json:"batchUpdateDeployData"` // 批量更新部署参数 值 json字符串
+	BatchRemoveDeployData *BatchRemoveDeployRequest `gorm:"serializer:json" json:"batchRemoveDeployData"` // 批量删除部署参数 值 json字符串
 	Status                int8                      `json:"status"`                                       // 任务状态 0 运行中 1 运行完成
 }
 
@@ -27,6 +28,20 @@ type BatchUpdateDeployRequest struct {
 	LogID    string     `json:"logID"`    // 日志ID
 	IpList   []string   `json:"ipList"`   // 待更新IP列表
 	PortList []PortInfo `json:"portList"` // 待更新端口列表
+}
+
+// BatchRemoveDeployRequest MQ消费的批量删除部署请求结构体
+type BatchRemoveDeployRequest struct {
+	NetID  uint             `json:"netID"`  // 子网ID
+	LogID  string           `json:"logID"`  // 日志ID
+	TanIp  string           `json:"tanIp"`  // 探针IP
+	IPList []RemoveDeployIp `json:"ipList"` // 待删除IP列表
+}
+
+// RemoveDeployIp 单IP删除配置信息结构体
+type RemoveDeployIp struct {
+	Ip       string `json:"ip"`       // 待删除的IP地址
+	LinkName string `json:"linkName"` // 待删除的IP对应的网络接口名称
 }
 
 // DeployIp 单IP部署配置信息结构体

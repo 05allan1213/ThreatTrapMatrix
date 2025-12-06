@@ -118,3 +118,9 @@ func GetMACAddress(linkName string) (string, error) {
 	}
 	return strings.TrimSpace(mac), nil
 }
+
+// RemoveInterface 删除指定网络接口
+func RemoveInterface(iface string) error {
+	err := cmd.Cmd(fmt.Sprintf("ip link del %s", iface))
+	return err
+}

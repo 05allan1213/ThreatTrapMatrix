@@ -49,6 +49,8 @@ type MQ struct {
 	BatchDeployStatusTopic        string `yaml:"batchDeployStatusTopic"`        // 批量部署上报状态的topic
 	BatchUpdateDeployExchangeName string `yaml:"batchUpdateDeployExchangeName"` // 批量更新部署交换机名称
 	BatchUpdateDeployStatusTopic  string `yaml:"batchUpdateDeployStatusTopic"`  // 批量更新部署上报状态的topic
+	BatchRemoveDeployExchangeName string `yaml:"batchRemoveDeployExchangeName"` // 批量删除部署交换机名称
+	BatchRemoveDeployStatusTopic  string `yaml:"batchRemoveDeployStatusTopic"`  // 批量删除部署上报状态的topic
 }
 
 // Addr 获取rabbitMQ地址

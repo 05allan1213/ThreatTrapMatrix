@@ -50,6 +50,18 @@ func Run() {
 		logrus.Fatalf("BatchUpdateDeployStatusTopic声明队列失败: %v", err)
 		return
 	}
+	_, err = global.Queue.QueueDeclare(
+		cfg.BatchRemoveDeployStatusTopic, // 队列名称
+		false,                            // 持久性
+		false,                            // 自动删除
+		false,                            // 排他性
+		false,                            // 非阻塞
+		nil,                              // 其他参数
+	)
+	if err != nil {
+		logrus.Fatalf("BatchRemoveDeployStatusTopic声明队列失败: %v", err)
+		return
+	}
 
 	// 启动创建IP交换器的消费者协程
 	go register(cfg.CreateIpExchangeName, CreateIpExChange)
@@ -61,6 +73,8 @@ func Run() {
 	go register(cfg.BatchDeployExchangeName, BatchDeployExChange)
 	// 启动批量更新部署交换器的消费者协程
 	go register(cfg.BatchUpdateDeployExchangeName, BatchUpdateDeployExChange)
+	// 启动批量删除部署交换器的消费者协程
+	go register(cfg.BatchRemoveDeployExchangeName, BatchRemoveDeployExChange)
 }
 
 // register 注册单个交换器的消费者逻辑
