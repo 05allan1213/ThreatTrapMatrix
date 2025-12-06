@@ -22,8 +22,6 @@ func Run() {
 
 	// 创建默认Gin引擎
 	r := gin.Default()
-	// 创建静态路由
-	r.Static("uploads", "uploads")
 	// 创建API根路由分组
 	g := r.Group("matrix_server")
 	g.Use(middleware.LogMiddleware, middleware.AuthMiddleware) // 系统内部必须登录才能继续使用
