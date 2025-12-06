@@ -132,6 +132,7 @@ func (Api) DeployView(c *gin.Context) {
 		NetID:   cr.NetID,
 		LogID:   logID,
 		Network: model.Network,
+		TanIp:   model.IP,
 	}
 
 	// 初始化待入库的诱捕IP列表、待入库的诱捕端口列表
@@ -208,16 +209,9 @@ func (Api) DeployView(c *gin.Context) {
 			})
 		}
 
-		// 判断当前IP是否为探针IP（与子网IP一致则为探针IP）
-		var isTan bool
-		if model.IP == info.Ip {
-			isTan = true
-		}
-
 		// 组装MQ批量部署指令中的IP配置数据
 		batchDeployData.IPList = append(batchDeployData.IPList, mq_service.DeployIp{
 			Ip:       info.Ip,
-			IsTan:    isTan,
 			Mask:     model.Mask,
 			PortList: portList,
 		})

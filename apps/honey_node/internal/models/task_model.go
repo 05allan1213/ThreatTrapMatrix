@@ -16,13 +16,13 @@ type BatchDeployRequest struct {
 	NetID   uint       `json:"netID"`   // 子网ID
 	LogID   string     `json:"logID"`   // 日志ID
 	Network string     `json:"network"` // 网卡名称
+	TanIp   string     `json:"tanIp"`   // 探针IP
 	IPList  []DeployIp `json:"ipList"`  // 待部署IP列表
 }
 
 // DeployIp 单IP部署配置信息结构体
 type DeployIp struct {
 	Ip       string     `json:"ip"`       // 待部署的诱捕IP地址
-	IsTan    bool       `json:"isTan"`    // 是否为探针IP标识
 	Mask     int8       `json:"mask"`     // IP子网掩码
 	PortList []PortInfo `json:"portList"` // 该IP关联的端口转发配置列表
 }

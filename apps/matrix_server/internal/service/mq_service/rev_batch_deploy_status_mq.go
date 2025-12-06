@@ -16,13 +16,13 @@ import (
 
 // DeployStatusRequest 部署状态上报消息结构体
 type DeployStatusRequest struct {
-	NetID    uint    `json:"netID"`    // 子网ID，标识部署所属的子网
-	IP       string  `json:"ip"`       // 部署的诱捕IP地址
-	Mac      string  `json:"mac"`      // IP绑定的MAC地址
-	LinkName string  `json:"linkName"` // 网络接口名称
-	LogID    string  `json:"logID"`    // 日志ID，用于关联部署操作的日志记录
-	ErrorMsg string  `json:"errorMsg"` // 部署失败时的错误信息，成功时为空
-	Progress float64 `json:"progress"` // 部署进度（1-100的小数，100表示部署完成）
+	NetID    uint   `json:"netID"`    // 子网ID，标识部署所属的子网
+	IP       string `json:"ip"`       // 部署的诱捕IP地址
+	Mac      string `json:"mac"`      // IP绑定的MAC地址
+	LinkName string `json:"linkName"` // 网络接口名称
+	LogID    string `json:"logID"`    // 日志ID，用于关联部署操作的日志记录
+	ErrorMsg string `json:"errorMsg"` // 部署失败时的错误信息，成功时为空
+	Manuf    string `json:"manuf"`    // 厂商信息
 }
 
 // RevBatchDeployStatusMq 消费批量部署状态MQ消息
@@ -54,12 +54,32 @@ func RevBatchDeployStatusMq() {
 		}
 		logrus.Infof("收到批量部署回调 %s", d.Body)
 
+		// 计算部署进度
+		key := fmt.Sprintf("deploy_create_%d", data.NetID)
+		global.Redis.HDel(context.Background(), key, data.IP)
+		maps := global.Redis.HGetAll(context.Background(), key).Val()
+		remainingQuantity := len(maps) // 剩余个数
+		logrus.Infof("子网 %d 剩余个数 %d", data.NetID, remainingQuantity)
+
 		// 查询该子网下对应IP的诱捕IP记录
 		var honeyIp models.HoneyIpModel
 		err = global.DB.Take(&honeyIp, "net_id = ? and ip = ?", data.NetID, data.IP).Error
 		if err != nil {
 			logrus.Errorf("honeyIp记录不存在 %s", d.Body)
 			continue // 记录不存在跳过当前消息
+		}
+
+		if data.ErrorMsg == "存活主机" {
+			// 入存活主机的库
+			global.DB.Create(&models.HostModel{
+				NodeID: honeyIp.NodeID,
+				NetID:  data.NetID,
+				IP:     data.IP,
+				Mac:    data.Mac,
+				Manuf:  data.Manuf,
+			})
+			global.DB.Delete(&honeyIp)
+			continue
 		}
 
 		// 构建诱捕IP记录更新数据
@@ -80,8 +100,8 @@ func RevBatchDeployStatusMq() {
 			logrus.Errorf("记录更新失败 %s %s", err, d.Body)
 		}
 
-		// 部署进度为100表示当前子网部署完成，释放分布式锁
-		if data.Progress == 100 {
+		// 如何计算，当前子网部署完了？
+		if remainingQuantity == 0 {
 			// 构建子网部署锁的key（与部署时的锁key保持一致）
 			mutexname := fmt.Sprintf("deploy_create_lock_%d", data.NetID)
 			global.Redis.Del(context.Background(), mutexname)

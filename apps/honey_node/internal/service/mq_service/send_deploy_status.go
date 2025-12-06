@@ -13,13 +13,13 @@ import (
 
 // DeployStatusRequest 部署状态上报请求结构体
 type DeployStatusRequest struct {
-	NetID    uint    `json:"netID"`    // 子网ID，标识部署所属的子网
-	IP       string  `json:"ip"`       // 部署的诱捕IP地址
-	Mac      string  `json:"mac"`      // IP绑定的MAC地址
-	LinkName string  `json:"linkName"` // 网络接口名称
-	LogID    string  `json:"logID"`    // 日志ID，用于关联部署操作的日志记录
-	ErrorMsg string  `json:"errorMsg"` // 部署失败时的错误信息，成功时为空
-	Progress float64 `json:"progress"` // 部署进度（1-100的小数）
+	NetID    uint   `json:"netID"`    // 子网ID，标识部署所属的子网
+	IP       string `json:"ip"`       // 部署的诱捕IP地址
+	Mac      string `json:"mac"`      // IP绑定的MAC地址
+	LinkName string `json:"linkName"` // 网络接口名称
+	LogID    string `json:"logID"`    // 日志ID，用于关联部署操作的日志记录
+	ErrorMsg string `json:"errorMsg"` // 部署失败时的错误信息，成功时为空
+	Manuf    string `json:"manuf"`    // 厂商信息
 }
 
 // SendDeployStatusMsg 发送部署状态消息到MQ队列
