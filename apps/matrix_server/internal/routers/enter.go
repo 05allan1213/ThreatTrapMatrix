@@ -39,6 +39,8 @@ func Run() {
 	g.GET("deploy/progress/:id", middleware.BindUriMiddleware[models.IDRequest], api.App.NetProgressView)
 	// GET /deploy/detail : 获取子网ip详情
 	g.GET("deploy/detail", middleware.BindQueryMiddleware[api.DetailRequest], api.App.DetailView)
+	// POST /select_matrix_template : 选择矩阵模板
+	g.POST("select_matrix_template", middleware.BindJsonMiddleware[api.SelectMatrixTemplateRequest], api.App.SelectMatrixTemplateView)
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
