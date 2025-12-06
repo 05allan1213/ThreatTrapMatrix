@@ -10,6 +10,7 @@ import (
 	"honey_node/internal/service/mq_service"
 	"honey_node/internal/service/port_service"
 	"honey_node/internal/service/suricata_service"
+	"honey_node/internal/service/task_service"
 
 	"github.com/sirupsen/logrus"
 )
@@ -62,6 +63,9 @@ func main() {
 
 	// 加载端口转发
 	port_service.LoadTunnel()
+
+	// 启动任务服务
+	task_service.Run()
 
 	// 阻塞主协程，保持程序运行
 	select {}
