@@ -10,13 +10,11 @@ import (
 	"matrix_server/internal/middleware"
 	"matrix_server/internal/models"
 	"matrix_server/internal/service/mq_service"
+	"matrix_server/internal/service/redis_service/net_lock"
 	"matrix_server/internal/service/redis_service/net_progress"
 	"matrix_server/internal/utils/response"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -190,27 +188,13 @@ func (Api) DeployView(c *gin.Context) {
 		})
 	}
 
-	// 4. 分布式锁控制子网部署并发，防止同一子网重复部署
-	// 创建redsync的Redis连接池
-	pool := goredis.NewPool(global.Redis)
-	// 创建redsync实例
-	rs := redsync.New(pool)
-	// 构建子网部署操作的分布式锁Key
-	mutexname := fmt.Sprintf("deploy_action_lock_%d", cr.NetID)
-	// 创建基于子网ID的分布式互斥锁
-	mutex := rs.NewMutex(mutexname,
-		redsync.WithExpiry(20*time.Minute),           // 锁过期时间20分钟
-		redsync.WithTries(1),                         // 锁获取重试次数1次
-		redsync.WithRetryDelay(500*time.Millisecond), // 锁获取重试间隔500毫秒
-	)
-
-	// 尝试获取分布式锁（校验子网是否正在部署）
-	if err1 := mutex.Lock(); err1 != nil {
+	err = net_lock.Lock(cr.NetID)
+	if err != nil {
 		response.FailWithMsg("当前子网正在部署中", c)
 		return
 	}
 
-	// 5. 数据库事务处理：入库诱捕IP/端口、初始化部署进度、下发MQ部署消息
+	// 4. 数据库事务处理：入库诱捕IP/端口、初始化部署进度、下发MQ部署消息
 	err = global.DB.Transaction(func(tx *gorm.DB) error {
 		// 入库诱捕IP记录（状态为部署中）
 		var honeyIpToIDMap = map[string]uint{}
@@ -222,7 +206,7 @@ func (Api) DeployView(c *gin.Context) {
 
 		// 入库诱捕端口记录（补充HoneyIpID关联）
 		if len(createHoneyPortList) > 0 {
-			// 构建IP到诱捕IPID的映射
+			// 构建IP到诱捕ipID的映射
 			for _, ipModel := range createHoneyIpList {
 				honeyIpToIDMap[ipModel.IP] = ipModel.ID
 			}
@@ -260,7 +244,7 @@ func (Api) DeployView(c *gin.Context) {
 	if err != nil {
 		logrus.Errorf("部署失败 %s", err)
 		response.FailWithError(err, c)
-		// 注：此处未主动释放分布式锁，因锁有20分钟过期时间，避免重复部署风险
+		net_lock.UnLock(cr.NetID)
 		return
 	}
 

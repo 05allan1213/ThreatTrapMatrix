@@ -4,12 +4,11 @@ package mq_service
 // Description: 批量更新部署状态消息消费模块，实现MQ消息消费、更新部署状态解析、子网更新进度统计、端口状态更新及分布式锁释放等核心逻辑
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"matrix_server/internal/global"
 	"matrix_server/internal/models"
+	"matrix_server/internal/service/redis_service/net_lock"
 	"matrix_server/internal/service/redis_service/net_progress"
 
 	"github.com/sirupsen/logrus"
@@ -103,9 +102,7 @@ func RevBatchUpdateDeployStatusMq() {
 
 		// 判定子网更新部署完成：已完成数等于总数时释放分布式锁
 		if netDeployInfo.CompletedCount == netDeployInfo.AllCount {
-			// 构建子网部署操作的分布式锁Key
-			mutexname := fmt.Sprintf("deploy_action_lock_%d", data.NetID)
-			global.Redis.Del(context.Background(), mutexname) // 释放分布式锁
+			net_lock.UnLock(data.NetID)
 			logrus.Infof("子网更新部署完成 解锁")
 		}
 	}

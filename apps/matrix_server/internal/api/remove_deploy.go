@@ -5,18 +5,15 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"matrix_server/internal/global"
 	"matrix_server/internal/middleware"
 	"matrix_server/internal/models"
 	"matrix_server/internal/service/mq_service"
+	"matrix_server/internal/service/redis_service/net_lock"
 	"matrix_server/internal/service/redis_service/net_progress"
 	"matrix_server/internal/utils/response"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -78,28 +75,13 @@ func (Api) RemoveDeployView(c *gin.Context) {
 		})
 	}
 
-	// 3. 校验子网部署状态并加分布式锁，防止并发部署操作
-	// 创建redsync的Redis连接池
-	pool := goredis.NewPool(global.Redis)
-	// 创建redsync实例
-	rs := redsync.New(pool)
-
-	// 构建分布式锁的Key（按子网ID区分）
-	mutexname := fmt.Sprintf("deploy_action_lock_%d", cr.NetID)
-	// 创建基于子网ID的分布式互斥锁
-	mutex := rs.NewMutex(mutexname,
-		redsync.WithExpiry(20*time.Minute),           // 锁过期时间20分钟
-		redsync.WithTries(1),                         // 锁获取重试次数1次
-		redsync.WithRetryDelay(500*time.Millisecond), // 锁获取重试间隔500毫秒
-	)
-
-	// 尝试获取分布式锁
-	if err1 := mutex.Lock(); err1 != nil {
+	err = net_lock.Lock(cr.NetID)
+	if err != nil {
 		response.FailWithMsg("当前子网正在部署中", c)
 		return
 	}
 
-	// 4. 事务处理：更新IP状态并下发MQ删除部署消息
+	// 3. 事务处理：更新IP状态并下发MQ删除部署消息
 	err = global.DB.Transaction(func(tx *gorm.DB) error {
 		// 将蜜罐IP状态更新为删除中（状态4）
 		err = global.DB.Model(&honeyIpList).Update("status", 4).Error
@@ -128,6 +110,7 @@ func (Api) RemoveDeployView(c *gin.Context) {
 		// 记录部署失败日志
 		logrus.Errorf("部署失败 %s", err)
 		response.FailWithError(err, c)
+		net_lock.UnLock(cr.NetID)
 		return
 	}
 
