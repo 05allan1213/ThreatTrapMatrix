@@ -15,7 +15,7 @@ func Run() {
 	// 声明MQ告警队列，配置队列基础属性
 	_, err := global.Queue.QueueDeclare(
 		cfg.AlertTopic, // 队列名称：从配置读取告警队列主题
-		false,          // 持久性：false表示队列不持久化（服务重启后队列消失）
+		true,           // 持久性：true表示队列数据持久化保存，MQ重启后数据不丢失
 		false,          // 自动删除：false表示队列不会自动删除
 		false,          // 排他性：false表示非排他队列（允许多消费者连接）
 		false,          // 非阻塞：false表示同步声明队列，等待声明完成

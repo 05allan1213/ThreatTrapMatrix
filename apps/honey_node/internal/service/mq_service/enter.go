@@ -35,7 +35,7 @@ func Run() {
 func queueDeclare(queueName string) {
 	_, err := global.Queue.QueueDeclare(
 		queueName, // 队列名称
-		false,     // 非持久化：队列数据不落地，MQ重启后丢失（适配临时状态消息）
+		true,      // 持久性：true表示队列数据持久化保存，MQ重启后数据不丢失
 		false,     // 非自动删除：无消费者时不自动删除队列
 		false,     // 非排他性：允许多个消费者监听同一队列
 		false,     // 非阻塞：不等待服务器额外响应
