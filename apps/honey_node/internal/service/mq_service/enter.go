@@ -116,7 +116,7 @@ func register(exChangeName string, fun func(msg string) error) {
 		nil,           // 额外参数：无
 	)
 	if err != nil {
-		logrus.Fatalf("绑定队列失败 %s", err)
+		logrus.Fatalf("%s 绑定队列失败 %s", queue.Name, err)
 	}
 
 	// 注册消费者，开始监听队列消息（关闭自动确认，手动控制消息确认）

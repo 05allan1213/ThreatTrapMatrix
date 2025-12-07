@@ -164,8 +164,9 @@ func (HoneyPortApi) UpdateView(c *gin.Context) {
 	var portList []models.HoneyPortModel
 	global.DB.Find(&portList, "honey_ip_id = ?", cr.HoneyIPID)
 	req := mq_service.BindPortRequest{
-		IP:    honeyIPModel.IP,
-		LogID: "",
+		IP:        honeyIPModel.IP,
+		HoneyIpID: honeyIPModel.ID,
+		LogID:     "",
 	}
 	for _, model := range portList {
 		req.PortList = append(req.PortList, mq_service.PortInfo{

@@ -13,9 +13,10 @@ import (
 
 // BindPortRequest 绑定诱捕端口的消息结构体
 type BindPortRequest struct {
-	IP       string     `json:"ip"`       // 要绑定端口的诱捕IP地址
-	PortList []PortInfo `json:"portList"` // 端口绑定配置列表（外部端口与目标服务的映射）
-	LogID    string     `json:"logID"`    // 操作日志ID（用于追踪端口绑定操作的链路）
+	IP        string     `json:"ip"`        // 要绑定端口的诱捕IP地址
+	PortList  []PortInfo `json:"portList"`  // 端口绑定配置列表（外部端口与目标服务的映射）
+	HoneyIpID uint       `json:"honeyIpID"` // 绑定的诱捕IPID
+	LogID     string     `json:"logID"`     // 操作日志ID（用于追踪端口绑定操作的链路）
 }
 
 // PortInfo 单个端口的绑定信息结构体

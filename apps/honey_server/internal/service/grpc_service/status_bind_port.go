@@ -20,6 +20,7 @@ func (NodeService) StatusBindPort(ctx context.Context, request *node_rpc.StatusB
 
 	// 查询指定ID的诱捕IP记录（预加载关联的端口列表）
 	var honeyIPModel models.HoneyIpModel
+	logrus.Infof("端口转发回调 %d %#v", request.HoneyIPID, request.PortInfoList)
 	err1 := global.DB.Preload("PortList").Take(&honeyIPModel, request.HoneyIPID).Error
 	if err1 != nil {
 		// 诱捕IP不存在时返回错误

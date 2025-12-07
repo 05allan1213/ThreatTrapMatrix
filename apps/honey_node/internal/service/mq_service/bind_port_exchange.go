@@ -1,93 +1,93 @@
 package mq_service
 
 // File: honey_node/service/mq_service/bind_port_exchange.go
-// Description: 消息队列服务处理模块，负责解析端口绑定相关消息并执行端口隧道管理操作
+// Description: 节点端口绑定MQ消息处理模块，消费端口绑定指令消息，执行端口隧道创建、端口记录持久化，并将绑定结果上报至管理服务的gRPC接口
 
 import (
+	"context"
 	"encoding/json"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
+	"honey_node/internal/rpc/node_rpc"
 	"honey_node/internal/service/port_service"
-	"net"
 
 	"github.com/sirupsen/logrus"
 )
 
 // BindPortRequest 端口绑定请求结构体，接收MQ传递的端口绑定参数
 type BindPortRequest struct {
-	IP       string            `json:"ip"`       // 目标IP地址
-	PortList []models.PortInfo `json:"portList"` // 端口映射列表
-	LogID    string            `json:"logID"`    // 日志id，用于链路追踪
+	IP        string            `json:"ip"`        // 待绑定端口的目标IP地址
+	HoneyIpID uint              `json:"honeyIpID"` // 关联的诱捕IP ID，用于上报状态时关联管理服务的诱捕IP记录
+	PortList  []models.PortInfo `json:"portList"`  // 端口配置列表，包含待绑定的端口号、本地/目标地址等信息
+	LogID     string            `json:"logID"`     // 日志ID，用于关联端口绑定操作的全链路日志
 }
 
-// isLocalAddress 检查指定的IP地址是否在本地系统中存在
-func isLocalAddress(ip string) bool {
-	// 获取所有网络接口
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		logrus.Errorf("获取网络接口失败: %v", err)
-		return false
-	}
-
-	// 遍历所有网络接口
-	for _, iface := range interfaces {
-		addrs, err := iface.Addrs()
-		if err != nil {
-			continue
-		}
-
-		// 检查每个地址
-		for _, addr := range addrs {
-			var ipAddr net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ipAddr = v.IP
-			case *net.IPAddr:
-				ipAddr = v.IP
-			}
-
-			// 如果找到匹配的IP地址，返回true
-			if ipAddr != nil && ipAddr.String() == ip {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-// BindPortExChange 处理端口绑定消息，解析后执行端口隧道创建逻辑
+// BindPortExChange 消费端口绑定MQ消息的核心处理函数
 func BindPortExChange(msg string) error {
-	logrus.Infof("端口绑定消息 %#v", msg)
+	logrus.Infof("接收端口绑定消息 %#v", msg)
+
+	// 解析MQ消息体为端口绑定请求结构体
 	var req BindPortRequest
 	if err := json.Unmarshal([]byte(msg), &req); err != nil {
 		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
-		return nil // 保持原有逻辑，解析失败返回nil
+		return nil // 解析失败返回nil，不阻断后续处理（保持原有逻辑）
 	}
-	// 先把之前这个ip上的服务全部停止，避免端口占用冲突
+
+	// 第一步：停止目标IP上已有的所有端口隧道，避免端口占用冲突
 	port_service.CloseIpTunnel(req.IP)
 
+	// 初始化端口绑定状态列表，用于收集绑定结果上报至管理服务
+	var portInfoList []*node_rpc.StatusPortInfo
+
+	// 第二步：遍历端口配置列表，逐个执行端口隧道绑定
 	for _, port := range req.PortList {
-		// 检查本地是否存在该IP地址
-		if !isLocalAddress(port.IP) {
-			logrus.Warnf("本地不存在IP地址 %s，跳过端口绑定", port.IP)
-			continue
+		// 持久化端口配置记录到数据库
+		global.DB.Create(&models.PortModel{
+			TargetAddr: port.TargetAddr(), // 端口转发的目标地址
+			LocalAddr:  port.LocalAddr(),  // 本地监听地址
+		})
+
+		// 初始化端口状态信息（默认无错误）
+		portInfo := &node_rpc.StatusPortInfo{
+			Port: int64(port.Port), // 待绑定的端口号
 		}
 
-		// 起端口监听，每个端口映射独立协程处理，避免阻塞
-		global.DB.Create(&models.PortModel{
-			TargetAddr: port.TargetAddr(),
-			LocalAddr:  port.LocalAddr(),
-		})
-		go func(port models.PortInfo) {
-			err := port_service.Tunnel(port.LocalAddr(), port.TargetAddr())
-			if err != nil {
-				logrus.Errorf("端口绑定失败 %s", err)
-			}
-			// 如果报错，大概率是ip没有起来，也可能是端口没有释放掉
-			// 需要通知管理，只通知失败的
-		}(port)
+		// 执行端口隧道绑定（创建端口转发）
+		err := port_service.Tunnel(port.LocalAddr(), port.TargetAddr())
+		if err != nil {
+			// 绑定失败时记录错误日志，并填充端口状态的错误信息
+			logrus.Errorf("端口绑定失败 %s", err)
+			portInfo.Msg = err.Error()
+			// 绑定失败原因：大概率是IP未启用/端口未释放，需仅上报失败状态至管理服务
+		}
+
+		// 将端口状态加入上报列表
+		portInfoList = append(portInfoList, portInfo)
 	}
 
+	// 第三步：将端口绑定结果上报至管理服务的gRPC接口
+	reportBindPortStatus(req.HoneyIpID, portInfoList)
+	return nil
+}
+
+// reportBindPortStatus 上报端口绑定状态至管理服务
+func reportBindPortStatus(honeyIPID uint, portInfoList []*node_rpc.StatusPortInfo) error {
+	// 调用管理服务的StatusBindPort gRPC接口上报状态
+	response, err := global.GrpcClient.StatusBindPort(context.Background(), &node_rpc.StatusBindPortRequest{
+		HoneyIPID:    uint32(honeyIPID), // 转换为uint32适配gRPC参数类型
+		PortInfoList: portInfoList,
+	})
+
+	if err != nil {
+		// 上报失败记录错误日志
+		logrus.Errorf("上报端口绑定状态至管理服务失败: %v", err)
+		return err
+	}
+
+	// 上报成功记录结构化日志
+	logrus.WithFields(logrus.Fields{
+		"honeyIPID":    honeyIPID,
+		"portInfoList": portInfoList,
+	}).Infof("上报端口绑定状态至管理服务成功: %v", response)
 	return nil
 }
