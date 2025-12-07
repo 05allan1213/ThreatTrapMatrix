@@ -36,16 +36,17 @@ func ReadConfig() *config.Config {
 }
 
 // SetConfig 将配置结构体写入配置文件
-func SetConfig() {
+func SetConfig() error {
 	byteData, err := yaml.Marshal(global.Config)
 	if err != nil {
 		logrus.Errorf("配置序列化失败 %s", err)
-		return
+		return err
 	}
 	err = os.WriteFile(flags.Options.File, byteData, 0666)
 	if err != nil {
 		logrus.Errorf("配置文件写入错误 %s", err)
-		return
+		return err
 	}
 	logrus.Infof("%s 配置文件更新成功", flags.Options.File)
+	return err
 }

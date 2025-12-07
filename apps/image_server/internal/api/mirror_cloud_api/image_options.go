@@ -4,10 +4,10 @@ package mirror_cloud_api
 // Description: 镜像选项列表API接口
 
 import (
+	"fmt"
 	"image_server/internal/global"
 	"image_server/internal/models"
 	"image_server/internal/utils/response"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )

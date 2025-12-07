@@ -35,5 +35,5 @@ COPY --from=builder /app/main /app
 # 启动应用程序
 CMD ["./main"]
 
-# docker build -t image_server:v1 .
+# docker build -t image_server:v1.0.1 .
 # docker run -itd --name image_server -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock image_server:v1

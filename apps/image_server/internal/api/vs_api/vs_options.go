@@ -4,10 +4,10 @@ package vs_api
 // Description: 虚拟服务选项列表接口实现，提供前端下拉选择所需的虚拟服务选项数据
 
 import (
+	"fmt"
 	"image_server/internal/global"
 	"image_server/internal/models"
 	"image_server/internal/utils/response"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )

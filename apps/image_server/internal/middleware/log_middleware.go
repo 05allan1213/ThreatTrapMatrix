@@ -17,8 +17,11 @@ func LogMiddleware(c *gin.Context) {
 	log := global.Log
 	// 生成UUID作为请求唯一标识LogID
 	uid := uuid.New().String()
-	// 创建携带LogID的日志实例
-	logger := log.WithField("logID", uid)
+	// 创建携带LogID和客户端IP地址的日志实例
+	logger := log.WithFields(map[string]interface{}{
+		"logID":    uid,
+		"clientIP": c.ClientIP(),
+	})
 	// 将带标识的日志实例存入Gin上下文
 	c.Set("log", logger)
 }
