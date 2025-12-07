@@ -6,6 +6,7 @@ package grpc_service
 import (
 	"context"
 	"fmt"
+	"honey_server/internal/core"
 	"honey_server/internal/global"
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
@@ -17,7 +18,8 @@ import (
 // StatusCreateIP 处理节点上报的诱捕IP创建状态请求
 func (NodeService) StatusCreateIP(ctx context.Context, request *node_rpc.StatusCreateIPRequest) (pd *node_rpc.BaseResponse, err error) {
 	pd = new(node_rpc.BaseResponse) // 初始化gRPC响应对象
-
+	log := core.GetLogger()
+	log.WithField("request_data", request).Infof("接收创建ip回调")
 	// 查询对应的诱捕IP记录，验证记录存在性
 	var honeyIPModel models.HoneyIpModel
 	err1 := global.DB.Take(&honeyIPModel, request.HoneyIPID).Error

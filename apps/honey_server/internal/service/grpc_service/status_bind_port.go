@@ -6,6 +6,7 @@ package grpc_service
 import (
 	"context"
 	"fmt"
+	"honey_server/internal/core"
 	"honey_server/internal/global"
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
@@ -21,7 +22,8 @@ func (NodeService) StatusBindPort(ctx context.Context, request *node_rpc.StatusB
 
 	// 查询指定ID的诱捕IP记录（预加载关联的端口列表）
 	var honeyIPModel models.HoneyIpModel
-	logrus.Infof("端口转发回调 %d %#v", request.HoneyIPID, request.PortInfoList)
+	log := core.GetLogger()
+	log.WithField("request_data", request).Infof("接收ip绑定端口回调")
 	err1 := global.DB.Preload("PortList").Take(&honeyIPModel, request.HoneyIPID).Error
 	if err1 != nil {
 		// 诱捕IP不存在时返回错误
