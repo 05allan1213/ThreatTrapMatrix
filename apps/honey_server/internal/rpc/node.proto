@@ -147,6 +147,7 @@ message statusPortInfo {
 // 删除IP状态回调结构体
 message StatusDeleteIPRequest {
   repeated uint32 honeyIPIDList = 1; // 诱捕ipID列表
+  int64 netID = 2; // 网络id
 }
 // 传输的数据块
 message TunnelData {

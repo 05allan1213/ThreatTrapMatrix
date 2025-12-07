@@ -9,6 +9,7 @@ import (
 	"honey_server/internal/global"
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
+	"honey_server/internal/service/redis_service/net_lock"
 
 	"github.com/sirupsen/logrus"
 )
@@ -23,6 +24,8 @@ func (NodeService) StatusCreateIP(ctx context.Context, request *node_rpc.StatusC
 	if err1 != nil {
 		return nil, fmt.Errorf("诱捕ip不存在 %d", request.HoneyIPID)
 	}
+
+	net_lock.UnLock(honeyIPModel.NetID)
 
 	// 定义状态：2表示创建成功，3表示创建失败
 	var status int8 = 2

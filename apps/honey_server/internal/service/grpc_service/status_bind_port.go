@@ -9,6 +9,7 @@ import (
 	"honey_server/internal/global"
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
+	"honey_server/internal/service/redis_service/net_lock"
 
 	"github.com/sirupsen/logrus"
 )
@@ -26,6 +27,8 @@ func (NodeService) StatusBindPort(ctx context.Context, request *node_rpc.StatusB
 		// 诱捕IP不存在时返回错误
 		return nil, fmt.Errorf("诱捕ip不存在 %d", request.HoneyIPID)
 	}
+
+	net_lock.UnLock(honeyIPModel.NetID)
 
 	// 构建端口号到端口模型的映射
 	var portMap = map[int64]*models.HoneyPortModel{}

@@ -17,6 +17,7 @@ import (
 // DeleteIPRequest 删除诱捕IP的消息结构体（节点）
 type DeleteIPRequest struct {
 	IpList []IpInfo `json:"ipList"` // 待删除的诱捕IP信息列表
+	NetID  uint     `json:"netID"`  // 网络ID
 	LogID  string   `json:"logID"`  // 操作日志ID（用于全链路追踪）
 }
 
@@ -63,15 +64,16 @@ func DeleteIpExChange(msg string) error {
 	}
 
 	// 上报删除状态到服务端（通知服务端删除数据库记录）
-	reportDeleteIPStatus(idList)
+	reportDeleteIPStatus(int64(req.NetID), idList)
 	return nil
 }
 
 // reportDeleteIPStatus 通过gRPC向服务端上报IP删除状态，触发数据库记录删除
-func reportDeleteIPStatus(honeyIPIDList []uint32) error {
+func reportDeleteIPStatus(netID int64, honeyIPIDList []uint32) error {
 	// 调用服务端gRPC接口，上报删除的IPID列表
 	response, err := global.GrpcClient.StatusDeleteIP(context.Background(), &node_rpc.StatusDeleteIPRequest{
 		HoneyIPIDList: honeyIPIDList,
+		NetID:         netID,
 	})
 
 	if err != nil {

@@ -9,26 +9,41 @@ import (
 	"honey_server/internal/models"
 	"honey_server/internal/service/grpc_service"
 	"honey_server/internal/service/mq_service"
+	"honey_server/internal/service/redis_service/net_lock"
 	"honey_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 )
 
+// RemoveRequest 批量删除请求参数结构体
+type RemoveRequest struct {
+	NetID  uint   `json:"netID" binding:"required"`  // 待删除的子网ID
+	IDList []uint `json:"idList" binding:"required"` // 待删除的IP列表
+}
+
 // RemoveView 处理诱捕IP批量删除请求，包含节点状态校验与状态更新
 func (HoneyIPApi) RemoveView(c *gin.Context) {
 	log := middleware.GetLog(c)
 	// 获取批量删除请求的ID列表参数
-	cr := middleware.GetBind[models.IDListRequest](c)
+	cr := middleware.GetBind[RemoveRequest](c)
 
 	log.WithFields(map[string]interface{}{
-		"honey_ip_ids": cr.IdList,
+		"honey_ip_ids": cr.IDList,
+		"net_id":       cr.NetID,
 	}).Info("honey IP deletion request received") // 收到诱捕IP批量删除请求
+
+	var netModel models.NetModel
+	err := global.DB.Take(&netModel, cr.NetID).Error
+	if err != nil {
+		response.FailWithMsg("当前子网不存在", c)
+		return
+	}
 
 	// 查询待删除的诱捕IP列表，并预加载关联的节点信息
 	var honeyIPList []models.HoneyIpModel
-	if err := global.DB.Preload("NodeModel").Preload("NetModel").Find(&honeyIPList, "id in ?", cr.IdList).Error; err != nil {
+	if err = global.DB.Preload("NodeModel").Preload("NetModel").Find(&honeyIPList, "net_id = ? and id in ?", cr.NetID, cr.IDList).Error; err != nil {
 		log.WithFields(map[string]interface{}{
-			"honey_ip_ids": cr.IdList,
+			"honey_ip_ids": cr.IDList,
 			"error":        err,
 		}).Error("failed to fetch honey IPs") // 获取诱捕IP列表失败
 		response.FailWithMsg("查询诱捕IP失败", c)
@@ -38,7 +53,7 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 	// 检查是否存在指定的诱捕IP记录
 	if len(honeyIPList) == 0 {
 		log.WithFields(map[string]interface{}{
-			"honey_ip_ids": cr.IdList,
+			"honey_ip_ids": cr.IDList,
 		}).Warn("no honey IPs found") // 未找到诱捕IP
 		response.FailWithMsg("未找到诱捕ip", c)
 		return
@@ -49,7 +64,7 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 	for _, honeyIP := range honeyIPList {
 		if honeyIP.NodeModel.Uid != nodeUID {
 			log.WithFields(map[string]interface{}{
-				"honey_ip_ids": cr.IdList,
+				"honey_ip_ids": cr.IDList,
 				"mixed_nodes":  true,
 			}).Warn("honey IPs belong to different nodes") // 诱捕IP属于不同节点
 			response.FailWithMsg("批量删除的诱捕IP必须属于同一节点", c)
@@ -80,9 +95,16 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 		return
 	}
 
+	err = net_lock.Lock(cr.NetID)
+	if err != nil {
+		response.FailWithMsg("当前子网正在操作中", c)
+		return
+	}
+
 	// 发送删除IP消息给节点
 	req := mq_service.DeleteIPRequest{
 		LogID: log.Data["logID"].(string),
+		NetID: cr.NetID,
 	}
 	for _, model := range honeyIPList {
 		isTan := model.NetModel.IP == model.IP

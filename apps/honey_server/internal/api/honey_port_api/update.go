@@ -10,6 +10,7 @@ import (
 	"honey_server/internal/models"
 	"honey_server/internal/service/grpc_service"
 	"honey_server/internal/service/mq_service"
+	"honey_server/internal/service/redis_service/net_lock"
 	"honey_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
@@ -178,6 +179,12 @@ func (HoneyPortApi) UpdateView(c *gin.Context) {
 				"port_id":     model.ID,
 			}).Debug("port to be deleted") // 删除端口
 		}
+	}
+
+	err := net_lock.Lock(honeyIPModel.NetID)
+	if err != nil {
+		response.FailWithMsg("当前子网正在操作中", c)
+		return
 	}
 
 	// 使用事务执行端口配置的增删操作，保证数据一致性

@@ -9,6 +9,7 @@ import (
 	"honey_server/internal/global"
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
+	"honey_server/internal/service/redis_service/net_lock"
 
 	"github.com/sirupsen/logrus"
 )
@@ -19,6 +20,7 @@ func (NodeService) StatusDeleteIP(ctx context.Context, request *node_rpc.StatusD
 
 	// 根据节点上报的ID列表查询对应的诱捕IP记录
 	var honeyIPList []models.HoneyIpModel
+	net_lock.UnLock(uint(request.NetID))
 	global.DB.Find(&honeyIPList, "id in ?", request.HoneyIPIDList)
 
 	// 记录删除回调的日志

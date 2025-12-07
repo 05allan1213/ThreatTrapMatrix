@@ -14,6 +14,7 @@ import (
 // DeleteIPRequest 批量删除诱捕IP的消息结构体
 type DeleteIPRequest struct {
 	IpList []IpInfo `json:"ipList"` // 待删除的IP信息列表
+	NetID  uint     `json:"netID"`  // 网络ID
 	LogID  string   `json:"logID"`  // 操作日志ID（用于追踪批量删除操作的链路）
 }
 

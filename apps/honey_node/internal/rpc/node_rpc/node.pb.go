@@ -1208,6 +1208,7 @@ func (x *StatusPortInfo) GetMsg() string {
 type StatusDeleteIPRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	HoneyIPIDList []uint32               `protobuf:"varint,1,rep,packed,name=honeyIPIDList,proto3" json:"honeyIPIDList,omitempty"` // 诱捕ipID列表
+	NetID         int64                  `protobuf:"varint,2,opt,name=netID,proto3" json:"netID,omitempty"`                        // 网络id
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1247,6 +1248,13 @@ func (x *StatusDeleteIPRequest) GetHoneyIPIDList() []uint32 {
 		return x.HoneyIPIDList
 	}
 	return nil
+}
+
+func (x *StatusDeleteIPRequest) GetNetID() int64 {
+	if x != nil {
+		return x.NetID
+	}
+	return 0
 }
 
 // 传输的数据块
@@ -1395,9 +1403,10 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\fportInfoList\x18\x02 \x03(\v2\x18.node_rpc.statusPortInfoR\fportInfoList\"6\n" +
 	"\x0estatusPortInfo\x12\x12\n" +
 	"\x04port\x18\x01 \x01(\x03R\x04port\x12\x10\n" +
-	"\x03msg\x18\x02 \x01(\tR\x03msg\"=\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"S\n" +
 	"\x15StatusDeleteIPRequest\x12$\n" +
-	"\rhoneyIPIDList\x18\x01 \x03(\rR\rhoneyIPIDList\"<\n" +
+	"\rhoneyIPIDList\x18\x01 \x03(\rR\rhoneyIPIDList\x12\x14\n" +
+	"\x05netID\x18\x02 \x01(\x03R\x05netID\"<\n" +
 	"\n" +
 	"TunnelData\x12\x14\n" +
 	"\x05chunk\x18\x01 \x01(\fR\x05chunk\x12\x18\n" +

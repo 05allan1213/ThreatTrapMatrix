@@ -9,6 +9,7 @@ import (
 	"honey_server/internal/models"
 	"honey_server/internal/service/grpc_service"
 	"honey_server/internal/service/mq_service"
+	"honey_server/internal/service/redis_service/net_lock"
 	"honey_server/internal/utils"
 	"honey_server/internal/utils/response"
 
@@ -108,6 +109,11 @@ func (HoneyIPApi) CreateView(c *gin.Context) {
 			"node_id":  netModel.NodeModel.ID,
 		}).Warn("node is offline") // 节点离线
 		response.FailWithMsg("节点离线中", c)
+		return
+	}
+	err = net_lock.Lock(cr.NetID)
+	if err != nil {
+		response.FailWithMsg("当前子网正在操作中", c)
 		return
 	}
 
