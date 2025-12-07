@@ -9,17 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// RegisterExChange 注册系统所需的所有RabbitMQ交换器
-func RegisterExChange() {
-	cfg := global.Config.MQ
-	// 声明创建诱捕IP的交换器
-	exchangeDeclare(cfg.CreateIpExchangeName)
-	// 声明删除诱捕IP的交换器
-	exchangeDeclare(cfg.DeleteIpExchangeName)
-	// 声明绑定端口的交换器
-	exchangeDeclare(cfg.BindPortExchangeName)
-}
-
 // exchangeDeclare 声明单个RabbitMQ交换器
 func exchangeDeclare(name string) {
 	var err error
