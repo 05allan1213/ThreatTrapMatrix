@@ -23,6 +23,7 @@ const (
 	NodeService_NodeResource_FullMethodName   = "/node_rpc.NodeService/NodeResource"
 	NodeService_Command_FullMethodName        = "/node_rpc.NodeService/Command"
 	NodeService_StatusCreateIP_FullMethodName = "/node_rpc.NodeService/StatusCreateIP"
+	NodeService_StatusBindPort_FullMethodName = "/node_rpc.NodeService/StatusBindPort"
 	NodeService_StatusDeleteIP_FullMethodName = "/node_rpc.NodeService/StatusDeleteIP"
 	NodeService_Tunnel_FullMethodName         = "/node_rpc.NodeService/Tunnel"
 )
@@ -41,6 +42,8 @@ type NodeServiceClient interface {
 	Command(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CmdResponse, CmdRequest], error)
 	// 节点上报创建IP的回调
 	StatusCreateIP(ctx context.Context, in *StatusCreateIPRequest, opts ...grpc.CallOption) (*BaseResponse, error)
+	// 节点上报端口转发的回调
+	StatusBindPort(ctx context.Context, in *StatusBindPortRequest, opts ...grpc.CallOption) (*BaseResponse, error)
 	// 节点上报删除IP的回调
 	StatusDeleteIP(ctx context.Context, in *StatusDeleteIPRequest, opts ...grpc.CallOption) (*BaseResponse, error)
 	// 端口转发通道
@@ -98,6 +101,16 @@ func (c *nodeServiceClient) StatusCreateIP(ctx context.Context, in *StatusCreate
 	return out, nil
 }
 
+func (c *nodeServiceClient) StatusBindPort(ctx context.Context, in *StatusBindPortRequest, opts ...grpc.CallOption) (*BaseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BaseResponse)
+	err := c.cc.Invoke(ctx, NodeService_StatusBindPort_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *nodeServiceClient) StatusDeleteIP(ctx context.Context, in *StatusDeleteIPRequest, opts ...grpc.CallOption) (*BaseResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BaseResponse)
@@ -135,6 +148,8 @@ type NodeServiceServer interface {
 	Command(grpc.BidiStreamingServer[CmdResponse, CmdRequest]) error
 	// 节点上报创建IP的回调
 	StatusCreateIP(context.Context, *StatusCreateIPRequest) (*BaseResponse, error)
+	// 节点上报端口转发的回调
+	StatusBindPort(context.Context, *StatusBindPortRequest) (*BaseResponse, error)
 	// 节点上报删除IP的回调
 	StatusDeleteIP(context.Context, *StatusDeleteIPRequest) (*BaseResponse, error)
 	// 端口转发通道
@@ -160,6 +175,9 @@ func (UnimplementedNodeServiceServer) Command(grpc.BidiStreamingServer[CmdRespon
 }
 func (UnimplementedNodeServiceServer) StatusCreateIP(context.Context, *StatusCreateIPRequest) (*BaseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StatusCreateIP not implemented")
+}
+func (UnimplementedNodeServiceServer) StatusBindPort(context.Context, *StatusBindPortRequest) (*BaseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StatusBindPort not implemented")
 }
 func (UnimplementedNodeServiceServer) StatusDeleteIP(context.Context, *StatusDeleteIPRequest) (*BaseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method StatusDeleteIP not implemented")
@@ -249,6 +267,24 @@ func _NodeService_StatusCreateIP_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NodeService_StatusBindPort_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusBindPortRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NodeServiceServer).StatusBindPort(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NodeService_StatusBindPort_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NodeServiceServer).StatusBindPort(ctx, req.(*StatusBindPortRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _NodeService_StatusDeleteIP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StatusDeleteIPRequest)
 	if err := dec(in); err != nil {
@@ -292,6 +328,10 @@ var NodeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StatusCreateIP",
 			Handler:    _NodeService_StatusCreateIP_Handler,
+		},
+		{
+			MethodName: "StatusBindPort",
+			Handler:    _NodeService_StatusBindPort_Handler,
 		},
 		{
 			MethodName: "StatusDeleteIP",
