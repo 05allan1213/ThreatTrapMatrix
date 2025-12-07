@@ -9,9 +9,11 @@ import (
 	"alert_server/internal/models"
 	"alert_server/internal/service/common_service"
 	"alert_server/internal/utils/response"
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // WhiteIPApi 白名单IP管理接口统一入口结构体
@@ -26,27 +28,53 @@ type CreateRequest struct {
 
 // CreateView 创建白名单IP接口
 func (WhiteIPApi) CreateView(c *gin.Context) {
+	log := middleware.GetLog(c)
 	// 绑定并校验请求参数
 	cr := middleware.GetBind[CreateRequest](c)
 
 	// 校验IP是否已存在于白名单（避免重复添加）
-	var model models.WhiteIPModel
-	err := global.DB.Take(&model, "ip = ?", cr.IP).Error
-	if err == nil {
+	log.WithFields(map[string]interface{}{
+		"ip":     cr.IP,
+		"notice": cr.Notice,
+	}).Info("white IP creation request received") // 收到白名单IP创建请求
+
+	// 检查IP是否已存在
+	var existingModel models.WhiteIPModel
+	if err := global.DB.Take(&existingModel, "ip = ?", cr.IP).Error; err == nil {
+		log.WithFields(map[string]interface{}{
+			"ip":          cr.IP,
+			"existing_id": existingModel.ID,
+		}).Warn("white IP already exists") // 白名单IP已存在
 		response.FailWithMsg("白名单ip不能重复", c)
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// 处理非"记录不存在"的数据库错误
+		log.WithFields(map[string]interface{}{
+			"ip":    cr.IP,
+			"error": err,
+		}).Error("failed to check existing white IP") // 未能检查到现有的白名单IP
+		response.FailWithMsg("检查白名单IP是否存在失败", c)
 		return
 	}
 
 	// 保存白名单IP数据到数据库
-	err = global.DB.Create(&models.WhiteIPModel{
+	newModel := models.WhiteIPModel{
 		IP:     cr.IP,
 		Notice: cr.Notice,
-	}).Error
-	if err != nil {
+	}
+	if err := global.DB.Create(&newModel).Error; err != nil {
+		log.WithFields(map[string]interface{}{
+			"ip":    cr.IP,
+			"error": err,
+		}).Error("failed to create white IP") // 保存白名单IP数据到数据库失败
 		response.FailWithMsg("白名单ip保存失败", c)
 		return
 	}
 
+	log.WithFields(map[string]interface{}{
+		"white_ip_id": newModel.ID,
+		"ip":          newModel.IP,
+	}).Info("white IP created successfully") // 白名单IP保存成功
 	response.OkWithMsg("白名单ip保存成功", c)
 }
 
@@ -75,35 +103,60 @@ type UpdateRequest struct {
 
 // UpdateView 更新白名单IP接口
 func (WhiteIPApi) UpdateView(c *gin.Context) {
+	log := middleware.GetLog(c)
 	// 绑定并校验请求参数
 	cr := middleware.GetBind[UpdateRequest](c)
 
+	log.WithFields(map[string]interface{}{
+		"white_ip_id": cr.ID,
+		"new_ip":      cr.IP,
+		"new_notice":  cr.Notice,
+	}).Info("white IP update request received") // 收到白名单IP更新请求
+
 	// 校验待更新的白名单记录是否存在
 	var model models.WhiteIPModel
-	err := global.DB.Take(&model, cr.ID).Error
-	if err != nil {
+	if err := global.DB.Take(&model, cr.ID).Error; err != nil {
+		log.WithFields(map[string]interface{}{
+			"white_ip_id": cr.ID,
+			"error":       err,
+		}).Warn("white IP not found") // 白名单IP不存在
 		response.FailWithMsg("白名单ip不存在", c)
 		return
 	}
 
 	// 校验新IP是否已被其他白名单记录占用（排除当前更新的记录）
-	var newModel models.WhiteIPModel
-	err = global.DB.Take(&newModel, "id <> ? and ip = ?", cr.ID, cr.IP).Error
-	if err == nil {
-		response.FailWithMsg("修改的ip不能重复", c)
-		return
+	if cr.IP != model.IP { // 仅当IP发生变更时才检查重复
+		var duplicateModel models.WhiteIPModel
+		if err := global.DB.Take(&duplicateModel, "id <> ? and ip = ?", cr.ID, cr.IP).Error; err == nil {
+			log.WithFields(map[string]interface{}{
+				"white_ip_id": cr.ID,
+				"conflict_ip": cr.IP,
+				"conflict_id": duplicateModel.ID,
+			}).Warn("duplicate white IP found") // 存在重复IP
+			response.FailWithMsg("修改的ip不能重复", c)
+			return
+		}
 	}
 
 	// 更新白名单IP及备注信息
-	err = global.DB.Model(&model).Updates(map[string]any{
+	updateData := map[string]any{
 		"ip":     cr.IP,
 		"notice": cr.Notice,
-	}).Error
-	if err != nil {
+	}
+
+	if err := global.DB.Model(&model).Updates(updateData).Error; err != nil {
+		log.WithFields(map[string]interface{}{
+			"white_ip_id": cr.ID,
+			"update_data": updateData,
+			"error":       err,
+		}).Error("failed to update white IP") // 白名单IP更新失败
 		response.FailWithMsg("白名单ip更新失败", c)
 		return
 	}
 
+	log.WithFields(map[string]interface{}{
+		"white_ip_id": cr.ID,
+	}).Info("white IP updated successfully") // 白名单IP更新成功
 	response.OkWithMsg("白名单ip更新成功", c)
 }
 
@@ -115,17 +168,34 @@ func (WhiteIPApi) RemoveView(c *gin.Context) {
 	log := middleware.GetLog(c)
 
 	// 调用通用删除服务，批量删除白名单IP
-	successCount, err := common_service.Remove(models.WhiteIPModel{}, common_service.RemoveRequest{
-		IDList: cr.IdList,  // 待删除的白名单ID列表
-		Log:    log,        // 日志实例
-		Msg:    "白名单ip", // 业务模块名称（用于日志记录）
-	})
+	log.WithFields(map[string]interface{}{
+		"white_ip_ids": cr.IdList,
+		"total_count":  len(cr.IdList),
+	}).Info("white IP removal request received") // 收到白名单IP批量删除请求
+
+	successCount, err := common_service.Remove(
+		models.WhiteIPModel{},
+		common_service.RemoveRequest{
+			IDList: cr.IdList,
+			Log:    log,
+			Msg:    "白名单ip",
+		},
+	)
 	if err != nil {
+		log.WithFields(map[string]interface{}{
+			"white_ip_ids": cr.IdList,
+			"error":        err,
+		}).Error("failed to delete white IPs") // 删除白名单IP失败
 		msg := fmt.Sprintf("删除白名单ip失败 %s", err)
 		response.FailWithMsg(msg, c)
 		return
 	}
 
+	log.WithFields(map[string]interface{}{
+		"white_ip_ids":    cr.IdList,
+		"total_requested": len(cr.IdList),
+		"success_count":   successCount,
+	}).Info("white IPs deletion completed successfully") // 白名单IP删除成功
 	// 返回删除结果（总数量、成功数量）
 	msg := fmt.Sprintf("删除成功 共%d个，成功%d个", len(cr.IdList), successCount)
 	response.OkWithMsg(msg, c)

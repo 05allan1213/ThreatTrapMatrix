@@ -7,6 +7,7 @@ import (
 	"alert_server/internal/es_models"
 	"alert_server/internal/global"
 	"alert_server/internal/middleware"
+	"alert_server/internal/utils"
 	"alert_server/internal/utils/response"
 	"context"
 	"fmt"
@@ -24,25 +25,42 @@ type RemoveRequest struct {
 
 // RemoveView 告警记录删除接口，支持单个ID删除或按源IP批量删除，自动整合待删除ID列表后执行批量删除
 func (AlertApi) RemoveView(c *gin.Context) {
+	log := middleware.GetLog(c)
+
 	// 绑定并校验删除请求参数
 	cr := middleware.GetBind[RemoveRequest](c)
+
+	log.WithFields(map[string]interface{}{
+		"alert_id": cr.ID,
+		"src_ip":   cr.SrcIp,
+	}).Info("alert removal request received") // 收到告警记录删除请求
 
 	var idList []string // 待删除的告警记录ID列表（整合单个ID和源IP对应的所有ID）
 
 	// 1. 处理单个告警ID删除：参数不为空时添加到ID列表
 	if cr.ID != "" {
 		idList = append(idList, cr.ID)
+		log.WithFields(map[string]interface{}{
+			"alert_id": cr.ID,
+		}).Debug("added single alert ID to removal list") // 添加单个ID到删除列表
 	}
 
 	// 2. 处理按源IP批量删除：参数不为空时，查询该IP下所有告警记录的ID
 	if cr.SrcIp != "" {
+		log.WithFields(map[string]interface{}{
+			"src_ip": cr.SrcIp,
+		}).Debug("searching alerts by source IP for removal") // 查询该IP下的所有告警记录的ID
+
 		// 从ES查询该源IP对应的所有告警记录（单次最多查询10000条，避免查询量过大）
 		res, err := global.ES.Search(es_models.AlertModel{}.Index()).
 			Query(elastic.NewTermQuery("srcIp", cr.SrcIp)). // 按源IP精确筛选
 			Size(10000). // 限制单次查询最大条数
 			Do(context.Background())
 		if err != nil {
-			logrus.Errorf("告警查询失败 %s", err)
+			log.WithFields(map[string]interface{}{
+				"src_ip": cr.SrcIp,
+				"error":  err,
+			}).Error("failed to search alerts by source IP") // 按源IP搜索告警失败
 			response.FailWithMsg("告警查询失败", c)
 			return
 		}
@@ -51,21 +69,40 @@ func (AlertApi) RemoveView(c *gin.Context) {
 		for _, hit := range res.Hits.Hits {
 			idList = append(idList, hit.Id)
 		}
+		log.WithFields(map[string]interface{}{
+			"src_ip":      cr.SrcIp,
+			"found_count": len(res.Hits.Hits),
+		}).Debug("found alerts for source IP removal") // 按源IP搜索到告警
 	}
+
+	// 去重ID列表（防止重复删除）
+	idList = utils.Unique(idList)
 
 	// 校验待删除ID列表是否为空（无有效删除目标时返回失败）
 	if len(idList) == 0 {
+		log.Warn("no alert records found for removal") // 无有效删除目标
 		response.FailWithMsg("不存在的告警记录", c)
 		return
 	}
 
 	// 执行批量删除操作
-	err := BatchRemove(idList)
-	if err != nil {
+	log.WithFields(map[string]interface{}{
+		"total_ids":  len(idList),
+		"sample_ids": idList,
+	}).Debug("preparing to batch remove alerts") // 准备批量删除告警记录
+
+	if err := BatchRemove(idList); err != nil {
+		log.WithFields(map[string]interface{}{
+			"error": err,
+			"ids":   idList,
+		}).Error("failed to remove alert records") // 删除告警记录失败
 		response.FailWithMsg("告警记录删除失败", c)
 		return
 	}
 
+	log.WithFields(map[string]interface{}{
+		"removed_count": len(idList),
+	}).Info("alert records removed successfully") // 告警记录删除成功
 	response.OkWithMsg("告警记录删除成功", c)
 }
 
