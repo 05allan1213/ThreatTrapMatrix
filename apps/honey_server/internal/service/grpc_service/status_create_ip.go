@@ -11,14 +11,12 @@ import (
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
 	"honey_server/internal/service/redis_service/net_lock"
-
-	"github.com/sirupsen/logrus"
 )
 
 // StatusCreateIP 处理节点上报的诱捕IP创建状态请求
 func (NodeService) StatusCreateIP(ctx context.Context, request *node_rpc.StatusCreateIPRequest) (pd *node_rpc.BaseResponse, err error) {
 	pd = new(node_rpc.BaseResponse) // 初始化gRPC响应对象
-	log := core.GetLogger()
+	log := core.GetLogger().WithField("logID", request.LogID)
 	log.WithField("request_data", request).Infof("接收创建ip回调")
 	// 查询对应的诱捕IP记录，验证记录存在性
 	var honeyIPModel models.HoneyIpModel
@@ -33,7 +31,7 @@ func (NodeService) StatusCreateIP(ctx context.Context, request *node_rpc.StatusC
 	var status int8 = 2
 	if request.ErrMsg != "" {
 		status = 3 // 节点上报错误信息，标记为创建失败
-		logrus.Errorf("创建诱捕ip失败 %s", request.ErrMsg)
+		log.WithField("error", request.ErrMsg).Errorf("failed to create honey ip")
 	}
 
 	// 更新数据库中诱捕IP的状态、MAC地址、绑定的网络接口等信息

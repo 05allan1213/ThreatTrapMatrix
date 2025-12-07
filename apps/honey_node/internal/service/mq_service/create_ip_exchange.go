@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"honey_node/internal/core"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/rpc/node_rpc"
@@ -35,29 +36,25 @@ func CreateIpExChange(msg string) error {
 		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
 		return nil // 解析失败返回nil，避免消息重复投递
 	}
-
+	log := core.GetLogger().WithField("logID", req.LogID)
 	// 探针IP特殊处理：无需创建接口，直接获取基础网卡MAC并上报状态
 	if req.IsTan {
 		mac, _ := ip_service.GetMACAddress(req.Network)
-		return reportStatus(req.HoneyIPID, req.Network, mac, "")
+		return reportStatus(req.HoneyIPID, req.Network, mac, "", req.LogID)
 	}
 
 	// 记录IP创建请求处理日志，携带核心业务参数
-	global.Log.WithFields(logrus.Fields{
-		"honeyIPID": req.HoneyIPID,
-		"ip":        req.IP,
-		"mask":      req.Mask,
-		"network":   req.Network,
-		"logID":     req.LogID,
-	}).Info("开始处理创建IP请求")
+	log.WithFields(logrus.Fields{
+		"req_data": req,
+	}).Info("start processing create IP request") // 开始处理创建IP请求
 
 	// ARP预检测：检查目标IP是否已被局域网内其他设备占用
 	_mac, _, err := arping.PingOverIfaceByName(net.ParseIP(req.IP), req.Network)
 	if err == nil {
 		// IP已被占用，直接上报失败状态
 		err = fmt.Errorf("创建诱捕ip失败 ip已存在 ip %s mac %s", req.IP, _mac.String())
-		logrus.Error(err)
-		return reportStatus(req.HoneyIPID, "", _mac.String(), err.Error())
+		log.Error(err)
+		return reportStatus(req.HoneyIPID, "", _mac.String(), err.Error(), req.LogID)
 	}
 
 	// 构造虚拟网络接口名称（格式：hy_+诱捕IPID，确保唯一性）
@@ -72,7 +69,7 @@ func CreateIpExChange(msg string) error {
 	})
 	if err != nil {
 		// 接口创建失败，上报错误状态
-		return reportStatus(req.HoneyIPID, linkName, mac, err.Error())
+		return reportStatus(req.HoneyIPID, linkName, mac, err.Error(), req.LogID)
 	}
 
 	// IP配置成功，持久化到数据库（支持应用重启后自动恢复配置）
@@ -85,31 +82,29 @@ func CreateIpExChange(msg string) error {
 	})
 
 	// 所有步骤执行成功，上报成功状态
-	return reportStatus(req.HoneyIPID, linkName, mac, "")
+	return reportStatus(req.HoneyIPID, linkName, mac, "", req.LogID)
 }
 
 // reportStatus 向管理服务上报IP创建结果状态
-func reportStatus(honeyIPID uint, network, mac, errMsg string) error {
-	// 调用RPC接口上报状态
-	response, err := global.GrpcClient.StatusCreateIP(context.Background(), &node_rpc.StatusCreateIPRequest{
+func reportStatus(honeyIPID uint, network, mac, errMsg string, logID string) error {
+	log := core.GetLogger().WithField("logID", logID)
+	data := &node_rpc.StatusCreateIPRequest{
 		HoneyIPID: uint32(honeyIPID),
 		ErrMsg:    errMsg,
 		Network:   network,
 		Mac:       mac,
-	})
-
+		LogID:     logID,
+	}
+	_, err := global.GrpcClient.StatusCreateIP(context.Background(), data)
 	if err != nil {
-		logrus.Errorf("上报管理状态失败: %v", err)
+		log.WithField("error", err).Errorf("failed to report the management status") // 上报管理状态失败
 		return err
 	}
 
 	// 记录状态上报成功日志，携带关键参数便于排查
-	logrus.WithFields(logrus.Fields{
-		"honeyIPID": honeyIPID,
-		"network":   network,
-		"mac":       mac,
-		"errMsg":    errMsg,
-	}).Infof("上报管理状态成功: %v", response)
+	log.WithFields(logrus.Fields{
+		"data": data,
+	}).Infof("report the management status successfully") // 上报管理状态成功
 
 	return nil
 }

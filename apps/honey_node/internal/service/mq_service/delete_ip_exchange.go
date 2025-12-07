@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"honey_node/internal/core"
 	"honey_node/internal/global"
 	"honey_node/internal/rpc/node_rpc"
 	"honey_node/internal/utils/cmd"
@@ -37,11 +38,12 @@ func DeleteIpExChange(msg string) error {
 		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
 		return nil // 解析失败返回nil，避免消息重复投递
 	}
+	log := core.GetLogger().WithField("logID", req.LogID)
 
-	// 记录删除操作开始日志（包含请求详情，便于调试）
-	global.Log.WithFields(logrus.Fields{
-		"req": req,
-	}).Infof("删除诱捕ip")
+	// 记录删除操作开始日志
+	log.WithFields(logrus.Fields{
+		"req_data": req,
+	}).Infof("deleted honey ip") // 删除诱捕ip
 
 	// 收集待上报的诱捕IPID列表（用于通知服务端删除数据库记录）
 	var idList []uint32
@@ -52,7 +54,7 @@ func DeleteIpExChange(msg string) error {
 			cmd.Cmd(fmt.Sprintf("ip link del %s", info.Network))
 			linkNameList = append(linkNameList, info.Network)
 		} else {
-			logrus.Infof("这是探针 %v", info)
+			log.WithField("ip", info.IP).Infof("Tanip") // 探针ip
 		}
 		// 将HoneyIPID转换为gRPC要求的uint32类型并加入列表
 		idList = append(idList, uint32(info.HoneyIPID))
@@ -64,27 +66,28 @@ func DeleteIpExChange(msg string) error {
 	}
 
 	// 上报删除状态到服务端（通知服务端删除数据库记录）
-	reportDeleteIPStatus(int64(req.NetID), idList)
+	reportDeleteIPStatus(int64(req.NetID), idList, req.LogID)
 	return nil
 }
 
 // reportDeleteIPStatus 通过gRPC向服务端上报IP删除状态，触发数据库记录删除
-func reportDeleteIPStatus(netID int64, honeyIPIDList []uint32) error {
-	// 调用服务端gRPC接口，上报删除的IPID列表
-	response, err := global.GrpcClient.StatusDeleteIP(context.Background(), &node_rpc.StatusDeleteIPRequest{
+func reportDeleteIPStatus(netID int64, honeyIPIDList []uint32, logID string) error {
+	log := core.GetLogger().WithField("logID", logID)
+	data := &node_rpc.StatusDeleteIPRequest{
 		HoneyIPIDList: honeyIPIDList,
 		NetID:         netID,
-	})
-
+		LogID:         logID,
+	}
+	_, err := global.GrpcClient.StatusDeleteIP(context.Background(), data)
 	if err != nil {
-		logrus.Errorf("上报管理状态失败: %v", err)
-		return err // 返回错误表示上报失败（触发MQ重新投递）
+		log.WithField("error", err).Errorf("failed to report the management status") // 上报管理状态失败
+		return err                                                                   // 返回错误表示上报失败（触发MQ重新投递）
 	}
 
 	// 记录上报成功日志（包含删除的IPID列表，便于追踪）
-	global.Log.WithFields(logrus.Fields{
-		"honeyIPIDList": honeyIPIDList,
-	}).Infof("上报管理状态成功: %v", response)
+	log.WithFields(logrus.Fields{
+		"data": data,
+	}).Infof("report the management status successfully") // 上报管理状态成功
 
 	return nil
 }

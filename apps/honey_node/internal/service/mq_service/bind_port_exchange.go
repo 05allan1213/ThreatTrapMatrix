@@ -6,6 +6,7 @@ package mq_service
 import (
 	"context"
 	"encoding/json"
+	"honey_node/internal/core"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/rpc/node_rpc"
@@ -24,14 +25,14 @@ type BindPortRequest struct {
 
 // BindPortExChange 消费端口绑定MQ消息的核心处理函数
 func BindPortExChange(msg string) error {
-	logrus.Infof("接收端口绑定消息 %#v", msg)
-
 	// 解析MQ消息体为端口绑定请求结构体
 	var req BindPortRequest
 	if err := json.Unmarshal([]byte(msg), &req); err != nil {
 		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
 		return nil // 解析失败返回nil，不阻断后续处理（保持原有逻辑）
 	}
+	log := core.GetLogger().WithField("logID", req.LogID)
+	log.WithField("req_data", req).Infof("port binding message") // 端口绑定信息
 
 	// 第一步：停止目标IP上已有的所有端口隧道，避免端口占用冲突
 	port_service.CloseIpTunnel(req.IP)
@@ -56,7 +57,7 @@ func BindPortExChange(msg string) error {
 		err := port_service.Tunnel(port.LocalAddr(), port.TargetAddr())
 		if err != nil {
 			// 绑定失败时记录错误日志，并填充端口状态的错误信息
-			logrus.Errorf("端口绑定失败 %s", err)
+			log.WithField("error", err).Errorf("failed to bind port") // 端口绑定失败
 			portInfo.Msg = err.Error()
 			// 绑定失败原因：大概率是IP未启用/端口未释放，需仅上报失败状态至管理服务
 		}
@@ -66,28 +67,28 @@ func BindPortExChange(msg string) error {
 	}
 
 	// 第三步：将端口绑定结果上报至管理服务的gRPC接口
-	reportBindPortStatus(req.HoneyIpID, portInfoList)
+	reportBindPortStatus(req.HoneyIpID, portInfoList, req.LogID)
 	return nil
 }
 
 // reportBindPortStatus 上报端口绑定状态至管理服务
-func reportBindPortStatus(honeyIPID uint, portInfoList []*node_rpc.StatusPortInfo) error {
-	// 调用管理服务的StatusBindPort gRPC接口上报状态
-	response, err := global.GrpcClient.StatusBindPort(context.Background(), &node_rpc.StatusBindPortRequest{
+func reportBindPortStatus(honeyIPID uint, portInfoList []*node_rpc.StatusPortInfo, logID string) error {
+	log := core.GetLogger().WithField("logID", logID)
+	data := &node_rpc.StatusBindPortRequest{
 		HoneyIPID:    uint32(honeyIPID), // 转换为uint32适配gRPC参数类型
 		PortInfoList: portInfoList,
-	})
-
+		LogID:        logID,
+	}
+	_, err := global.GrpcClient.StatusBindPort(context.Background(), data)
 	if err != nil {
 		// 上报失败记录错误日志
-		logrus.Errorf("上报端口绑定状态至管理服务失败: %v", err)
+		log.WithField("error", err).Errorf("failed to report the management status") // 上报管理状态失败
 		return err
 	}
 
 	// 上报成功记录结构化日志
-	logrus.WithFields(logrus.Fields{
-		"honeyIPID":    honeyIPID,
-		"portInfoList": portInfoList,
-	}).Infof("上报端口绑定状态至管理服务成功: %v", response)
+	log.WithFields(logrus.Fields{
+		"data": data,
+	}).Infof("report the management status successfully") // 上报管理状态成功
 	return nil
 }

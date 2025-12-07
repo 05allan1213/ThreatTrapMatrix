@@ -11,22 +11,17 @@ import (
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
 	"honey_server/internal/service/redis_service/net_lock"
-
-	"github.com/sirupsen/logrus"
 )
 
 // StatusDeleteIP 处理节点上报的诱捕IP删除状态请求
 func (NodeService) StatusDeleteIP(ctx context.Context, request *node_rpc.StatusDeleteIPRequest) (pd *node_rpc.BaseResponse, err error) {
 	pd = new(node_rpc.BaseResponse) // 初始化gRPC响应对象
-	log := core.GetLogger()
+	log := core.GetLogger().WithField("logID", request.LogID)
 	log.WithField("request_data", request).Infof("接收批量删除ip回调")
 	// 根据节点上报的ID列表查询对应的诱捕IP记录
 	var honeyIPList []models.HoneyIpModel
 	net_lock.UnLock(uint(request.NetID))
 	global.DB.Find(&honeyIPList, "id in ?", request.HoneyIPIDList)
-
-	// 记录删除回调的日志
-	logrus.Infof("删除诱捕ip回调 %v", request.HoneyIPIDList)
 
 	// 校验查询结果：若没有找到任何记录，返回错误
 	if len(honeyIPList) == 0 {

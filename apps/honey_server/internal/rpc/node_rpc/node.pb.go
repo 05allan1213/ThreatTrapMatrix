@@ -530,9 +530,10 @@ type CmdRequest struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	CmdType               CmdType                `protobuf:"varint,1,opt,name=cmdType,proto3,enum=node_rpc.CmdType" json:"cmdType,omitempty"`      // 命令类型
 	TaskID                string                 `protobuf:"bytes,2,opt,name=taskID,proto3" json:"taskID,omitempty"`                               // 任务id
-	NetworkFlushInMessage *NetworkFlushInMessage `protobuf:"bytes,3,opt,name=NetworkFlushInMessage,proto3" json:"NetworkFlushInMessage,omitempty"` // 网卡刷新信息
-	NetScanInMessage      *NetScanInMessage      `protobuf:"bytes,4,opt,name=NetScanInMessage,proto3" json:"NetScanInMessage,omitempty"`           // 扫描网卡信息
-	NodeRemoveInMessage   *NodeRemoveInMessage   `protobuf:"bytes,5,opt,name=NodeRemoveInMessage,proto3" json:"NodeRemoveInMessage,omitempty"`     // 删除节点信息
+	LogID                 string                 `protobuf:"bytes,3,opt,name=logID,proto3" json:"logID,omitempty"`                                 // 日志id
+	NetworkFlushInMessage *NetworkFlushInMessage `protobuf:"bytes,4,opt,name=NetworkFlushInMessage,proto3" json:"NetworkFlushInMessage,omitempty"` // 网卡刷新信息
+	NetScanInMessage      *NetScanInMessage      `protobuf:"bytes,5,opt,name=NetScanInMessage,proto3" json:"NetScanInMessage,omitempty"`           // 扫描网卡信息
+	NodeRemoveInMessage   *NodeRemoveInMessage   `protobuf:"bytes,6,opt,name=NodeRemoveInMessage,proto3" json:"NodeRemoveInMessage,omitempty"`     // 删除节点信息
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -577,6 +578,13 @@ func (x *CmdRequest) GetCmdType() CmdType {
 func (x *CmdRequest) GetTaskID() string {
 	if x != nil {
 		return x.TaskID
+	}
+	return ""
+}
+
+func (x *CmdRequest) GetLogID() string {
+	if x != nil {
+		return x.LogID
 	}
 	return ""
 }
@@ -936,9 +944,10 @@ type CmdResponse struct {
 	NodeID                 string                  `protobuf:"bytes,3,opt,name=nodeID,proto3" json:"nodeID,omitempty"`                                 // 节点id
 	Code                   int32                   `protobuf:"varint,4,opt,name=code,proto3" json:"code,omitempty"`                                    // 状态码
 	ErrorMsg               string                  `protobuf:"bytes,5,opt,name=errorMsg,proto3" json:"errorMsg,omitempty"`                             // 错误信息
-	NetworkFlushOutMessage *NetworkFlushOutMessage `protobuf:"bytes,6,opt,name=NetworkFlushOutMessage,proto3" json:"NetworkFlushOutMessage,omitempty"` // 网卡刷新信息
-	NetScanOutMessage      *NetScanOutMessage      `protobuf:"bytes,7,opt,name=NetScanOutMessage,proto3" json:"NetScanOutMessage,omitempty"`           // 扫描网卡信息
-	NodeRemoveOutMessage   *NodeRemoveOutMessage   `protobuf:"bytes,8,opt,name=NodeRemoveOutMessage,proto3" json:"NodeRemoveOutMessage,omitempty"`     // 删除节点信息
+	LogID                  string                  `protobuf:"bytes,6,opt,name=logID,proto3" json:"logID,omitempty"`                                   // 日志id
+	NetworkFlushOutMessage *NetworkFlushOutMessage `protobuf:"bytes,7,opt,name=NetworkFlushOutMessage,proto3" json:"NetworkFlushOutMessage,omitempty"` // 网卡刷新信息
+	NetScanOutMessage      *NetScanOutMessage      `protobuf:"bytes,8,opt,name=NetScanOutMessage,proto3" json:"NetScanOutMessage,omitempty"`           // 扫描网卡信息
+	NodeRemoveOutMessage   *NodeRemoveOutMessage   `protobuf:"bytes,9,opt,name=NodeRemoveOutMessage,proto3" json:"NodeRemoveOutMessage,omitempty"`     // 删除节点信息
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -1008,6 +1017,13 @@ func (x *CmdResponse) GetErrorMsg() string {
 	return ""
 }
 
+func (x *CmdResponse) GetLogID() string {
+	if x != nil {
+		return x.LogID
+	}
+	return ""
+}
+
 func (x *CmdResponse) GetNetworkFlushOutMessage() *NetworkFlushOutMessage {
 	if x != nil {
 		return x.NetworkFlushOutMessage
@@ -1036,6 +1052,7 @@ type StatusCreateIPRequest struct {
 	ErrMsg        string                 `protobuf:"bytes,2,opt,name=errMsg,proto3" json:"errMsg,omitempty"`        // 错误信息
 	Network       string                 `protobuf:"bytes,3,opt,name=network,proto3" json:"network,omitempty"`      // 网卡名称
 	Mac           string                 `protobuf:"bytes,4,opt,name=mac,proto3" json:"mac,omitempty"`              // mac地址
+	LogID         string                 `protobuf:"bytes,5,opt,name=logID,proto3" json:"logID,omitempty"`          // 日志id
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1098,11 +1115,19 @@ func (x *StatusCreateIPRequest) GetMac() string {
 	return ""
 }
 
+func (x *StatusCreateIPRequest) GetLogID() string {
+	if x != nil {
+		return x.LogID
+	}
+	return ""
+}
+
 // 端口转发状态回调结构体
 type StatusBindPortRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	HoneyIPID     uint32                 `protobuf:"varint,1,opt,name=honeyIPID,proto3" json:"honeyIPID,omitempty"`      // 诱捕ipID
 	PortInfoList  []*StatusPortInfo      `protobuf:"bytes,2,rep,name=portInfoList,proto3" json:"portInfoList,omitempty"` // 端口信息列表
+	LogID         string                 `protobuf:"bytes,3,opt,name=logID,proto3" json:"logID,omitempty"`               // 日志id
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1149,6 +1174,13 @@ func (x *StatusBindPortRequest) GetPortInfoList() []*StatusPortInfo {
 		return x.PortInfoList
 	}
 	return nil
+}
+
+func (x *StatusBindPortRequest) GetLogID() string {
+	if x != nil {
+		return x.LogID
+	}
+	return ""
 }
 
 // 端口信息结构体
@@ -1209,6 +1241,7 @@ type StatusDeleteIPRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	HoneyIPIDList []uint32               `protobuf:"varint,1,rep,packed,name=honeyIPIDList,proto3" json:"honeyIPIDList,omitempty"` // 诱捕ipID列表
 	NetID         int64                  `protobuf:"varint,2,opt,name=netID,proto3" json:"netID,omitempty"`                        // 网络id
+	LogID         string                 `protobuf:"bytes,3,opt,name=logID,proto3" json:"logID,omitempty"`                         // 日志id
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1255,6 +1288,13 @@ func (x *StatusDeleteIPRequest) GetNetID() int64 {
 		return x.NetID
 	}
 	return 0
+}
+
+func (x *StatusDeleteIPRequest) GetLogID() string {
+	if x != nil {
+		return x.LogID
+	}
+	return ""
 }
 
 // 传输的数据块
@@ -1357,14 +1397,15 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x0e\n" +
 	"\x02ip\x18\x02 \x01(\tR\x02ip\x12\x10\n" +
 	"\x03net\x18\x03 \x01(\tR\x03net\x12\x12\n" +
-	"\x04mask\x18\x04 \x01(\x05R\x04mask\"\xc1\x02\n" +
+	"\x04mask\x18\x04 \x01(\x05R\x04mask\"\xd7\x02\n" +
 	"\n" +
 	"CmdRequest\x12+\n" +
 	"\acmdType\x18\x01 \x01(\x0e2\x11.node_rpc.CmdTypeR\acmdType\x12\x16\n" +
-	"\x06taskID\x18\x02 \x01(\tR\x06taskID\x12U\n" +
-	"\x15NetworkFlushInMessage\x18\x03 \x01(\v2\x1f.node_rpc.NetworkFlushInMessageR\x15NetworkFlushInMessage\x12F\n" +
-	"\x10NetScanInMessage\x18\x04 \x01(\v2\x1a.node_rpc.NetScanInMessageR\x10NetScanInMessage\x12O\n" +
-	"\x13NodeRemoveInMessage\x18\x05 \x01(\v2\x1d.node_rpc.NodeRemoveInMessageR\x13NodeRemoveInMessage\"E\n" +
+	"\x06taskID\x18\x02 \x01(\tR\x06taskID\x12\x14\n" +
+	"\x05logID\x18\x03 \x01(\tR\x05logID\x12U\n" +
+	"\x15NetworkFlushInMessage\x18\x04 \x01(\v2\x1f.node_rpc.NetworkFlushInMessageR\x15NetworkFlushInMessage\x12F\n" +
+	"\x10NetScanInMessage\x18\x05 \x01(\v2\x1a.node_rpc.NetScanInMessageR\x10NetScanInMessage\x12O\n" +
+	"\x13NodeRemoveInMessage\x18\x06 \x01(\v2\x1d.node_rpc.NodeRemoveInMessageR\x13NodeRemoveInMessage\"E\n" +
 	"\x15NetworkFlushInMessage\x12,\n" +
 	"\x11filterNetworkName\x18\x01 \x03(\tR\x11filterNetworkName\"\x80\x01\n" +
 	"\x10NetScanInMessage\x12\x18\n" +
@@ -1383,30 +1424,34 @@ const file_internal_rpc_node_proto_rawDesc = "" +
 	"\x05manuf\x18\x05 \x01(\tR\x05manuf\x12\x14\n" +
 	"\x05netID\x18\x06 \x01(\rR\x05netID\x12\x16\n" +
 	"\x06errMsg\x18\a \x01(\tR\x06errMsg\"\x16\n" +
-	"\x14NodeRemoveOutMessage\"\x93\x03\n" +
+	"\x14NodeRemoveOutMessage\"\xa9\x03\n" +
 	"\vCmdResponse\x12+\n" +
 	"\acmdType\x18\x01 \x01(\x0e2\x11.node_rpc.CmdTypeR\acmdType\x12\x16\n" +
 	"\x06taskID\x18\x02 \x01(\tR\x06taskID\x12\x16\n" +
 	"\x06nodeID\x18\x03 \x01(\tR\x06nodeID\x12\x12\n" +
 	"\x04code\x18\x04 \x01(\x05R\x04code\x12\x1a\n" +
-	"\berrorMsg\x18\x05 \x01(\tR\berrorMsg\x12X\n" +
-	"\x16NetworkFlushOutMessage\x18\x06 \x01(\v2 .node_rpc.NetworkFlushOutMessageR\x16NetworkFlushOutMessage\x12I\n" +
-	"\x11NetScanOutMessage\x18\a \x01(\v2\x1b.node_rpc.NetScanOutMessageR\x11NetScanOutMessage\x12R\n" +
-	"\x14NodeRemoveOutMessage\x18\b \x01(\v2\x1e.node_rpc.NodeRemoveOutMessageR\x14NodeRemoveOutMessage\"y\n" +
+	"\berrorMsg\x18\x05 \x01(\tR\berrorMsg\x12\x14\n" +
+	"\x05logID\x18\x06 \x01(\tR\x05logID\x12X\n" +
+	"\x16NetworkFlushOutMessage\x18\a \x01(\v2 .node_rpc.NetworkFlushOutMessageR\x16NetworkFlushOutMessage\x12I\n" +
+	"\x11NetScanOutMessage\x18\b \x01(\v2\x1b.node_rpc.NetScanOutMessageR\x11NetScanOutMessage\x12R\n" +
+	"\x14NodeRemoveOutMessage\x18\t \x01(\v2\x1e.node_rpc.NodeRemoveOutMessageR\x14NodeRemoveOutMessage\"\x8f\x01\n" +
 	"\x15StatusCreateIPRequest\x12\x1c\n" +
 	"\thoneyIPID\x18\x01 \x01(\rR\thoneyIPID\x12\x16\n" +
 	"\x06errMsg\x18\x02 \x01(\tR\x06errMsg\x12\x18\n" +
 	"\anetwork\x18\x03 \x01(\tR\anetwork\x12\x10\n" +
-	"\x03mac\x18\x04 \x01(\tR\x03mac\"s\n" +
+	"\x03mac\x18\x04 \x01(\tR\x03mac\x12\x14\n" +
+	"\x05logID\x18\x05 \x01(\tR\x05logID\"\x89\x01\n" +
 	"\x15StatusBindPortRequest\x12\x1c\n" +
 	"\thoneyIPID\x18\x01 \x01(\rR\thoneyIPID\x12<\n" +
-	"\fportInfoList\x18\x02 \x03(\v2\x18.node_rpc.statusPortInfoR\fportInfoList\"6\n" +
+	"\fportInfoList\x18\x02 \x03(\v2\x18.node_rpc.statusPortInfoR\fportInfoList\x12\x14\n" +
+	"\x05logID\x18\x03 \x01(\tR\x05logID\"6\n" +
 	"\x0estatusPortInfo\x12\x12\n" +
 	"\x04port\x18\x01 \x01(\x03R\x04port\x12\x10\n" +
-	"\x03msg\x18\x02 \x01(\tR\x03msg\"S\n" +
+	"\x03msg\x18\x02 \x01(\tR\x03msg\"i\n" +
 	"\x15StatusDeleteIPRequest\x12$\n" +
 	"\rhoneyIPIDList\x18\x01 \x03(\rR\rhoneyIPIDList\x12\x14\n" +
-	"\x05netID\x18\x02 \x01(\x03R\x05netID\"<\n" +
+	"\x05netID\x18\x02 \x01(\x03R\x05netID\x12\x14\n" +
+	"\x05logID\x18\x03 \x01(\tR\x05logID\"<\n" +
 	"\n" +
 	"TunnelData\x12\x14\n" +
 	"\x05chunk\x18\x01 \x01(\fR\x05chunk\x12\x18\n" +
