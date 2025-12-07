@@ -4,7 +4,6 @@ package mq_service
 // Description: MQ消息消费处理模块，实现批量删除部署消息的解析、任务入库及异步执行删除部署任务，包含端口转发关闭、网络接口删除、任务状态更新等核心逻辑
 
 import (
-	"encoding/json"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/service/ip_service"
@@ -15,14 +14,7 @@ import (
 )
 
 // BatchRemoveDeployExChange 处理批量删除部署的MQ消息
-func BatchRemoveDeployExChange(msg string) error {
-	// 解析JSON格式消息到批量删除部署请求结构体
-	var req models.BatchRemoveDeployRequest
-	if err := json.Unmarshal([]byte(msg), &req); err != nil {
-		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
-		return nil // 保持原有逻辑，解析失败时返回nil不中断流程
-	}
-
+func BatchRemoveDeployExChange(req models.BatchRemoveDeployRequest) error {
 	// 生成唯一任务ID
 	taskID := uuid.New().String()
 	// 创建批量删除部署任务记录并写入数据库

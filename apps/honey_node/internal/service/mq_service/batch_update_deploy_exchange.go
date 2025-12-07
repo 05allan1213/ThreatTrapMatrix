@@ -4,7 +4,6 @@ package mq_service
 // Description: 实现节点侧批量更新部署MQ消息消费逻辑，包含任务入库、异步清理旧端口转发、重建新端口转发、更新状态上报及任务状态更新等核心功能
 
 import (
-	"encoding/json"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/service/port_service"
@@ -14,14 +13,7 @@ import (
 )
 
 // BatchUpdateDeployExChange 节点侧批量更新部署MQ消息处理入口函数
-func BatchUpdateDeployExChange(msg string) error {
-	// 解析MQ消息体为批量更新部署请求结构体
-	var req models.BatchUpdateDeployRequest
-	if err := json.Unmarshal([]byte(msg), &req); err != nil {
-		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
-		return nil // 保持原有逻辑，解析失败时返回nil，不中断后续处理
-	}
-
+func BatchUpdateDeployExChange(req models.BatchUpdateDeployRequest) error {
 	// 生成唯一任务ID，用于标识本次批量更新部署任务
 	taskID := uuid.New().String()
 	// 将批量更新部署任务入库，记录任务基础信息及原始更新指令

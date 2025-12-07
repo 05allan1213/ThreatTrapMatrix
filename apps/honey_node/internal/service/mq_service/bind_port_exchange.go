@@ -5,7 +5,6 @@ package mq_service
 
 import (
 	"context"
-	"encoding/json"
 	"honey_node/internal/core"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
@@ -24,13 +23,7 @@ type BindPortRequest struct {
 }
 
 // BindPortExChange 消费端口绑定MQ消息的核心处理函数
-func BindPortExChange(msg string) error {
-	// 解析MQ消息体为端口绑定请求结构体
-	var req BindPortRequest
-	if err := json.Unmarshal([]byte(msg), &req); err != nil {
-		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
-		return nil // 解析失败返回nil，不阻断后续处理（保持原有逻辑）
-	}
+func BindPortExChange(req BindPortRequest) error {
 	log := core.GetLogger().WithField("logID", req.LogID)
 	log.WithField("req_data", req).Infof("port binding message") // 端口绑定信息
 

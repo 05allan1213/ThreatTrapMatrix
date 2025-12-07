@@ -5,7 +5,6 @@ package mq_service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"honey_node/internal/core"
 	"honey_node/internal/global"
@@ -29,13 +28,7 @@ type CreateIPRequest struct {
 }
 
 // CreateIpExChange 处理创建诱捕IP的MQ消息，包含ARP预检测、macvlan配置、资源清理及状态上报
-func CreateIpExChange(msg string) error {
-	var req CreateIPRequest
-	// 解析MQ消息为结构体
-	if err := json.Unmarshal([]byte(msg), &req); err != nil {
-		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
-		return nil // 解析失败返回nil，避免消息重复投递
-	}
+func CreateIpExChange(req CreateIPRequest) error {
 	log := core.GetLogger().WithField("logID", req.LogID)
 	// 探针IP特殊处理：无需创建接口，直接获取基础网卡MAC并上报状态
 	if req.IsTan {

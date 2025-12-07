@@ -1,147 +1,153 @@
 package mq_service
 
 // File: honey_node/service/mq_service/mq_service.go
-// Description: RabbitMQ消费者服务，负责注册不同业务交换器的消费者，处理消息消费与确认逻辑
+// Description: 节点MQ消费/生产核心模块，实现RabbitMQ队列/交换器声明、消息路由绑定、通用消费注册及队列消息发送能力，支撑创建IP、删除IP、端口绑定等指令的消费处理，以及告警/部署状态等消息的生产发送，保障节点与服务端的可靠通信
 
 import (
+	"encoding/json"
 	"fmt"
 	"honey_node/internal/global"
 
 	"github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 )
 
 // Run 启动所有RabbitMQ消费者协程
 func Run() {
 	cfg := global.Config.MQ
-	// 声明队列
-	_, err := global.Queue.QueueDeclare(
-		cfg.AlertTopic, // 队列名称
-		false,          // 持久性
-		false,          // 自动删除
-		false,          // 排他性
-		false,          // 非阻塞
-		nil,            // 其他参数
-	)
-	if err != nil {
-		logrus.Fatalf("AlertTopic声明队列失败: %v", err)
-		return
-	}
-	_, err = global.Queue.QueueDeclare(
-		cfg.BatchDeployStatusTopic, // 队列名称
-		false,                      // 持久性
-		false,                      // 自动删除
-		false,                      // 排他性
-		false,                      // 非阻塞
-		nil,                        // 其他参数
-	)
-	if err != nil {
-		logrus.Fatalf("BatchDeployStatusTopic声明队列失败: %v", err)
-		return
-	}
-	_, err = global.Queue.QueueDeclare(
-		cfg.BatchUpdateDeployStatusTopic, // 队列名称
-		false,                            // 持久性
-		false,                            // 自动删除
-		false,                            // 排他性
-		false,                            // 非阻塞
-		nil,                              // 其他参数
-	)
-	if err != nil {
-		logrus.Fatalf("BatchUpdateDeployStatusTopic声明队列失败: %v", err)
-		return
-	}
-	_, err = global.Queue.QueueDeclare(
-		cfg.BatchRemoveDeployStatusTopic, // 队列名称
-		false,                            // 持久性
-		false,                            // 自动删除
-		false,                            // 排他性
-		false,                            // 非阻塞
-		nil,                              // 其他参数
-	)
-	if err != nil {
-		logrus.Fatalf("BatchRemoveDeployStatusTopic声明队列失败: %v", err)
-		return
-	}
 
-	// 启动创建IP交换器的消费者协程
-	go register(cfg.CreateIpExchangeName, CreateIpExChange)
-	// 启动删除IP交换器的消费者协程
-	go register(cfg.DeleteIpExchangeName, DeleteIpExChange)
-	// 启动绑定端口交换器的消费者协程
-	go register(cfg.BindPortExchangeName, BindPortExChange)
-	// 启动批量部署交换器的消费者协程
-	go register(cfg.BatchDeployExchangeName, BatchDeployExChange)
-	// 启动批量更新部署交换器的消费者协程
-	go register(cfg.BatchUpdateDeployExchangeName, BatchUpdateDeployExChange)
-	// 启动批量删除部署交换器的消费者协程
-	go register(cfg.BatchRemoveDeployExchangeName, BatchRemoveDeployExChange)
+	// 声明状态上报类队列
+	queueDeclare(cfg.AlertTopic)
+	queueDeclare(cfg.BatchDeployStatusTopic)
+	queueDeclare(cfg.BatchUpdateDeployStatusTopic)
+	queueDeclare(cfg.BatchRemoveDeployStatusTopic)
+
+	// 注册业务指令交换器及消费回调
+	go register(cfg.CreateIpExchangeName, CreateIpExChange)                   // 创建IP指令消费
+	go register(cfg.DeleteIpExchangeName, DeleteIpExChange)                   // 删除IP指令消费
+	go register(cfg.BindPortExchangeName, BindPortExChange)                   // 绑定端口指令消费
+	go register(cfg.BatchDeployExchangeName, BatchDeployExChange)             // 批量部署指令消费
+	go register(cfg.BatchUpdateDeployExchangeName, BatchUpdateDeployExChange) // 批量更新部署指令消费
+	go register(cfg.BatchRemoveDeployExchangeName, BatchRemoveDeployExChange) // 批量删除部署指令消费
 }
 
-// register 注册单个交换器的消费者逻辑
-func register(exChangeName string, fun func(msg string) error) {
-	// 声明交换器（确保与生产者交换器一致，防止生产者未提前声明）
-	err := global.Queue.ExchangeDeclare(
-		exChangeName, // 交换器名称（与生产者保持一致）
-		"direct",     // 交换器类型：direct（直接匹配路由键）
-		true,         // 持久化：交换器重启后保留
-		false,        // 自动删除：不自动删除
-		false,        // 内部交换器：否（允许客户端发送消息）
-		false,        // 非阻塞：立即返回
-		nil,          // 额外参数：无
+// queueDeclare 声明RabbitMQ队列
+func queueDeclare(queueName string) {
+	_, err := global.Queue.QueueDeclare(
+		queueName, // 队列名称
+		false,     // 非持久化：队列数据不落地，MQ重启后丢失（适配临时状态消息）
+		false,     // 非自动删除：无消费者时不自动删除队列
+		false,     // 非排他性：允许多个消费者监听同一队列
+		false,     // 非阻塞：不等待服务器额外响应
+		nil,       // 额外参数
 	)
 	if err != nil {
-		logrus.Fatalf("%s 声明交换器失败 %s", exChangeName, err)
+		logrus.Fatalf("声明队列失败%s %v", queueName, err) // 队列声明失败终止程序
+		return
 	}
+	logrus.Infof("声明队列成功 %s", queueName)
+}
+
+// registerExchange 声明RabbitMQ交换器
+func registerExchange(exchangeName string) {
+	err := global.Queue.ExchangeDeclare(
+		exchangeName, // 交换器名称
+		"direct",     // 交换器类型：direct（按路由键精准路由到队列）
+		true,         // 持久化：交换器在MQ重启后保留
+		false,        // 非自动删除：无绑定队列时不自动删除
+		false,        // 非内部交换器：允许外部生产者发送消息
+		false,        // 非阻塞：不等待服务器额外响应
+		nil,          // 额外参数
+	)
+	if err != nil {
+		logrus.Fatalf("%s 声明交换器失败 %s", exchangeName, err) // 交换器声明失败终止程序
+	}
+	logrus.Infof("声明交换器成功 %s", exchangeName)
+}
+
+// register 通用MQ消费注册函数
+func register[T any](exChangeName string, fun func(msg T) error) {
+	// 声明业务指令交换器
+	registerExchange(exChangeName)
 
 	cf := global.Config
-	// 声明专属队列（按节点UID命名，确保队列唯一性）
-	queue, err := global.Queue.QueueDeclare(
-		fmt.Sprintf("%s_%s_queue", exChangeName, cf.System.Uid), // 队列名称（唯一标识，与node01绑定）
-		true,                                                    // 持久化队列：队列重启后保留
-		false,                                                   // 自动删除：不自动删除
-		false,                                                   // 排他性：否（允许多个消费者消费，但此处每个节点独占队列）
-		false,                                                   // 非阻塞：立即返回
-		nil,                                                     // 额外参数：无
+
+	// 构建节点专属队列名称（交换器名+节点UID），避免节点间队列冲突
+	queueName := fmt.Sprintf("%s_%s_queue", exChangeName, cf.System.Uid)
+	queueDeclare(queueName)
+
+	// 绑定队列到交换器（路由键为节点UID，确保指令仅投递到当前节点）
+	err := global.Queue.QueueBind(
+		queueName,     // 待绑定的队列名称
+		cf.System.Uid, // 绑定键（路由键）：与生产者侧的路由键一致（节点UID）
+		exChangeName,  // 目标交换器名称
+		false,         // 非阻塞：不等待服务器额外响应
+		nil,           // 额外参数
 	)
 	if err != nil {
-		logrus.Fatalf("声明队列失败 %s", err)
+		logrus.Fatalf("%s 绑定队列失败 %s", queueName, err) // 队列绑定失败终止程序
 	}
 
-	// 将队列绑定到交换器，指定路由键为节点UID（确保消息精准路由到当前节点）
-	err = global.Queue.QueueBind(
-		queue.Name,    // 队列名称
-		cf.System.Uid, // 路由键：节点唯一标识，与生产者发送时的路由键匹配
-		exChangeName,  // 交换器名称
-		false,         // 非阻塞：立即返回
-		nil,           // 额外参数：无
-	)
-	if err != nil {
-		logrus.Fatalf("%s 绑定队列失败 %s", queue.Name, err)
-	}
-
-	// 注册消费者，开始监听队列消息（关闭自动确认，手动控制消息确认）
+	// 启动消息消费（关闭自动确认，手动控制消息ACK/Nack）
 	msgs, err := global.Queue.Consume(
-		queue.Name, // 要消费的队列名称
-		"",         // 消费者标签：空（使用默认标识）
-		false,      // 自动确认：否（手动Ack/Nack）
-		false,      // 排他性：否
-		false,      // 本地消费者：否（接收所有节点发送的消息）
-		false,      // 非阻塞：立即返回
-		nil,        // 额外参数：无
+		queueName, // 消费的队列名称
+		"",        // 消费者标识：空字符串由MQ自动生成唯一标识
+		false,     // 关闭自动确认：需手动调用Ack/Nack确认消息处理状态
+		false,     // 非排他性：允许其他消费者消费同一队列（备用节点场景）
+		false,     // 非本地消费者：接收所有投递到队列的消息
+		false,     // 非阻塞：不等待服务器额外响应
+		nil,       // 额外参数
 	)
+	if err != nil {
+		logrus.Fatalf("%s 启动消费失败 %s", queueName, err) // 消费启动失败终止程序
+	}
 
-	logrus.Infof("绑定交换器成功 %s", exChangeName)
-
-	// 循环消费消息通道中的消息
+	// 循环消费消息
 	for d := range msgs {
-		// 调用业务处理函数处理消息内容
-		err = fun(string(d.Body))
-		if err == nil {
-			// 处理成功：手动确认消息（false表示仅确认当前消息）
-			d.Ack(false)
+		var data T
+		// 反序列化消息体为指定业务类型
+		err = json.Unmarshal(d.Body, &data)
+		if err != nil {
+			logrus.Errorf("json解析失败 %s %s", err, string(d.Body))
+			d.Ack(false) // 解析失败仍ACK，避免无效消息重复消费
 			continue
 		}
-		// 处理失败：拒绝消息并重新入队（false不批量，true重新入队）
+
+		// 调用业务回调处理消息
+		err = fun(data)
+		if err == nil {
+			d.Ack(false) // 处理成功：手动确认消息（false表示仅确认当前消息）
+			continue
+		}
+
+		// 处理失败：拒绝消息并重新入队（false=不批量拒绝，true=重新入队）
 		d.Nack(false, true)
 	}
+}
+
+// sendQueueMessage 向指定队列发送消息（直接投递，无交换器）
+func sendQueueMessage(queueName string, req any) (err error) {
+	// 序列化业务请求为JSON字节数据（忽略序列化错误，仅捕获发送错误）
+	byteData, _ := json.Marshal(req)
+
+	// 直接向队列发送消息（交换器为空，路由键为队列名）
+	err = global.Queue.Publish(
+		"",        // 交换器：空字符串表示使用默认交换器（direct类型）
+		queueName, // 路由键：目标队列名称，默认交换器会直接投递到该队列
+		false,     // 强制投递：false表示队列不存在时丢弃消息
+		false,     // 立即投递：false表示不强制立即投递到消费者
+		amqp.Publishing{
+			ContentType: "text/plain", // 消息内容类型
+			Body:        byteData,     // 序列化后的业务数据
+		})
+
+	// 发送失败：记录错误日志（含队列名、错误信息、消息内容）
+	if err != nil {
+		logrus.Errorf("%s 发送消息失败: %v %s", queueName, err, string(byteData))
+		return
+	}
+
+	// 发送成功：记录信息日志（含队列名、消息内容）
+	logrus.Infof("%s 发送消息成功: %s", queueName, string(byteData))
+	return nil
 }

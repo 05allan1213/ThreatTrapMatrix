@@ -4,11 +4,7 @@ package mq_service
 // Description: 实现部署状态消息的MQ发送功能，用于上报诱捕IP部署的状态、进度、错误信息等数据到指定MQ队列
 
 import (
-	"encoding/json"
 	"honey_node/internal/global"
-
-	"github.com/sirupsen/logrus"
-	"github.com/streadway/amqp"
 )
 
 // DeployStatusRequest 部署状态上报请求结构体
@@ -24,28 +20,5 @@ type DeployStatusRequest struct {
 
 // SendDeployStatusMsg 发送部署状态消息到MQ队列
 func SendDeployStatusMsg(data DeployStatusRequest) {
-	// 将部署状态数据序列化为JSON字节数组
-	byteData, _ := json.Marshal(data)
-	// 获取全局配置中的MQ配置信息
-	cfg := global.Config.MQ
-
-	// 发布消息到MQ队列
-	err := global.Queue.Publish(
-		"",                         // exchange：使用默认交换机
-		cfg.BatchDeployStatusTopic, // routing key：指定告警主题作为路由键
-		false,                      // mandatory：不强制要求消息必须路由到队列
-		false,                      // immediate：不要求立即投递
-		amqp.Publishing{
-			ContentType: "text/plain", // 消息内容类型
-			Body:        byteData,     // 消息体：序列化后的部署状态数据
-		})
-
-	// 处理消息发送失败的情况
-	if err != nil {
-		logrus.Errorf("发送失败: %v %s", err, string(byteData))
-		return
-	}
-
-	// 记录消息发送成功日志
-	logrus.Infof("发送成功: %s", string(byteData))
+	sendQueueMessage(global.Config.MQ.BatchDeployStatusTopic, data)
 }

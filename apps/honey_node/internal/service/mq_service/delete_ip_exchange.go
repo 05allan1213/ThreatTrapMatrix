@@ -5,7 +5,6 @@ package mq_service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"honey_node/internal/core"
 	"honey_node/internal/global"
@@ -31,13 +30,7 @@ type IpInfo struct {
 }
 
 // DeleteIpExChange 处理删除诱捕IP的MQ消息，执行虚拟接口删除命令并上报删除状态
-func DeleteIpExChange(msg string) error {
-	var req DeleteIPRequest
-	// 解析MQ消息内容为DeleteIPRequest结构体
-	if err := json.Unmarshal([]byte(msg), &req); err != nil {
-		logrus.Errorf("JSON解析失败: %v, 消息: %s", err, msg)
-		return nil // 解析失败返回nil，避免消息重复投递
-	}
+func DeleteIpExChange(req DeleteIPRequest) error {
 	log := core.GetLogger().WithField("logID", req.LogID)
 
 	// 记录删除操作开始日志
