@@ -6,7 +6,7 @@ package user_api
 import (
 	"fmt"
 	"honey_server/internal/middleware"
-	user_service2 "honey_server/internal/service/user_service"
+	"honey_server/internal/service/user_service"
 	"honey_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
@@ -26,20 +26,33 @@ func (UserApi) CreateView(c *gin.Context) {
 
 	// 获取上下文日志实例
 	log := middleware.GetLog(c)
+	log.WithFields(map[string]interface{}{
+		"username": cr.Username,
+		"role":     cr.Role,
+	}).Info("user creation request received") // 收到用户创建请求
 	// 初始化用户服务
-	us := user_service2.NewUserService(log)
+	us := user_service.NewUserService(log)
 	// 调用服务层创建用户方法
-	user, err := us.Create(user_service2.UserCreateRequest{
+	user, err := us.Create(user_service.UserCreateRequest{
 		Username: cr.Username,
 		Password: cr.Password,
 		Role:     cr.Role,
 	})
 	if err != nil {
 		msg := fmt.Sprintf("创建用户失败 %s", err)
-		log.Errorf(msg)
+		log.WithFields(map[string]interface{}{
+			"username": cr.Username,
+			"error":    err,
+		}).Error("failed to create user") // 创建用户失败
 		response.FailWithMsg(msg, c)
 		return
 	}
+
+	log.WithFields(map[string]interface{}{
+		"user_id":  user.ID,
+		"username": user.Username,
+		"role":     user.Role,
+	}).Info("user created successfully") // 用户创建成功
 	// 返回创建成功结果（用户ID）
 	response.OkWithData(user.ID, c)
 }

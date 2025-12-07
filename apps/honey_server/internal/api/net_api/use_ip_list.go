@@ -73,27 +73,27 @@ func (NetApi) NetUseIPListView(c *gin.Context) {
 
 	// 合并已使用IP，去重存储
 	usedIPs := make(map[string]struct{})
-	for _, ip := range filterIPList1 {
-		usedIPs[ip] = struct{}{}
+	for _, usedip := range filterIPList1 {
+		usedIPs[usedip] = struct{}{}
 	}
-	for _, ip := range filterIPList2 {
-		usedIPs[ip] = struct{}{}
+	for _, usedip := range filterIPList2 {
+		usedIPs[usedip] = struct{}{}
 	}
 
 	// 筛选出未被使用的可用IP
 	var availableIPs []string
-	for _, ip := range ipList {
-		if _, exists := usedIPs[ip]; !exists {
-			availableIPs = append(availableIPs, ip)
+	for _, unusedip := range ipList {
+		if _, exists := usedIPs[unusedip]; !exists {
+			availableIPs = append(availableIPs, unusedip)
 		}
 	}
 
 	// 应用前缀匹配
 	if cr.Key != "" {
 		var filteredIPs []string
-		for _, ip := range availableIPs {
-			if strings.HasPrefix(ip, cr.Key) {
-				filteredIPs = append(filteredIPs, ip)
+		for _, unusedip := range availableIPs {
+			if strings.HasPrefix(unusedip, cr.Key) {
+				filteredIPs = append(filteredIPs, unusedip)
 			}
 		}
 		availableIPs = filteredIPs
