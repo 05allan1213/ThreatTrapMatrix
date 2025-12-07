@@ -4,12 +4,12 @@ package captcha_api
 // Description: 验证码接口模块，提供图片验证码生成接口及相关数据结构定义
 
 import (
+	"honey_server/internal/middleware"
 	"honey_server/internal/utils/captcha"
 	"honey_server/internal/utils/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
-	"github.com/sirupsen/logrus"
 )
 
 // CaptchaApi 验证码接口处理结构体
@@ -23,6 +23,8 @@ type GenerateResponse struct {
 
 // GenerateView 生成图片验证码的接口处理函数
 func (CaptchaApi) GenerateView(c *gin.Context) {
+	log := middleware.GetLog(c)
+
 	// 配置图片验证码参数：尺寸、干扰线、字符长度及来源等
 	driver := base64Captcha.DriverString{
 		Width:           200,          // 验证码图片宽度
@@ -38,7 +40,10 @@ func (CaptchaApi) GenerateView(c *gin.Context) {
 	// 生成验证码ID、Base64图片、字符值及错误信息
 	id, b64s, _, err := cp.Generate()
 	if err != nil {
-		logrus.Errorf("图片验证码生成失败 %s", err)
+		log.WithFields(map[string]interface{}{
+			"error":      err,
+			"captcha_id": id,
+		}).Error("image verification code generation failed")
 		response.FailWithMsg("图片验证码生成失败", c)
 		return
 	}

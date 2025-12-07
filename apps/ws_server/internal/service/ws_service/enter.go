@@ -5,6 +5,7 @@ package ws_service
 
 import (
 	"sync"
+	"ws_server/internal/core"
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
@@ -24,19 +25,38 @@ func RemoveWs(addr string) {
 }
 
 // SendMsg 向所有在线的WebSocket客户端广播消息
-func SendMsg(msg []byte) {
-	// 遍历所有在线WS连接，执行消息推送
+func SendMsg(msg []byte, logID string) {
+	// 初始化带日志追踪ID的日志实例
+	log := core.GetLogger().WithField("logID", logID)
+	var count int // 统计推送成功的客户端数量
+
+	// 遍历所有在线WS连接执行消息推送
 	wsStore.Range(func(key, value any) bool {
 		// 类型断言转换为WebSocket连接实例
 		conn := value.(*websocket.Conn)
-		// 向客户端推送文本消息
+		// 向客户端推送文本类型消息
 		err := conn.WriteMessage(websocket.TextMessage, msg)
 		if err != nil {
+			// 单连接推送失败：记录结构化错误日志
+			log.WithFields(map[string]interface{}{
+				"error": err.Error(),
+				"addr":  key,
+			}).Error("消息推送失败")
+			// 兼容原有logrus直接输出的日志
 			logrus.Errorf("消息推送失败 %s", err)
 			return true // 返回true继续遍历下一个连接
 		}
-		// 推送成功记录日志
+
+		// 单连接推送成功：记录结构化成功日志
+		log.WithFields(map[string]interface{}{
+			"addr": key,
+		}).Infof("消息推送成功")
+		count++ // 累加成功计数
+		// 兼容原有logrus直接输出的日志
 		logrus.Infof("消息推送成功 %s", string(msg))
 		return true // 返回true继续遍历下一个连接
 	})
+
+	// 推送完成：记录全量推送统计日志
+	log.WithField("ws_count", count).Info("消息推送完成")
 }

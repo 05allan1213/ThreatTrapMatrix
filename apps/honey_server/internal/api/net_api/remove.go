@@ -21,19 +21,35 @@ func (NetApi) RemoveView(c *gin.Context) {
 	log := middleware.GetLog(c)
 
 	// 调用通用删除服务执行批量删除操作
-	successCount, err := common_service.Remove(models.NetModel{}, common_service.RemoveRequest{
-		IDList: cr.IdList, // 待删除的网络ID列表
-		Log:    log,       // 日志实例，用于记录删除过程
-		Msg:    "网络",    // 业务模块名称，用于日志和提示信息
-	})
+	log.WithFields(map[string]interface{}{
+		"network_ids":   cr.IdList,
+		"request_count": len(cr.IdList),
+	}).Info("network deletion request received") // 收到网络批量删除请求
+
+	successCount, err := common_service.Remove(
+		models.NetModel{},
+		common_service.RemoveRequest{
+			IDList: cr.IdList,
+			Log:    log,
+			Msg:    "网络",
+		},
+	)
 
 	// 处理删除操作错误
 	if err != nil {
+		log.WithFields(map[string]interface{}{
+			"network_ids": cr.IdList,
+			"error":       err,
+		}).Error("failed to delete networks") // 删除网络失败
 		msg := fmt.Sprintf("删除网络失败 %s", err)
 		response.FailWithMsg(msg, c)
 		return
 	}
 
+	log.WithFields(map[string]interface{}{
+		"request_count": len(cr.IdList),
+		"success_count": successCount,
+	}).Info("networks deleted successfully") // 网络删除完成
 	// 构造删除成功提示信息，包含总数和成功数
 	msg := fmt.Sprintf("删除成功 共%d个，成功%d个", len(cr.IdList), successCount)
 	response.OkWithMsg(msg, c)

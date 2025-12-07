@@ -4,8 +4,9 @@ package mirror_cloud_api
 // Description: 镜像文件查看API接口实现，处理镜像文件上传、验证、解析及临时文件管理
 
 import (
-	"image_server/internal/utils/docker"
 	"fmt"
+	"image_server/internal/middleware"
+	"image_server/internal/utils/docker"
 	"os"
 	"path/filepath"
 	"time"
@@ -38,6 +39,12 @@ func (MirrorCloudApi) ImageSeeView(c *gin.Context) {
 		return
 	}
 
+	log := middleware.GetLog(c)
+	log.WithFields(logrus.Fields{
+		"file_size": file.Size,
+		"file_name": file.Filename,
+	}).Info("received image file upload request") // 收到镜像文件上传请求
+
 	// 校验镜像文件大小是否超出限制
 	if file.Size > maxFileSize {
 		response.FailWithMsg("镜像文件大小不能超过2GB", c)
@@ -54,32 +61,57 @@ func (MirrorCloudApi) ImageSeeView(c *gin.Context) {
 	// 创建临时目录（若不存在），确保文件存储路径有效
 	if err := os.MkdirAll(tempImageDir, 0755); err != nil {
 		response.FailWithMsg(fmt.Sprintf("创建临时目录失败: %v", err), c)
+		log.WithFields(logrus.Fields{
+			"error": err.Error(),
+		}).Error("failed to create temp directory") // 创建临时目录失败
 		return
 	}
 
 	// 拼接临时文件完整路径并保存上传的镜像文件
 	tempFilePath := filepath.Join(tempImageDir, file.Filename)
 	if err := c.SaveUploadedFile(file, tempFilePath); err != nil {
+		log.WithFields(logrus.Fields{
+			"error": err.Error(),
+		}).Error("failed to save uploaded image file") // 保存镜像文件失败
 		response.FailWithMsg(fmt.Sprintf("保存镜像文件失败: %v", err), c)
 		return
 	}
+	log.WithFields(logrus.Fields{
+		"image_path": tempFilePath,
+	}).Infof("uploaded image file saved to temp path") // 镜像文件保存成功
 
 	// 解析镜像文件元数据（ID、名称、标签）
 	imageID, imageName, imageTag, err := docker.ParseImageMetadata(tempFilePath)
 	if err != nil {
 		// 解析失败时清理已保存的临时文件，避免垃圾文件残留
 		os.Remove(tempFilePath)
+		log.WithFields(logrus.Fields{
+			"error": err,
+		}).Error("failed to parse image metadata") // 解析镜像元数据失败
 		response.FailWithMsg(fmt.Sprintf("解析镜像元数据失败: %v", err), c)
 		return
 	}
+	log.WithFields(logrus.Fields{
+		"image_id":   imageID,
+		"image_name": imageName,
+		"image_tag":  imageTag,
+	}).Info("image metadata parsed successfully") // 解析镜像元数据成功
 
 	// 异步执行临时文件清理（延迟5分钟），不阻塞接口响应
 	go func() {
 		time.Sleep(5 * time.Minute)
 		err = os.Remove(tempFilePath)
-		if err == nil {
+		if os.IsNotExist(err) {
+			return
+		}
+		if err != nil {
+			logrus.Errorf("镜像删除失败 %s", err)
+		} else {
 			logrus.Infof("删除镜像文件 %s", tempFilePath)
 		}
+		log.WithFields(logrus.Fields{
+			"file_path": tempFilePath,
+		}).Infof("temp image file deleted successfully") // 删除临时镜像文件成功
 	}()
 
 	// 组装镜像信息响应数据
@@ -89,6 +121,10 @@ func (MirrorCloudApi) ImageSeeView(c *gin.Context) {
 		ImageTag:  imageTag,
 		ImagePath: tempFilePath,
 	}
+
+	log.WithFields(logrus.Fields{
+		"response_data": data,
+	}).Infof("image file upload successfully") // 镜像文件上传成功
 
 	// 返回成功响应及镜像元数据
 	response.OkWithData(data, c)

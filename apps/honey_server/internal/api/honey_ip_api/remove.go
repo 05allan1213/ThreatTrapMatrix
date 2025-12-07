@@ -16,17 +16,45 @@ import (
 
 // RemoveView 处理诱捕IP批量删除请求，包含节点状态校验与状态更新
 func (HoneyIPApi) RemoveView(c *gin.Context) {
+	log := middleware.GetLog(c)
 	// 获取批量删除请求的ID列表参数
 	cr := middleware.GetBind[models.IDListRequest](c)
 
+	log.WithFields(map[string]interface{}{
+		"honey_ip_ids": cr.IdList,
+	}).Info("honey IP deletion request received") // 收到诱捕IP批量删除请求
+
 	// 查询待删除的诱捕IP列表，并预加载关联的节点信息
 	var honeyIPList []models.HoneyIpModel
-	global.DB.Preload("NodeModel").Preload("NetModel").Find(&honeyIPList, "id in ?", cr.IdList)
+	if err := global.DB.Preload("NodeModel").Preload("NetModel").Find(&honeyIPList, "id in ?", cr.IdList).Error; err != nil {
+		log.WithFields(map[string]interface{}{
+			"honey_ip_ids": cr.IdList,
+			"error":        err,
+		}).Error("failed to fetch honey IPs") // 获取诱捕IP列表失败
+		response.FailWithMsg("查询诱捕IP失败", c)
+		return
+	}
 
 	// 检查是否存在指定的诱捕IP记录
 	if len(honeyIPList) == 0 {
+		log.WithFields(map[string]interface{}{
+			"honey_ip_ids": cr.IdList,
+		}).Warn("no honey IPs found") // 未找到诱捕IP
 		response.FailWithMsg("未找到诱捕ip", c)
 		return
+	}
+
+	// 检查所有诱捕IP是否属于同一节点
+	nodeUID := honeyIPList[0].NodeModel.Uid
+	for _, honeyIP := range honeyIPList {
+		if honeyIP.NodeModel.Uid != nodeUID {
+			log.WithFields(map[string]interface{}{
+				"honey_ip_ids": cr.IdList,
+				"mixed_nodes":  true,
+			}).Warn("honey IPs belong to different nodes") // 诱捕IP属于不同节点
+			response.FailWithMsg("批量删除的诱捕IP必须属于同一节点", c)
+			return
+		}
 	}
 
 	// 获取关联的节点信息（取第一个诱捕IP所属节点）
@@ -34,6 +62,10 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 
 	// 校验节点是否处于运行状态
 	if nodeModel.Status != 1 {
+		log.WithFields(map[string]interface{}{
+			"node_id": nodeModel.ID,
+			"status":  nodeModel.Status,
+		}).Warn("node is not running") // 节点未运行
 		response.FailWithMsg("节点未运行", c)
 		return
 	}
@@ -41,19 +73,19 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 	// 校验节点是否在线（可通信）
 	_, ok := grpc_service.GetNodeCommand(nodeModel.Uid)
 	if !ok {
+		log.WithFields(map[string]interface{}{
+			"node_uid": nodeModel.Uid,
+		}).Warn("node is offline") // 节点离线
 		response.FailWithMsg("节点离线中", c)
 		return
 	}
 
 	// 发送删除IP消息给节点
 	req := mq_service.DeleteIPRequest{
-		LogID: "",
+		LogID: log.Data["logID"].(string),
 	}
 	for _, model := range honeyIPList {
-		var isTan bool
-		if model.NetModel.IP == model.IP {
-			isTan = true
-		}
+		isTan := model.NetModel.IP == model.IP
 		req.IpList = append(req.IpList, mq_service.IpInfo{
 			HoneyIPID: model.ID,
 			IP:        model.IP,
@@ -61,10 +93,29 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 			IsTan:     isTan,
 		})
 	}
+	log.WithFields(map[string]interface{}{
+		"node_uid": nodeModel.Uid,
+		"ip_count": len(req.IpList),
+	}).Info("sending batch delete request to node") // 发送批量删除请求给节点
+
 	mq_service.SendDeleteIPMsg(nodeModel.Uid, req)
 
 	// 更新诱捕IP状态为删除中
-	global.DB.Model(&honeyIPList).Update("status", 4)
+	if err := global.DB.Model(&honeyIPList).Update("status", 4).Error; err != nil {
+		log.WithFields(map[string]interface{}{
+			"node_uid":   nodeModel.Uid,
+			"ip_count":   len(honeyIPList),
+			"new_status": 4,
+			"error":      err,
+		}).Error("failed to update honey IP status") // 数据库更新诱捕IP状态失败
+		response.FailWithMsg("更新诱捕IP状态失败", c)
+		return
+	}
+
+	log.WithFields(map[string]interface{}{
+		"node_uid": nodeModel.Uid,
+		"ip_count": len(honeyIPList),
+	}).Info("batch deletion initiated successfully") // 批量删除成功启动
 
 	// 返回删除处理中的响应
 	response.OkWithMsg("批量删除中", c)

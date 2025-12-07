@@ -23,7 +23,11 @@ func (UserApi) UserLogoutView(c *gin.Context) {
 	expiresAt := time.Unix(auth.ExpiresAt, 0)
 
 	// 记录用户注销日志（包含用户ID、Token、过期时间）
-	log.Infof("用户注销 %d %s %s", auth.UserID, token, expiresAt)
+	log.WithFields(map[string]interface{}{
+		"user_id":    auth.UserID,
+		"token":      token,
+		"expires_at": expiresAt,
+	}).Info("user logged out successfully") // 用户注销成功
 	// 返回注销成功响应
 	response.OkWithMsg("注销成功", c)
 }

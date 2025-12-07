@@ -2,9 +2,10 @@ package mq_service
 
 // wsMsgType WebSocket消息类型
 type wsMsgType struct {
-	Type   int8 `json:"type"`   // 消息类型
-	NetID  uint `json:"netID"`  // 子网ID
-	NodeID uint `json:"nodeID"` // 节点ID
+	Type   int8   `json:"type"`   // 消息类型
+	NetID  uint   `json:"netID"`  // 子网ID
+	NodeID uint   `json:"nodeID"` // 节点ID
+	LogID  string `json:"logID"`  // 日志ID
 }
 
 /*

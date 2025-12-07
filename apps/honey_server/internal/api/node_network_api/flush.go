@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"honey_server/internal/global"
 	"honey_server/internal/middleware"
 	"honey_server/internal/models"
@@ -22,18 +20,31 @@ import (
 
 // FlushView 处理节点网络视图刷新请求，向指定节点发送网卡刷新命令并返回结果
 func (NodeNetworkApi) FlushView(c *gin.Context) {
+	log := middleware.GetLog(c)
 	// 从请求中绑定并获取节点ID参数
 	cr := middleware.GetBind[models.IDRequest](c)
+
+	log.WithFields(map[string]interface{}{
+		"node_id": cr.Id,
+	}).Info("network interface flush request received") // 收到节点网卡刷新请求
 
 	var model models.NodeModel
 	// 查询指定ID的节点信息
 	if err := global.DB.Take(&model, cr.Id).Error; err != nil {
+		log.WithFields(map[string]interface{}{
+			"node_id": cr.Id,
+			"error":   err,
+		}).Warn("node not found") // 节点不存在
 		response.FailWithMsg("节点不存在", c)
 		return
 	}
 
 	// 检查节点状态是否为运行中
 	if model.Status != 1 {
+		log.WithFields(map[string]interface{}{
+			"node_id": model.ID,
+			"status":  model.Status,
+		}).Warn("node is not running") // 节点未运行
 		response.FailWithMsg("节点未运行", c)
 		return
 	}
@@ -41,6 +52,9 @@ func (NodeNetworkApi) FlushView(c *gin.Context) {
 	// 通过节点唯一标识获取RPC命令通道
 	cmd, ok := grpc_service.GetNodeCommand(model.Uid)
 	if !ok {
+		log.WithFields(map[string]interface{}{
+			"node_uid": model.Uid,
+		}).Warn("node is offline") // 节点离线
 		response.FailWithMsg("节点离线中", c)
 		return
 	}
@@ -62,8 +76,15 @@ func (NodeNetworkApi) FlushView(c *gin.Context) {
 	// 发送网卡刷新命令到节点
 	select {
 	case cmd.ReqChan <- req:
-		logrus.Debugf("已向节点 %s 发送网卡刷新请求", model.Uid)
+		log.WithFields(map[string]interface{}{
+			"node_uid": model.Uid,
+			"task_id":  req.TaskID,
+		}).Debug("flush request sent to node") // 发送网卡刷新命令到节点
 	case <-ctx.Done():
+		log.WithFields(map[string]interface{}{
+			"node_uid": model.Uid,
+			"error":    ctx.Err(),
+		}).Error("timeout sending flush command") // 发送命令超时
 		response.FailWithMsg("发送命令超时", c)
 		return
 	}
@@ -73,11 +94,26 @@ func (NodeNetworkApi) FlushView(c *gin.Context) {
 	// 等待节点响应结果
 	select {
 	case res := <-cmd.ResChan:
-		logrus.Debugf("已接收节点 %s 的网卡刷新响应", model.Uid)
+		log.WithFields(map[string]interface{}{
+			"node_uid": model.Uid,
+			"task_id":  req.TaskID,
+		}).Debug("flush response received from node")            // 从节点收到的刷新响应
 		networkInfoList = res.NetworkFlushOutMessage.NetworkList // 提取网卡信息
 	case <-ctx.Done():
+		log.WithFields(map[string]interface{}{
+			"node_uid": model.Uid,
+			"error":    ctx.Err(),
+		}).Error("timeout waiting for flush response") // 等待刷新响应超时
 		response.FailWithMsg("获取响应超时", c)
 		return
+	}
+
+	// 遍历网卡信息
+	for _, network := range networkInfoList {
+		log.WithFields(map[string]interface{}{
+			"network_name": network.Network,
+			"ip_address":   network.Ip,
+		}).Info("detected network interface") // 检测到网卡
 	}
 
 	// 查询数据库中当前节点的网卡记录
@@ -93,7 +129,6 @@ func (NodeNetworkApi) FlushView(c *gin.Context) {
 	// 构建新网卡名称到索引的映射
 	newNetworkMap := make(map[string]int)
 	for i, network := range networkInfoList {
-		logrus.Infof("节点网卡信息：%s %s", network.Network, network.Net)
 		newNetworkMap[network.Network] = i
 	}
 
@@ -139,26 +174,42 @@ func (NodeNetworkApi) FlushView(c *gin.Context) {
 			Status:  2, // 初始状态设为未启用
 		}
 		if err := global.DB.Create(&newRecord).Error; err != nil {
-			logrus.Errorf("创建网卡记录失败: %v", err)
+			log.WithFields(map[string]interface{}{
+				"network_name": network.Network,
+				"error":        err,
+			}).Error("failed to create new network record") // 创建新网卡记录失败
 		}
 	}
 
 	// 执行数据库删除操作
 	for _, network := range deletedNetworks {
 		if err := global.DB.Delete(&network).Error; err != nil {
-			logrus.Errorf("删除网卡记录失败: %v", err)
+			log.WithFields(map[string]interface{}{
+				"network_id":   network.ID,
+				"network_name": network.Network,
+				"error":        err,
+			}).Error("failed to delete network record") // 删除网卡记录失败
 		}
 	}
 
 	// 执行数据库更新操作
 	for _, network := range updatedNetworks {
 		if err := global.DB.Save(&network).Error; err != nil {
-			logrus.Errorf("更新网卡记录失败: %v", err)
+			log.WithFields(map[string]interface{}{
+				"network_id":   network.ID,
+				"network_name": network.Network,
+				"error":        err,
+			}).Error("failed to update network record") // 更新网卡记录失败
 		}
 	}
 
 	// 记录网卡信息同步统计
-	logrus.Infof("节点网卡同步完成：新增 %d 张，删除 %d 张，更新 %d 张", len(newNetworks), len(deletedNetworks), len(updatedNetworks))
+	log.WithFields(map[string]interface{}{
+		"node_id":          model.ID,
+		"new_networks":     len(newNetworks),
+		"deleted_networks": len(deletedNetworks),
+		"updated_networks": len(updatedNetworks),
+	}).Info("network interface flush completed") // 网卡信息同步统计完成
 
 	// 返回成功响应
 	response.OkWithMsg("网卡信息更新成功", c)
