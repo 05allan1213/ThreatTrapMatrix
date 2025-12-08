@@ -1,4 +1,12 @@
 server.host: '0.0.0.0'
-elasticsearch.hosts: ['http://10.4.0.5:9200']
+elasticsearch.hosts: [ 'http://elasticsearch:9200' ]
 # 配置中文环境
 i18n.locale: 'zh-CN'
+#启用基本认证
+elasticsearch.username: "elastic"  # 使用内置的kibana_system用户
+elasticsearch.password: "yourpassword"   # 设置一个密码
+
+xpack.security.enabled: true
+xpack.security.session.idleTimeout: "30m"
+xpack.security.session.lifespan: "7d"
+xpack.security.audit.enabled: true

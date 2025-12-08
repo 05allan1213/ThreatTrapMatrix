@@ -1,0 +1,20 @@
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+C = CN
+ST = Beijing
+L = Beijing
+O = YourCompany
+CN = kafka-broker
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+IP.1 = 192.168.5.130
+DNS.1 = kafka-broker
+IP.2 = 10.4.0.20
+DNS.2 = kafka-broker

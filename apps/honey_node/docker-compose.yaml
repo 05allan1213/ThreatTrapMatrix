@@ -1,0 +1,12 @@
+services:
+  filebeat:
+    image: elastic/filebeat:7.5.1
+    network_mode: host
+    volumes:
+      - ./test:/app/ttm
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - ./kafka-certs/ca.crt:/usr/share/filebeat/certs/ca.crt:ro
+    environment:
+      - SSL_CERT_FILE=/usr/share/filebeat/certs/ca.crt
+    extra_hosts:
+      - "kafka-broker:192.168.5.130"  # 虚拟主机名映射

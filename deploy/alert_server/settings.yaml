@@ -47,8 +47,8 @@ mq: # rabbitMQ
 
 es: # elasticsearch
   addr: http://10.4.0.5:9200 # elasticsearch地址
-  username: # 用户名
-  password: # 密码
+  username: elastic # 用户名
+  password: yourpassword # 密码
 
 alert: # 告警
   alertIndex: alert_index #  告警索引

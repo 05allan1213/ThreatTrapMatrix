@@ -44,9 +44,15 @@ services:
     image: "elasticsearch:7.12.0"
     restart: always
     privileged: true
+    ports:
+      - "9200:9200"
     environment:
       discovery.type: single-node
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "true"
+      ELASTIC_PASSWORD: "yourpassword"  # 设置 elastic 用户的密码
+      # 允许默认密码（否则 Kibana 无法自动连接）
+      xpack.security.authc.accept_default_password: "true"
     volumes:
       - ./es/data:/usr/share/elasticsearch/data
     networks:
