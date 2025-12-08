@@ -1,0 +1,40 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /app/ttm/*.log             # 监听所有 .log 文件
+      - /app/ttm/**/*.log          # 监听子目录中的所有 .log 文件
+    fields:
+      log_type: ttm_logs           # 添加自定义字段
+    # 多行日志处理（适用于Java堆栈跟踪等）
+    multiline.pattern: '^[[:space:]]+(at|\.{3})[[:space:]]+\b|^Caused by:'
+    multiline.negate: false
+    multiline.match: after
+
+# 处理器配置（可选）
+processors:
+  - add_host_metadata: ~
+  - add_docker_metadata: ~
+  - drop_fields:                   # 移除不需要的字段
+      fields: ["log.offset", "input.type"]
+
+# Kafka 输出配置
+output.kafka:
+  enabled: true
+  hosts: ["10.4.0.20:9092"]       # Kafka 地址
+  topic: "logs_topic"              # Kafka 主题名称
+  partition.round_robin:         # 分区策略
+    reachable_only: false
+  required_acks: 1               # 确认级别
+  compression: gzip              # 压缩提高吞吐量
+  max_message_bytes: 1048576     # 最大消息大小 (1MB)
+  codec.json:
+    pretty: false
+
+# 日志记录设置
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat.log
+  keepfiles: 7

@@ -1,0 +1,71 @@
+services:
+  kafka-server:
+    image: bitnami/kafka:3.9.0
+    # docker pull swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/bitnami/kafka:3.9.0
+    # docker tag  swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/bitnami/kafka:3.9.0  docker.io/bitnami/kafka:3.9.0
+    restart: always
+    ports:
+      - "9092:9092"
+      - "9093:9093"   # 添加CONTROLLER监听端口映射
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://10.4.0.20:9092
+      - KAFKA_HEAP_OPTS=-Xmx256M -Xms128M
+      # KRaft模式核心参数 ↓
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller  # 节点角色
+      - KAFKA_CFG_NODE_ID=1                        # 唯一节点ID
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@10.4.0.20:9093   # 关键：设置投票者
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.20
+  filebeat:
+    image: elastic/filebeat:7.5.1
+    volumes:
+      - ./test:/app/ttm
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.21
+
+  logstash:
+    image: logstash:7.12.1
+    volumes:
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    extra_hosts:
+      - "elasticsearch:10.0.0.5"  # 虚拟主机名映射
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.22
+
+  kibana:
+    image: kibana:7.12.0
+    ports:
+      - '5601:5601'
+    environment:
+      - ELASTICSEARCH_HOSTS=http://10.4.0.5:9200
+    volumes:
+      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.23
+  kafka-map:
+    image: dushixiang/kafka-map:latest
+    restart: always
+    ports:
+      - "9001:8080"
+    environment:
+      - DEFAULT_USERNAME=admin
+      - DEFAULT_PASSWORD=admin
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.24
+
+networks:
+  honey_network:
+    name: honey_network
+    external: true

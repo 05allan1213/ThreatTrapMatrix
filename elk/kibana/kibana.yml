@@ -1,0 +1,4 @@
+server.host: '0.0.0.0'
+elasticsearch.hosts: ['http://10.4.0.5:9200']
+# 配置中文环境
+i18n.locale: 'zh-CN'

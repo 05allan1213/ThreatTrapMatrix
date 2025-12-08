@@ -6,7 +6,7 @@ logger: # 日志器
 system: # 系统路由
   grpcManageAddr: "192.168.5.130:50001" # gRPC管理服务监听地址
   network: ens33 # 网卡名称
-  uid:  # 节点唯一标识（UUID）
+  uid: 36855fd7-05b0-4611-be1a-aa82ed3bd1a4 # 节点唯一标识（UUID）
   evePath: /var/log/suricata/eve.json # Suricata日志路径
 
 filterNetworkList: # 网卡过滤列表
