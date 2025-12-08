@@ -5,7 +5,7 @@ logger: # 日志器
 
 system: # 系统路由
   mode: debug # 运行模式 [debug, release, test]
-  webAddr: ":8085" # web的运行地址
+  webAddr: ":80" # web的运行地址
 
 jwt: # JWT
   expires: 8640000 # token过期时间 (100天)
@@ -15,7 +15,7 @@ jwt: # JWT
 mq: # rabbitMQ
   user: admin # 用户名
   password: password # 密码
-  host: 10.4.0.8 # 主机地址
+  host: 10.4.0.4 # 主机地址
   port: 5672 # 端口
   ssl: false # 是否使用SSL
   clientCertificate: # 客户端的证书

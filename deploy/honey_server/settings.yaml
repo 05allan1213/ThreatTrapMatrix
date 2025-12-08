@@ -10,7 +10,7 @@ db: # MySQL
 
 logger: # 日志器
   format: json # 日志格式 [json, text]
-  appName: matrix_server # 应用名称
+  appName: honey_server # 应用名称
   level: info # 日志级别
 
 redis: # Redis
@@ -21,6 +21,7 @@ redis: # Redis
 system: # 系统路由
   mode: debug # 运行模式 [debug, release, test]
   webAddr: ":80" # web的运行地址
+  grpcAddr: ":50001" # grpc的运行地址
 
 jwt: # JWT
   expires: 8640000 # token过期时间 (100天)
@@ -28,22 +29,19 @@ jwt: # JWT
   secret: a5y3p2t6y3p2 # token密钥
 
 whiteList: # 路由白名单
-  - /matrix_server/login # 登录
-  - /matrix_server/captcha # 验证码
-  - /matrix_server/site # 站点信息
+  - /honey_server/login # 登录
+  - /honey_server/captcha # 验证码
+  - /honey_server/site # 站点信息
 
 mq: # rabbitMQ
   user: admin # 用户名
   password: password # 密码
   host: 10.4.0.4 # 主机地址
   port: 5672 # 端口
+  createIpExchangeName: createIpExchange # 创建IP的交换机名称
+  deleteIpExchangeName: deleteIpExchangeName # 删除IP的交换机名称
+  bindPortExchangeName: bindPortExchangeName # 绑定端口的交换机名称
   ssl: false # 是否使用SSL
   clientCertificate: # 客户端的证书
   clientKey:  # 客户端的私钥
   caCertificate:  # ca的证书
-  batchDeployExchangeName: batchDeployExchangeName # 批量部署的交换机名称
-  batchDeployStatusTopic: batchDeployStatusTopic # 批量部署的Topic名称
-  batchUpdateDeployExchangeName: batchUpdateDeployExchangeName # 批量更新部署的交换机名称
-  batchUpdateDeployStatusTopic: batchUpdateDeployStatusTopic # 批量更新部署的Topic名称
-  batchRemoveDeployExchangeName: batchRemoveDeployExchangeName # 批量删除部署的交换机名称
-  batchRemoveDeployStatusTopic: batchRemoveDeployStatusTopic # 批量删除部署的Topic名称

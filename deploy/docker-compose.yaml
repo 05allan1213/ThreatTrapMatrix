@@ -1,13 +1,36 @@
 services:
+  mysql:
+    image: "mysql:5.7"
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456  # root用户的密码
+      TZ: Asia/Shanghai
+      MYSQL_DATABASE: honey
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --max_allowed_packet=128M;
+    volumes: #宿主机配置目录或文件挂载到容器
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/db.sql:/docker-entrypoint-initdb.d/db.sql
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.2
+  redis:
+    restart: always
+    image: redis:5.0.5
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.3
   rabbitmq:
     image: rabbitmq:3.9-management  # 使用带有管理插件的RabbitMQ镜像
-    container_name: rabbitmq  # 容器名称
-    restart: always # 容器重启策略
+    restart: always
     ports:
-      - "5672:5672"  # RabbitMQ的AMQP端口
-      - "15672:15672"  # RabbitMQ的管理界面端口
-      - "5671:5671" # RabbitMQ的AMQP加密端口
-      - "15671:15671" # RabbitMQ的管理界面加密端口
+      - "5671:5671"  # RabbitMQ的AMQP端口
+      - "15671:15671"  # RabbitMQ的管理界面端口
     environment:
       RABBITMQ_DEFAULT_USER: admin  # 设置默认用户名
       RABBITMQ_DEFAULT_PASS: password  # 设置默认密码
@@ -16,7 +39,7 @@ services:
       - ./rabbitMQ/ssl:/etc/rabbitmq/ssl          # SSL证书目录
     networks:
       honey_network:
-        ipv4_address: 10.4.0.8
+        ipv4_address: 10.4.0.4
   es:
     image: "elasticsearch:7.12.0"
     restart: always
@@ -24,57 +47,89 @@ services:
     environment:
       discovery.type: single-node
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-    ports:
-      - 9200:9200
     volumes:
       - ./es/data:/usr/share/elasticsearch/data
     networks:
       honey_network:
-        ipv4_address: 10.4.0.7
-  image_server:
-    image: image_server:v1.0.1
+        ipv4_address: 10.4.0.5
+  honey_web:
+    image: nginx:latest
     restart: always
-    ports:
-      - "8080:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./image_server/settings.yaml:/app/settings.yaml
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/logs:/var/log/nginx/
+      - ./honey_web/dist:/usr/share/nginx/honey_web
+      - ./nginx/cert/:/usr/share/nginx/cert
     networks:
       honey_network:
-        ipv4_address: 10.4.0.12
-  alert_server:
-    image: alert_server:v1.0.1
+        ipv4_address: 10.4.0.6
+    ports:
+      - "80:80"
+      - "443:443"
+
+  honey_server:
+    image: honey_server:v1.0.1
     restart: always
     ports:
-      - "8083:8083"
+      - "50001:50001"
     volumes:
-      - ./alert_server/settings.yaml:/app/settings.yaml
-    networks:
-      honey_network:
-        ipv4_address: 10.4.0.11
-  matrix_server:
-    image: matrix_server:v1.0.1
-    restart: always
-    ports:
-      - "8084:8084"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./matrix_server/settings.yaml:/app/settings.yaml
+      - ./honey_server/settings.yaml:/app/settings.yaml
+      - ./honey_server/uploads:/app/uploads
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
     networks:
       honey_network:
         ipv4_address: 10.4.0.10
+  image_server:
+    image: image_server:v1.0.1
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./image_server/settings.yaml:/app/settings.yaml
+    depends_on:
+      - mysql
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.11
+  alert_server:
+    image: alert_server:v1.0.1
+    restart: always
+    volumes:
+      - ./alert_server/settings.yaml:/app/settings.yaml
+    depends_on:
+      - mysql
+      - rabbitmq
+      - es
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.12
+  matrix_server:
+    image: matrix_server:v1.0.1
+    restart: always
+    volumes:
+      - ./matrix_server/settings.yaml:/app/settings.yaml
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      honey_network:
+        ipv4_address: 10.4.0.13
   ws_server:
     image: ws_server:v1.0.1
     restart: always
-    ports:
-      - "8085:8085"
     volumes:
       - ./ws_server/settings.yaml:/app/settings.yaml
+    depends_on:
+      - rabbitmq
     networks:
       honey_network:
-        ipv4_address: 10.4.0.9
+        ipv4_address: 10.4.0.14
 networks:
   honey_network:
+    name: honey_network
     driver: bridge
     ipam:
       driver: default

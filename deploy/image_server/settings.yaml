@@ -1,9 +1,9 @@
 db: # MySQL
-  db_name: "honey_db" # 数据库名称
-  host: "82.157.155.26" # 数据库主机地址
+  db_name: "honey" # 数据库名称
+  host: "10.4.0.2" # 数据库主机地址
   port: 3306  # 数据库端口号
-  user: "ayp"  # 数据库用户名
-  password: "801026qwe"  # 数据库密码
+  user: "root"  # 数据库用户名
+  password: "123456"  # 数据库密码
   maxIdleConns: 10 # 最大空闲连接数
   maxOpenConns: 100 # 最大连接数
   connMaxLifetime: 10000 # 连接最大生命周期
@@ -14,13 +14,13 @@ logger: # 日志器
   level: info # 日志级别
 
 redis: # Redis
-  addr: 82.157.155.26:6379 # Redis地址
+  addr: 10.4.0.3:6379 # Redis地址
   password: # Redis密码
   db: 1 # Redis数据库索引
 
 system: # 系统路由
   mode: debug # 运行模式 [debug, release, test]
-  webAddr: ":8080" # web的运行地址
+  webAddr: ":80" # web的运行地址
 
 jwt: # JWT
   expires: 8640000 # token过期时间 (100天)

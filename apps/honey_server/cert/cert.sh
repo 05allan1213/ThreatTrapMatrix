@@ -25,7 +25,7 @@ openssl req -new -key server.key -out server.csr \
     -subj "/C=CN/ST=Beijing/L=Beijing/O=MyOrg/OU=IT/CN=localhost"
 
 # 创建临时扩展文件
-echo "subjectAltName=DNS:localhost,DNS:example.com,IP:127.0.0.1,IP:192.168.56.1,IP:192.168.5.1,IP:192.168.5.130" > server.ext
+echo "subjectAltName=DNS:localhost,DNS:ayp05.com,IP:127.0.0.1,IP:192.168.56.1,IP:192.168.5.1,IP:192.168.5.130" > server.ext
 
 openssl x509 -req -sha256 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
     -out server.crt -days $DAYS -extfile server.ext
