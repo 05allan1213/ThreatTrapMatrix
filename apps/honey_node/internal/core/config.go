@@ -6,7 +6,6 @@ package core
 import (
 	"honey_node/internal/config"
 	"honey_node/internal/flags"
-	"honey_node/internal/global"
 	"os"
 
 	"github.com/google/uuid"
@@ -40,14 +39,14 @@ func ReadConfig() *config.Config {
 func SetDefault(c *config.Config) {
 	if c.System.Uid == "" {
 		c.System.Uid = uuid.New().String()
-		SetConfig()
+		SetConfig(c)
 	}
 }
 
 // SetConfig 更新配置文件内容，并保存到文件中
-func SetConfig() {
+func SetConfig(c *config.Config) {
 	// 将全局配置序列化为YAML格式
-	byteData, err := yaml.Marshal(global.Config)
+	byteData, err := yaml.Marshal(c)
 	if err != nil {
 		logrus.Errorf("配置序列化失败 %s", err)
 		return

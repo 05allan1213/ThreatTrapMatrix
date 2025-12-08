@@ -4,10 +4,10 @@ logger: # 日志器
   level: info # 日志级别
 
 system: # 系统路由
-  grpcManageAddr: "192.168.5.130:8082" # gRPC管理服务监听地址
+  grpcManageAddr: "192.168.5.130:50001" # gRPC管理服务监听地址
   network: ens33 # 网卡名称
-  uid: dde9b8cc-08b4-4f17-8c8e-209e0504a2eb # 节点唯一标识（UUID）
-  evePath: deploy/suricata/logs/eve.json # Suricata日志路径
+  uid:  # 节点唯一标识（UUID）
+  evePath: /var/log/suricata/eve.json # Suricata日志路径
 
 filterNetworkList: # 网卡过滤列表
   - br- # 过滤前缀为br-的网卡

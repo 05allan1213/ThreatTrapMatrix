@@ -1,7 +1,6 @@
 services:
   suricata:
     image: jasonish/suricata:7.0.10  # 指定具体版本
-    container_name: suricata
     network_mode: host  # 必须使用主机模式监听网卡
     cap_add:
       - NET_ADMIN
@@ -14,3 +13,11 @@ services:
     restart: always
     environment:
       TZ: Asia/Shanghai
+  node_server:
+    image: node_server:v1.0.1
+    network_mode: host
+    restart: always
+    volumes:
+      - ./node_server/settings.yaml:/app/settings.yaml
+      - ./node_server/gorm.db:/app/gorm.db
+      - ./suricata/logs:/var/log/suricata         # 挂载日志目录
