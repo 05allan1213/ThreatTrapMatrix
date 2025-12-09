@@ -44,7 +44,13 @@ services:
     image: elastic/filebeat:7.5.1
     volumes:
       - ./test:/app/ttm
+      - ../deploy/honey_server/logs:/app/ttm/honey_server
+      - ../deploy/image_server/logs:/app/ttm/image_server
+      - ../deploy/alert_server/logs:/app/ttm/alert_server
+      - ../deploy/matrix_server/logs:/app/ttm/matrix_server
+      - ../deploy/ws_server/logs:/app/ttm/ws_server
       - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+    user: "root"
     networks:
       honey_network:
         ipv4_address: 10.4.0.21

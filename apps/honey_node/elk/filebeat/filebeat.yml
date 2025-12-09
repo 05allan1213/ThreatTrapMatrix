@@ -7,21 +7,31 @@ filebeat.inputs:
     fields:
       log_type: ttm_logs           # 添加自定义字段
     # 多行日志处理（适用于Java堆栈跟踪等）
-    multiline.pattern: '^[[:space:]]+(at|\.{3})[[:space:]]+\b|^Caused by:'
-    multiline.negate: false
-    multiline.match: after
+    #    multiline.pattern: '^[[:space:]]+(at|\.{3})[[:space:]]+\b|^Caused by:'
+    #    multiline.negate: false
+    #    multiline.match: after
+    # JSON解析配置
+    json.keys_under_root: true  # 将JSON字段提升到根级别
+    json.overwrite_keys: true   # 覆盖同名的已有字段
+    json.add_error_key: true    # 解析失败时添加error字段
+
+    # 只保留解析后的JSON字段，移除Filebeat默认添加的冗余字段
+    processors:
+      - drop_fields:
+          fields: [ "log", "@version", "ecs", "input", "agent", "host" ]  # 移除不需要的字段
+          ignore_missing: true  # 忽略不存在的字段
 
 # 处理器配置（可选）
 processors:
   - add_host_metadata: ~
   - add_docker_metadata: ~
-  - drop_fields:                   # 移除不需要的字段
-      fields: ["log.offset", "input.type", "monitoring", "@metadata", "host", "agent"]
+  - drop_fields: # 移除不需要的字段
+      fields: [ "log.offset", "input.type", "monitoring", "@metadata", "host", "agent" ]
 
 # Kafka 输出配置
 output.kafka:
   enabled: true
-  hosts: ["kafka-broker:9095"]       # Kafka 地址
+  hosts: [ "kafka-broker:9095" ]       # Kafka 地址
   topic: "logs_topic"              # Kafka 主题名称
 
   ssl.enabled: true
@@ -31,7 +41,7 @@ output.kafka:
   sasl.mechanism: "PLAIN"
   security_protocol: "SASL_SSL"  # 明确指定协议类型
 
-  partition.round_robin:         # 分区策略
+  partition.round_robin: # 分区策略
     reachable_only: false
   required_acks: 1               # 确认级别
   compression: gzip              # 压缩提高吞吐量
@@ -41,7 +51,7 @@ output.kafka:
 
 # 日志记录设置
 logging.level: info
-logging.selectors: ["kafka", "tls"]  # 聚焦关键模块
+logging.selectors: [ "kafka", "tls" ]  # 聚焦关键模块
 logging.to_files: true
 logging.files:
   path: /var/log/filebeat

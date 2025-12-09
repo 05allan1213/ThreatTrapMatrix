@@ -80,6 +80,7 @@ services:
       - "50001:50001"
     volumes:
       - ./honey_server/settings.yaml:/app/settings.yaml
+      - ./honey_server/logs:/app/logs
       - ./honey_server/uploads:/app/uploads
     depends_on:
       - mysql
@@ -94,6 +95,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./image_server/settings.yaml:/app/settings.yaml
+      - ./image_server/logs:/app/logs
     depends_on:
       - mysql
     networks:
@@ -104,6 +106,7 @@ services:
     restart: always
     volumes:
       - ./alert_server/settings.yaml:/app/settings.yaml
+      - ./alert_server/logs:/app/logs
     depends_on:
       - mysql
       - rabbitmq
@@ -116,6 +119,7 @@ services:
     restart: always
     volumes:
       - ./matrix_server/settings.yaml:/app/settings.yaml
+      - ./matrix_server/logs:/app/logs
     depends_on:
       - mysql
       - redis
@@ -128,6 +132,7 @@ services:
     restart: always
     volumes:
       - ./ws_server/settings.yaml:/app/settings.yaml
+      - ./ws_server/logs:/app/logs
     depends_on:
       - rabbitmq
     networks:

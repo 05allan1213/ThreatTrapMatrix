@@ -17,7 +17,11 @@ services:
     image: node_server:v1.0.1
     network_mode: host
     restart: always
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     volumes:
       - ./node_server/settings.yaml:/app/settings.yaml
       - ./node_server/gorm.db:/app/gorm.db
       - ./suricata/logs:/var/log/suricata         # 挂载日志目录
+      - ./node_server/logs:/app/logs
