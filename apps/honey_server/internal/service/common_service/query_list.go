@@ -4,9 +4,9 @@ package common_service
 // Description: 通用查询服务模块，提供支持分页、模糊查询、排序等功能的通用列表查询能力
 
 import (
+	"fmt"
 	"honey_server/internal/core"
 	"honey_server/internal/models"
-	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -63,10 +63,10 @@ func QueryList[T any](model T, req QueryListRequest) (list []T, count int64, err
 	}
 	offset := (req.PageInfo.Page - 1) * req.PageInfo.Limit // 计算偏移量
 
+	// 查询总记录数（用于分页计算）
+	err = db.Model(model).Count(&count).Error
 	// 执行分页查询（带排序）
 	err = db.Offset(offset).Limit(req.PageInfo.Limit).Order(req.Sort).Find(&list).Error
-	// 查询总记录数（用于分页计算）
-	err = db.Count(&count).Error
 
 	return
 }
