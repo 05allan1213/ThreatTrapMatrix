@@ -12,17 +12,17 @@ import (
 
 // ErrorIp 部署失败的IP信息结构体
 type ErrorIp struct {
-	Ip  string // 部署失败的IP地址
-	Msg string // 部署失败的错误信息
+	Ip  string `json:"ip"`  // 部署失败的IP地址
+	Msg string `json:"msg"` // 部署失败的错误信息
 }
 
 // NetDeployInfo 子网部署进度信息结构体
 type NetDeployInfo struct {
-	Type           int8      // 部署类型标识（1表示批量部署）
-	AllCount       int64     // 部署任务的总IP数量
-	CompletedCount int64     // 已完成部署的IP数量
-	ErrorCount     int64     // 部署失败的IP数量
-	ErrorIpList    []ErrorIp // 部署失败的IP列表（含错误信息）
+	Type           int8      `json:"type"`           // 部署类型标识（1表示批量部署）
+	AllCount       int64     `json:"allCount"`       // 部署任务的总IP数量
+	CompletedCount int64     `json:"completedCount"` // 已完成部署的IP数量
+	ErrorCount     int64     `json:"errorCount"`     // 部署失败的IP数量
+	ErrorIpList    []ErrorIp `json:"errorIpList"`    // 部署失败的IP列表（含错误信息）
 }
 
 // MarshalBinary 实现BinaryMarshaler接口
