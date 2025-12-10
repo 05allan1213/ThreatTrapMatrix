@@ -4,6 +4,7 @@ package mq_service
 // Description: 实现节点侧批量更新部署MQ消息消费逻辑，包含任务入库、异步清理旧端口转发、重建新端口转发、更新状态上报及任务状态更新等核心功能
 
 import (
+	"honey_node/internal/core"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/service/port_service"
@@ -35,6 +36,8 @@ func BatchUpdateDeployExChange(req models.BatchUpdateDeployRequest) error {
 
 // UpdateDeployTask 批量更新部署核心任务执行函数
 func UpdateDeployTask(req models.BatchUpdateDeployRequest, taskID string) {
+	log := core.GetLogger().WithField("logID", req.LogID)
+	log.WithField("data", req).Info("批量更新部署")
 	// 第一步：清理待更新IP的所有旧端口转发（先删后建，保证配置更新的准确性）
 	for _, s := range req.IpList {
 		port_service.CloseIpTunnel(s) // 关闭指定IP的所有端口隧道
@@ -73,6 +76,7 @@ func UpdateDeployTask(req models.BatchUpdateDeployRequest, taskID string) {
 			// 端口隧道创建失败时记录错误信息
 			if err != nil {
 				pI.ErrorMsg = err.Error()
+				log.WithField("error", err.Error()).Error("创建端口转发失败")
 			} else {
 				// 端口隧道创建成功，持久化端口配置到数据库
 				global.DB.Create(&models.PortModel{
@@ -88,7 +92,7 @@ func UpdateDeployTask(req models.BatchUpdateDeployRequest, taskID string) {
 		SendUpdateDeployStatusMsg(res)
 	}
 
-	logrus.Infof("批量更新部署结束")
+	log.WithField("ipCount", len(ipPortMap)).Info("批量更新部署结束")
 
 	// 第四步：更新批量更新部署任务状态为执行完成
 	var taskModel models.TaskModel

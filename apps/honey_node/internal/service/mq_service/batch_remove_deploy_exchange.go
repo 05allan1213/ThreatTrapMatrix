@@ -4,6 +4,7 @@ package mq_service
 // Description: MQ消息消费处理模块，实现批量删除部署消息的解析、任务入库及异步执行删除部署任务，包含端口转发关闭、网络接口删除、任务状态更新等核心逻辑
 
 import (
+	"honey_node/internal/core"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/service/ip_service"
@@ -35,6 +36,8 @@ func BatchRemoveDeployExChange(req models.BatchRemoveDeployRequest) error {
 
 // RemoveDeployTask 执行批量删除部署的具体任务逻辑
 func RemoveDeployTask(req models.BatchRemoveDeployRequest, taskID string) {
+	log := core.GetLogger().WithField("logID", req.LogID)
+	log.WithField("data", req).Info("批量删除部署开始")
 	// 遍历待删除部署的IP列表，逐个处理
 	// 处理逻辑：1. 关闭端口转发 2. 删除网络接口 3. 发送单个IP删除部署状态消息
 	for _, s := range req.IPList {
@@ -53,6 +56,10 @@ func RemoveDeployTask(req models.BatchRemoveDeployRequest, taskID string) {
 		if err != nil {
 			// 接口删除失败时记录错误信息
 			res.ErrorMsg = err.Error()
+			log.WithFields(logrus.Fields{
+				"error": err.Error(),
+				"data":  res,
+			}).Error("删除接口报错")
 		}
 		global.DB.Delete(&models.IpModel{}, "ip = ?", s.Ip)
 		// 发送当前IP的删除部署状态消息
@@ -60,7 +67,7 @@ func RemoveDeployTask(req models.BatchRemoveDeployRequest, taskID string) {
 	}
 
 	// 记录批量删除部署任务执行完成日志
-	logrus.Infof("批量删除部署结束")
+	log.Infof("批量删除部署结束")
 
 	// 查询任务记录并更新任务状态
 	var taskModel models.TaskModel

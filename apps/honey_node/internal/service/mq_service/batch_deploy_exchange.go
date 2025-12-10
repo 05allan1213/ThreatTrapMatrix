@@ -43,12 +43,14 @@ func BatchDeployExChange(req models.BatchDeployRequest) error {
 
 // DeployTask 批量部署核心任务执行函数
 func DeployTask(req models.BatchDeployRequest, taskID string) {
+	log := core.GetLogger().WithField("logID", req.LogID)
 	// 协程池控制：限制IP创建的并发数为200，平衡部署效率与系统资源
 	var maxChan = make(chan struct{}, 200)
 	// 等待组：用于等待所有IP创建协程执行完成
 	var wait sync.WaitGroup
 	// 汇总所有待创建的端口转发配置
 	var portList []models.PortInfo
+	log.WithField("data", req).Info("节点开始部署")
 
 	// 第一步：批量异步创建诱捕IP配置（含多维度合法性校验）
 	for _, ip := range req.IPList {
@@ -81,6 +83,7 @@ func DeployTask(req models.BatchDeployRequest, taskID string) {
 			var model models.IpModel
 			global.DB.Find(&model, "network = ? and ip = ?", req.Network, info.Ip)
 			if model.ID != 0 {
+				log.WithField("data", info.Ip).Info("部署ip在model里面")
 				res.Mac = model.Mac           // 复用已部署IP的MAC地址
 				res.LinkName = model.LinkName // 复用已部署IP的网络接口名称
 				SendDeployStatusMsg(res)      // 上报已部署IP状态（无需重复创建）
@@ -91,6 +94,7 @@ func DeployTask(req models.BatchDeployRequest, taskID string) {
 				if ok {
 					res.ErrorMsg = fmt.Sprintf("当前ip存在与本地ip中") // 记录本地IP冲突错误
 					SendDeployStatusMsg(res)                           // 上报IP冲突状态
+					log.WithField("data", info.Ip).Info("当前ip存在与本地ip中")
 					return
 				}
 			}
@@ -100,7 +104,11 @@ func DeployTask(req models.BatchDeployRequest, taskID string) {
 			if err == nil {
 				// 查询MAC地址对应的设备厂商信息，便于排查存活主机
 				manuf, _ := core.ManufQuery(_mac.String())
-				logrus.Warnf("存活主机 %s %s %s", info.Ip, _mac.String(), manuf)
+				log.WithFields(logrus.Fields{
+					"ip":    info.Ip,
+					"mac":   _mac.String(),
+					"manuf": manuf,
+				}).Warnf("存活主机")
 
 				res.ErrorMsg = "存活主机" // 记录存活主机错误
 				res.Mac = _mac.String()   // 记录存活主机的MAC地址
@@ -122,6 +130,9 @@ func DeployTask(req models.BatchDeployRequest, taskID string) {
 			// IP配置失败时上报错误状态并退出
 			if err != nil {
 				res.ErrorMsg = err.Error()
+				log.WithFields(logrus.Fields{
+					"error": err.Error(),
+				}).Error("部署失败")
 				SendDeployStatusMsg(res)
 				return
 			}
@@ -163,19 +174,24 @@ func DeployTask(req models.BatchDeployRequest, taskID string) {
 		go func(port models.PortInfo) {
 			err := port_service.Tunnel(port.LocalAddr(), port.TargetAddr())
 			if err != nil {
-				logrus.Errorf("端口绑定失败 %s", err)
+				log.WithFields(logrus.Fields{
+					"error": err.Error(),
+				}).Error("端口绑定失败")
 			}
 			// 异常说明：端口绑定失败大概率是IP未配置完成，或端口未释放
-			// 待补充逻辑：仅通知失败的端口绑定信息给服务端
 		}(info)
 	}
-	logrus.Infof("批量部署完成")
+	log.WithFields(logrus.Fields{
+		"count": len(req.IPList),
+	}).Infof("批量部署结束")
 
 	// 第三步：更新批量部署任务状态为执行完成
 	var taskModel models.TaskModel
 	err := global.DB.Take(&taskModel, "task_id = ?", taskID).Error
 	if err != nil {
-		logrus.Errorf("%s 任务不存在", taskID)
+		log.WithFields(logrus.Fields{
+			"task": taskID,
+		}).Error("任务不存在")
 		return
 	}
 	// 更新任务状态为1（执行完成）
