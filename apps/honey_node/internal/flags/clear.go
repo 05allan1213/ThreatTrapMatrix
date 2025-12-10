@@ -12,7 +12,7 @@ import (
 )
 
 // Clear 清空节点的全量业务数据
-func Clear() {
+func Clear(log *logrus.Entry) {
 	// 1. 清理IP相关资源及记录：先删除IP关联的网络接口，再删除IP数据库记录
 	var ipList []models.IpModel
 	global.DB.Find(&ipList) // 查询所有IP记录
@@ -23,7 +23,7 @@ func Clear() {
 	if len(ipList) > 0 {
 		global.DB.Delete(&ipList)
 	}
-	logrus.Infof("删除ip记录%d条", len(ipList))
+	log.Infof("删除ip记录%d条", len(ipList))
 
 	// 2. 清理端口数据库记录
 	var portList []models.PortModel
@@ -31,7 +31,7 @@ func Clear() {
 	if len(portList) > 0 {
 		global.DB.Delete(&portList) // 批量删除端口记录
 	}
-	logrus.Infof("删除端口记录%d条", len(portList))
+	log.Infof("删除端口记录%d条", len(portList))
 
 	// 3. 清理任务数据库记录
 	var taskList []models.TaskModel
@@ -39,5 +39,5 @@ func Clear() {
 	if len(taskList) > 0 {
 		global.DB.Delete(&taskList) // 批量删除任务记录
 	}
-	logrus.Infof("删除任务记录%d条", len(taskList))
+	log.Infof("删除任务记录%d条", len(taskList))
 }

@@ -208,6 +208,8 @@ func (nc *NodeClient) handleCommand(request *node_rpc.CmdRequest) {
 		nc.CmdNetworkFlush(request)
 	case node_rpc.CmdType_cmdNetScanType: // 网络扫描命令
 		nc.CmdNetScan(request)
+	case node_rpc.CmdType_cmdNodeRemoveType: // 节点移除命令
+		nc.CmdNodeRemove(request)
 	default: // 未知命令类型
 		logrus.Warnf("未知命令类型: %v", request.CmdType)
 	}

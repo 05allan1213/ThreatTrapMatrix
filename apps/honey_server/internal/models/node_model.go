@@ -36,6 +36,14 @@ func (n *NodeModel) BeforeDelete(tx *gorm.DB) error {
 	}
 	logrus.Infof("关联诱捕ip %d", len(ipList))
 
+	// 删除与节点关联的主机
+	var hostList []HostModel
+	err = tx.Find(&hostList, "node_id = ?", n.ID).Delete(&hostList).Error
+	if err != nil {
+		return err
+	}
+	logrus.Infof("关联主机 %d", len(hostList))
+
 	// 删除与节点关联的网络
 	var netList []NetModel
 	err = tx.Find(&netList, "node_id = ?", n.ID).Delete(&netList).Error

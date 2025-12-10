@@ -5,17 +5,14 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // Model 通用基础模型结构体
 // 包含主键、创建时间、更新时间、软删除字段，作为所有业务模型的嵌入基类
 type Model struct {
-	ID        uint           `gorm:"primarykey" json:"id"`   // 主键ID（自增）
-	CreatedAt time.Time      `json:"createdAt"`              // 记录创建时间
-	UpdatedAt time.Time      `json:"updatedAt"`              // 记录最后更新时间
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt"` // 软删除标识（gorm内置）
+	ID        uint      `gorm:"primarykey" json:"id"` // 主键ID（自增）
+	CreatedAt time.Time `json:"createdAt"`            // 记录创建时间
+	UpdatedAt time.Time `json:"updatedAt"`            // 记录最后更新时间
 }
 
 // PageInfo 分页查询参数结构体

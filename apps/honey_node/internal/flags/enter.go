@@ -69,7 +69,7 @@ func runBaseCommand() {
 		os.Exit(0)
 	}
 	if Options.Clear {
-		Clear()
+		Clear(global.Log)
 		os.Exit(0)
 	}
 }
