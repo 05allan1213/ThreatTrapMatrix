@@ -44,7 +44,11 @@ func main() {
 	flags.Run()
 
 	// 初始化rabbitMQ连接
-	global.Queue = core.InitMQ()
+	queue, err := core.InitMQ()
+	if err != nil {
+		logrus.Fatalf("mq连接失败 %s", err)
+	}
+	global.Queue = queue
 
 	// 启动suricata服务
 	go suricata_service.Run()

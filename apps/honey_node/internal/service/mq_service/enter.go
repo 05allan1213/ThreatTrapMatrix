@@ -6,7 +6,9 @@ package mq_service
 import (
 	"encoding/json"
 	"fmt"
+	"honey_node/internal/core"
 	"honey_node/internal/global"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -29,6 +31,9 @@ func Run() {
 	go register(cfg.BatchDeployExchangeName, BatchDeployExChange)             // 批量部署指令消费
 	go register(cfg.BatchUpdateDeployExchangeName, BatchUpdateDeployExChange) // 批量更新部署指令消费
 	go register(cfg.BatchRemoveDeployExchangeName, BatchRemoveDeployExChange) // 批量删除部署指令消费
+
+	// 监控检测
+	go watchHealth()
 }
 
 // queueDeclare 声明RabbitMQ队列
@@ -122,6 +127,7 @@ func register[T any](exChangeName string, fun func(msg T) error) {
 		// 处理失败：记录错误日志并确认消息
 		d.Ack(false)
 	}
+	logrus.Errorf("%s 接收队列消息结束", queueName)
 }
 
 // sendQueueMessage 向指定队列发送消息（直接投递，无交换器）
@@ -149,4 +155,42 @@ func sendQueueMessage(queueName string, req any) (err error) {
 	// 发送成功：记录信息日志（含队列名、消息内容）
 	logrus.Infof("%s 发送消息成功: %s", queueName, string(byteData))
 	return nil
+}
+
+// watchHealth 监控MQ连接健康状态并实现自动重连
+func watchHealth() {
+	// 创建用于接收MQ连接关闭通知的通道
+	closeQueue := make(chan *amqp.Error, 1)
+	// 注册MQ连接关闭通知监听，当连接关闭时会向closeQueue发送关闭错误信息
+	global.Queue.NotifyClose(closeQueue)
+
+	// 启动独立协程处理MQ重连逻辑，避免阻塞主协程
+	go func() {
+		// 监听MQ关闭通知通道，接收连接关闭的错误信息
+		for s := range closeQueue {
+			fmt.Println("mq被关闭了", s)
+		}
+		// 打印通道关闭提示，进入重连等待阶段
+		fmt.Println("通道被关闭, 等待重连")
+		// 重连前延迟2秒，避免频繁重试占用资源
+		time.Sleep(2 * time.Second)
+
+		// 循环执行重连逻辑，直到重连成功
+		for {
+			// 尝试初始化MQ连接
+			mq, err := core.InitMQ()
+			if err != nil {
+				// 重连失败，记录警告日志并延迟2秒后重试
+				logrus.Warnf("mq连接失败, 等待重连 %s", err)
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			// 重连成功，更新全局MQ实例
+			global.Queue = mq
+			// 重启MQ相关业务处理逻辑
+			Run()
+			// 重连成功，退出循环
+			break
+		}
+	}()
 }

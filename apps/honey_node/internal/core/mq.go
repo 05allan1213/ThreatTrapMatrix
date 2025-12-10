@@ -6,6 +6,7 @@ package core
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"honey_node/internal/global"
 	"os"
 
@@ -14,10 +15,9 @@ import (
 )
 
 // InitMQ 初始化RabbitMQ连接并创建通道
-func InitMQ() *amqp.Channel {
+func InitMQ() (ch *amqp.Channel, err error) {
 	cfg := global.Config.MQ // 获取全局MQ配置
 	var conn *amqp.Connection
-	var err error
 
 	// 根据配置选择SSL/TLS连接或普通连接
 	if cfg.Ssl {
@@ -50,14 +50,19 @@ func InitMQ() *amqp.Channel {
 
 	// 连接失败时终止程序
 	if err != nil || conn == nil {
-		logrus.Fatalf("无法连接到 RabbitMQ: %v", err)
+		logrus.Errorf("无法连接到 RabbitMQ: %v", err)
+		if err == nil {
+			return nil, errors.New("连接mq失败")
+		}
+		return
 	}
 
 	// 创建MQ通道（Channel），用于消息收发
-	ch, err := conn.Channel()
+	ch, err = conn.Channel()
 	if err != nil {
-		logrus.Fatalf("无法打开通道: %v", err)
+		logrus.Errorf("无法打开通道: %v", err)
+		return
 	}
 	logrus.Infof("%s:%d rabbitMQ连接成功！", cfg.Host, cfg.Port)
-	return ch
+	return
 }
