@@ -1,38 +1,71 @@
 package mq_service
 
 // File: honey_node/service/mq_service/mq_service.go
-// Description: 节点MQ消费/生产核心模块，实现RabbitMQ队列/交换器声明、消息路由绑定、通用消费注册及队列消息发送能力，支撑创建IP、删除IP、端口绑定等指令的消费处理，以及告警/部署状态等消息的生产发送，保障节点与服务端的可靠通信
+// Description: MQ服务核心模块，负责RabbitMQ队列/交换器的声明与绑定、业务消费端注册、消息发送、连接健康监控及自动重连，封装不同业务场景的MQ消费逻辑
 
 import (
 	"encoding/json"
 	"fmt"
 	"honey_node/internal/core"
 	"honey_node/internal/global"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
-// Run 启动所有RabbitMQ消费者协程
+// wg 同步等待组
+// 用于等待所有业务交换器的消费端注册完成，确保首次初始化时所有消费逻辑都已就绪
+var wg = sync.WaitGroup{}
+
+// Run MQ服务启动入口函数
 func Run() {
 	cfg := global.Config.MQ
 
-	// 声明状态上报类队列
-	queueDeclare(cfg.AlertTopic)
-	queueDeclare(cfg.BatchDeployStatusTopic)
-	queueDeclare(cfg.BatchUpdateDeployStatusTopic)
-	queueDeclare(cfg.BatchRemoveDeployStatusTopic)
+	// 首次初始化时，声明状态通知类队列（供消费端接收部署/更新/移除状态）
+	if !cfg.InitMQ {
+		queueDeclare(cfg.AlertTopic)                   // 告警通知队列
+		queueDeclare(cfg.BatchDeployStatusTopic)       // 批量部署状态队列
+		queueDeclare(cfg.BatchUpdateDeployStatusTopic) // 批量更新部署状态队列
+		queueDeclare(cfg.BatchRemoveDeployStatusTopic) // 批量移除部署状态队列
+	}
 
-	// 注册业务指令交换器及消费回调
-	go register(cfg.CreateIpExchangeName, CreateIpExChange)                   // 创建IP指令消费
-	go register(cfg.DeleteIpExchangeName, DeleteIpExChange)                   // 删除IP指令消费
-	go register(cfg.BindPortExchangeName, BindPortExChange)                   // 绑定端口指令消费
-	go register(cfg.BatchDeployExchangeName, BatchDeployExChange)             // 批量部署指令消费
-	go register(cfg.BatchUpdateDeployExchangeName, BatchUpdateDeployExChange) // 批量更新部署指令消费
-	go register(cfg.BatchRemoveDeployExchangeName, BatchRemoveDeployExChange) // 批量删除部署指令消费
+	// 启动独立协程处理消费端注册，避免阻塞主协程
+	go func() {
+		// 注册6个核心业务交换器的消费端，WaitGroup计数+6
+		wg.Add(6)
 
-	// 监控检测
+		// 注册IP创建业务消费端，间隔200ms避免并发声明资源冲突
+		go register(cfg.CreateIpExchangeName, CreateIpExChange)
+		time.Sleep(200 * time.Millisecond)
+		// 注册IP删除业务消费端
+		go register(cfg.DeleteIpExchangeName, DeleteIpExChange)
+		time.Sleep(200 * time.Millisecond)
+		// 注册端口绑定业务消费端
+		go register(cfg.BindPortExchangeName, BindPortExChange)
+		time.Sleep(200 * time.Millisecond)
+		// 注册批量部署业务消费端
+		go register(cfg.BatchDeployExchangeName, BatchDeployExChange)
+		time.Sleep(200 * time.Millisecond)
+		// 注册批量更新部署业务消费端
+		go register(cfg.BatchUpdateDeployExchangeName, BatchUpdateDeployExChange)
+		time.Sleep(200 * time.Millisecond)
+		// 注册批量移除部署业务消费端
+		go register(cfg.BatchRemoveDeployExchangeName, BatchRemoveDeployExChange)
+
+		// 等待所有消费端注册完成
+		wg.Wait()
+
+		// 首次初始化完成后，更新配置标记并持久化，避免重复声明队列/交换器
+		if !global.Config.MQ.InitMQ {
+			global.Config.MQ.InitMQ = true
+			core.SetConfig(global.Config)
+			logrus.Infof("全部交换器注册及绑定完成")
+		}
+	}()
+
+	// 启动MQ连接健康监控，异常时自动重连
 	go watchHealth()
 }
 
@@ -40,14 +73,14 @@ func Run() {
 func queueDeclare(queueName string) {
 	_, err := global.Queue.QueueDeclare(
 		queueName, // 队列名称
-		true,      // 持久性：true表示队列数据持久化保存，MQ重启后数据不丢失
-		false,     // 非自动删除：无消费者时不自动删除队列
-		false,     // 非排他性：允许多个消费者监听同一队列
-		false,     // 非阻塞：不等待服务器额外响应
-		nil,       // 额外参数
+		true,      // 持久化：队列元数据持久化到磁盘，服务重启不丢失
+		false,     // 自动删除：关闭最后一个消费者后不自动删除队列
+		false,     // 排他性：非排他队列，允许多个消费者连接
+		false,     // 非阻塞：同步声明队列，等待结果返回
+		nil,       // 额外参数：无特殊配置
 	)
 	if err != nil {
-		logrus.Fatalf("声明队列失败%s %v", queueName, err) // 队列声明失败终止程序
+		logrus.Fatalf("声明队列失败%s %v", queueName, err)
 		return
 	}
 	logrus.Infof("声明队列成功 %s", queueName)
@@ -56,141 +89,140 @@ func queueDeclare(queueName string) {
 // registerExchange 声明RabbitMQ交换器
 func registerExchange(exchangeName string) {
 	err := global.Queue.ExchangeDeclare(
-		exchangeName, // 交换器名称
-		"direct",     // 交换器类型：direct（按路由键精准路由到队列）
-		true,         // 持久化：交换器在MQ重启后保留
-		false,        // 非自动删除：无绑定队列时不自动删除
-		false,        // 非内部交换器：允许外部生产者发送消息
-		false,        // 非阻塞：不等待服务器额外响应
-		nil,          // 额外参数
+		exchangeName, // 交换器名称（需与生产者端一致）
+		"direct",     // 交换器类型：direct（直接交换器），按路由键精准匹配队列
+		true,         // 持久化：交换器元数据持久化，服务重启不丢失
+		false,        // 自动删除：无绑定队列时不自动删除交换器
+		false,        // 内部交换器：非内部，允许生产者发送消息
+		false,        // 非阻塞：同步声明交换器，等待结果返回
+		nil,          // 额外参数：无特殊配置
 	)
 	if err != nil {
-		logrus.Fatalf("%s 声明交换器失败 %s", exchangeName, err) // 交换器声明失败终止程序
+		logrus.Fatalf("%s 声明交换器失败 %s", exchangeName, err)
 	}
 	logrus.Infof("声明交换器成功 %s", exchangeName)
 }
 
-// register 通用MQ消费注册函数
+// register 泛型消费端注册函数
 func register[T any](exChangeName string, fun func(msg T) error) {
-	// 声明业务指令交换器
-	registerExchange(exChangeName)
-
+	mq := global.Config.MQ
 	cf := global.Config
-
-	// 构建节点专属队列名称（交换器名+节点UID），避免节点间队列冲突
+	// 生成队列名称：交换器名 + 系统UID + 固定后缀，确保节点队列唯一性
 	queueName := fmt.Sprintf("%s_%s_queue", exChangeName, cf.System.Uid)
-	queueDeclare(queueName)
 
-	// 绑定队列到交换器（路由键为节点UID，确保指令仅投递到当前节点）
-	err := global.Queue.QueueBind(
-		queueName,     // 待绑定的队列名称
-		cf.System.Uid, // 绑定键（路由键）：与生产者侧的路由键一致（节点UID）
-		exChangeName,  // 目标交换器名称
-		false,         // 非阻塞：不等待服务器额外响应
-		nil,           // 额外参数
-	)
-	if err != nil {
-		logrus.Fatalf("%s 绑定队列失败 %s", queueName, err) // 队列绑定失败终止程序
+	// 首次初始化时，完成交换器、队列的声明及绑定
+	if !mq.InitMQ {
+		// 声明业务交换器
+		registerExchange(exChangeName)
+		// 声明业务队列
+		queueDeclare(queueName)
+		// 绑定队列到交换器：绑定键为系统UID，确保消息仅路由到当前节点的队列
+		err := global.Queue.QueueBind(
+			queueName,     // 待绑定的队列名称
+			cf.System.Uid, // 绑定键：与生产者的路由键（UID）匹配，实现节点级消息隔离
+			exChangeName,  // 绑定的交换器名称
+			false,         // 非阻塞：同步绑定，等待结果返回
+			nil,           // 额外参数：无特殊配置
+		)
+		if err != nil {
+			logrus.Fatalf("%s 绑定队列失败 %s", queueName, err)
+		}
 	}
 
-	// 启动消息消费（关闭自动确认，手动控制消息ACK/Nack）
+	// 创建队列消费者，关闭自动确认（手动ACK保证消息处理可靠性）
 	msgs, err := global.Queue.Consume(
 		queueName, // 消费的队列名称
 		"",        // 消费者标识：空字符串由MQ自动生成唯一标识
-		false,     // 关闭自动确认：需手动调用Ack/Nack确认消息处理状态
-		false,     // 非排他性：允许其他消费者消费同一队列（备用节点场景）
-		false,     // 非本地消费者：接收所有投递到队列的消息
-		false,     // 非阻塞：不等待服务器额外响应
-		nil,       // 额外参数
+		false,     // 自动确认：关闭，需手动调用Ack确认消息处理完成
+		false,     // 非排他性：允许多个消费者消费该队列（当前节点仅一个）
+		false,     // 非本地消费者：接收所有发送到队列的消息，包括当前节点生产的
+		false,     // 非阻塞：同步创建消费者，等待结果返回
+		nil,       // 额外参数：无特殊配置
 	)
 	if err != nil {
-		logrus.Fatalf("%s 启动消费失败 %s", queueName, err) // 消费启动失败终止程序
+		logrus.Fatalf("%s 创建消费者失败 %s", queueName, err)
 	}
+	// 消费端创建完成，WaitGroup计数-1
+	wg.Done()
 
-	// 循环消费消息
+	// 循环监听并处理队列消息（通道关闭时退出循环）
 	for d := range msgs {
 		var data T
-		// 反序列化消息体为指定业务类型
+		// 解析消息体为指定类型的业务结构体
 		err = json.Unmarshal(d.Body, &data)
 		if err != nil {
 			logrus.Errorf("json解析失败 %s %s", err, string(d.Body))
-			d.Ack(false) // 解析失败仍ACK，避免无效消息重复消费
+			d.Ack(false) // 解析失败仍手动ACK，避免消息重复投递
 			continue
 		}
 
-		// 调用业务回调处理消息
+		// 调用业务处理函数处理消息
 		err = fun(data)
 		if err == nil {
-			d.Ack(false) // 处理成功：手动确认消息（false表示仅确认当前消息）
+			d.Ack(false) // 处理成功，手动ACK确认消息（false：仅确认当前消息）
 			continue
 		}
-		// 处理失败：记录错误日志并确认消息
+
+		// 处理失败时，暂不重新入队（注释Nack逻辑），直接ACK避免死循环
+		// d.Nack(false, true) // 拒绝消息，重新入队（可根据业务场景开启）
 		d.Ack(false)
 	}
 	logrus.Errorf("%s 接收队列消息结束", queueName)
 }
 
-// sendQueueMessage 向指定队列发送消息（直接投递，无交换器）
+// sendQueueMessage 发送消息到指定MQ队列
 func sendQueueMessage(queueName string, req any) (err error) {
-	// 序列化业务请求为JSON字节数据（忽略序列化错误，仅捕获发送错误）
+	// 将消息结构体序列化为JSON字节数组，作为MQ消息体
 	byteData, _ := json.Marshal(req)
-
-	// 直接向队列发送消息（交换器为空，路由键为队列名）
+	// 发布消息到MQ：使用默认交换器（空字符串），按队列名路由
 	err = global.Queue.Publish(
-		"",        // 交换器：空字符串表示使用默认交换器（direct类型）
-		queueName, // 路由键：目标队列名称，默认交换器会直接投递到该队列
-		false,     // 强制投递：false表示队列不存在时丢弃消息
-		false,     // 立即投递：false表示不强制立即投递到消费者
+		"",        // exchange：默认交换器，直接按routing key匹配队列
+		queueName, // routing key：目标队列名称，默认交换器会路由到同名队列
+		false,     // mandatory：消息无法路由时不返回给生产者
+		false,     // immediate：RabbitMQ 3.0+已废弃，固定传false
 		amqp.Publishing{
-			ContentType: "text/plain", // 消息内容类型
-			Body:        byteData,     // 序列化后的业务数据
+			ContentType: "text/plain", // 消息内容类型：纯文本（JSON格式）
+			Body:        byteData,     // 消息体：JSON序列化后的字节数组
 		})
-
-	// 发送失败：记录错误日志（含队列名、错误信息、消息内容）
 	if err != nil {
 		logrus.Errorf("%s 发送消息失败: %v %s", queueName, err, string(byteData))
 		return
 	}
-
-	// 发送成功：记录信息日志（含队列名、消息内容）
 	logrus.Infof("%s 发送消息成功: %s", queueName, string(byteData))
 	return nil
 }
 
 // watchHealth 监控MQ连接健康状态并实现自动重连
 func watchHealth() {
-	// 创建用于接收MQ连接关闭通知的通道
+	// 创建连接关闭通知通道（缓冲大小1，避免MQ推送关闭事件时阻塞）
 	closeQueue := make(chan *amqp.Error, 1)
-	// 注册MQ连接关闭通知监听，当连接关闭时会向closeQueue发送关闭错误信息
+	// 注册连接关闭通知监听：连接断开时，MQ会向该通道发送关闭错误信息
 	global.Queue.NotifyClose(closeQueue)
 
-	// 启动独立协程处理MQ重连逻辑，避免阻塞主协程
+	// 启动独立协程处理重连逻辑，不阻塞主协程
 	go func() {
-		// 监听MQ关闭通知通道，接收连接关闭的错误信息
+		// 监听关闭通知通道，接收连接关闭的错误信息
 		for s := range closeQueue {
 			fmt.Println("mq被关闭了", s)
 		}
-		// 打印通道关闭提示，进入重连等待阶段
+		// 通道关闭，进入重连流程
 		fmt.Println("通道被关闭, 等待重连")
-		// 重连前延迟2秒，避免频繁重试占用资源
-		time.Sleep(2 * time.Second)
+		time.Sleep(2 * time.Second) // 重连前延迟，避免频繁重试
 
-		// 循环执行重连逻辑，直到重连成功
+		// 循环重连直到成功
 		for {
-			// 尝试初始化MQ连接
+			// 尝试重新初始化MQ连接
 			mq, err := core.InitMQ()
 			if err != nil {
-				// 重连失败，记录警告日志并延迟2秒后重试
 				logrus.Warnf("mq连接失败, 等待重连 %s", err)
 				time.Sleep(2 * time.Second)
 				continue
 			}
 			// 重连成功，更新全局MQ实例
 			global.Queue = mq
-			// 重启MQ相关业务处理逻辑
+			// 重启MQ服务，恢复所有消费端和监控
 			Run()
-			// 重连成功，退出循环
-			break
+			break // 重连成功，退出循环
 		}
 	}()
 }
