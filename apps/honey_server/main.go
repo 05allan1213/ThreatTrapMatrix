@@ -5,6 +5,7 @@ import (
 	"honey_server/internal/flags"
 	"honey_server/internal/global"
 	"honey_server/internal/routers"
+	"honey_server/internal/service/cron_service"
 	"honey_server/internal/service/grpc_service"
 	"honey_server/internal/service/mq_service"
 )
@@ -19,6 +20,7 @@ func main() {
 	global.Queue = core.InitMQ()         // 初始化消息队列
 	mq_service.Run()                     // 注册交换机
 	flags.Run()                          // 运行命令行参数
+	cron_service.Run()                   // 启动定时任务
 	go grpc_service.Run()                // 启动gRPC服务
 	routers.Run()                        // 启动路由
 }
