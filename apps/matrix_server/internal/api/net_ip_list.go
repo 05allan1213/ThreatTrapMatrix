@@ -43,7 +43,7 @@ type NetIpListResponse struct {
 	Title              string      `json:"title"`              // 子网名称
 	Subnet             string      `json:"subnet"`             // 子网网段
 	IsAction           bool        `json:"isAction"`           // 当前子网是否正在执行操作
-	NodeStatus         int8        `json:"nodeStatus"`         // 子网节点状态：1 运行中
+	NodeStatus         int8        `json:"nodeStatus"`         // 子网节点状态：1 在线 2 离线
 	List               []NetIpInfo `json:"list"`               // 分页后的IP列表数据
 }
 
@@ -174,7 +174,7 @@ func (Api) NetIpListView(c *gin.Context) {
 	data.NodeStatus = model.NodeModel.Status
 
 	// 判断当前子网是否正在执行操作
-	err = global.Redis.Get(context.Background(), fmt.Sprintf("deploy_action_lock_%d", cr.NetID)).Err()
+	err = global.Redis.Get(context.Background(), fmt.Sprintf("net_action_lock_%d", cr.NetID)).Err()
 	if err == nil {
 		data.IsAction = true
 	}
