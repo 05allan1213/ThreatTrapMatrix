@@ -66,6 +66,8 @@ services:
       - ./nginx/logs:/var/log/nginx/
       - ./honey_web/dist:/usr/share/nginx/honey_web
       - ./nginx/cert/:/usr/share/nginx/cert
+    environment:
+      - TZ=Asia/Shanghai
     networks:
       honey_network:
         ipv4_address: 10.4.0.6
@@ -81,6 +83,8 @@ services:
       - ./honey_server/settings.yaml:/app/settings.yaml
       - ./honey_server/logs:/app/logs
       - ./honey_server/uploads:/app/uploads
+    environment:
+      - TZ=Asia/Shanghai
     depends_on:
       - mysql
       - redis
@@ -92,6 +96,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./image_server/settings.yaml:/app/settings.yaml
       - ./image_server/logs:/app/logs
+    environment:
+      - TZ=Asia/Shanghai
     depends_on:
       - mysql
     networks:
@@ -103,6 +109,8 @@ services:
     volumes:
       - ./alert_server/settings.yaml:/app/settings.yaml
       - ./alert_server/logs:/app/logs
+    environment:
+      - TZ=Asia/Shanghai
     depends_on:
       - mysql
       - rabbitmq
@@ -116,6 +124,8 @@ services:
     volumes:
       - ./matrix_server/settings.yaml:/app/settings.yaml
       - ./matrix_server/logs:/app/logs
+    environment:
+      - TZ=Asia/Shanghai
     depends_on:
       - mysql
       - redis
@@ -129,6 +139,8 @@ services:
     volumes:
       - ./ws_server/settings.yaml:/app/settings.yaml
       - ./ws_server/logs:/app/logs
+    environment:
+      - TZ=Asia/Shanghai
     depends_on:
       - rabbitmq
     networks:

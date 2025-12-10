@@ -17,6 +17,8 @@ services:
     image: node_server:v1.0.1
     network_mode: host
     restart: always
+    environment:
+      - TZ=Asia/Shanghai
     cap_add:
       - NET_ADMIN
       - NET_RAW
