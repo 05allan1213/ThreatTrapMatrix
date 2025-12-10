@@ -11,6 +11,7 @@ import (
 	"matrix_server/internal/service/redis_service/net_progress"
 
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // DeployStatusRequest 批量部署状态回调的消息结构体
@@ -115,5 +116,11 @@ func revBatchDeployStatusMq(data DeployStatusRequest) {
 			NetID:  data.NetID,
 			NodeID: honeyIp.NodeID,
 		})
+		var nodeModel models.NodeModel
+		global.DB.Take(&nodeModel, honeyIp.NodeID)
+		global.DB.Model(&nodeModel).Update("honey_ip_count", gorm.Expr("honey_ip_count + ?", netDeployInfo.AllCount))
+		var netModel models.NetModel
+		global.DB.Take(&netModel, honeyIp.NetID)
+		global.DB.Model(&netModel).Update("honey_ip_count", gorm.Expr("honey_ip_count + ?", netDeployInfo.AllCount))
 	}
 }

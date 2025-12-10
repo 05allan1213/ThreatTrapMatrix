@@ -10,6 +10,7 @@ import (
 	"matrix_server/internal/service/redis_service/net_progress"
 
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // RemoveDeployStatusRequest 批量删除部署状态回调的消息结构体
@@ -84,5 +85,11 @@ func revBatchRemoveDeployStatusMq(data RemoveDeployStatusRequest) {
 			Type:  1,
 			NetID: data.NetID,
 		})
+		var nodeModel models.NodeModel
+		global.DB.Take(&nodeModel, model.NodeID)
+		global.DB.Model(&nodeModel).Update("honey_ip_count", gorm.Expr("honey_ip_count - ?", netDeployInfo.AllCount))
+		var netModel models.NetModel
+		global.DB.Take(&netModel, model.NetID)
+		global.DB.Model(&netModel).Update("honey_ip_count", gorm.Expr("honey_ip_count - ?", netDeployInfo.AllCount))
 	}
 }
