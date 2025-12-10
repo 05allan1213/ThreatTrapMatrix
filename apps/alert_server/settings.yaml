@@ -41,6 +41,7 @@ mq: # rabbitMQ
   clientCertificate: # 客户端的证书
   clientKey:  # 客户端的私钥
   caCertificate:  # ca的证书
+  wsTopic: wsTopic # websocket的Topic
 
 es: # elasticsearch
   addr: http://10.4.0.5:9200 # elasticsearch地址

@@ -72,5 +72,9 @@ func RevAlertMq() {
 			continue
 		}
 		logrus.Infof("告警消息入库成功 %s", response.Id)
+
+		SendWsMsg(WsMsgType{
+			Type: 3,
+		})
 	}
 }

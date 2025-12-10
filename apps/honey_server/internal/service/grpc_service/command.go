@@ -7,6 +7,7 @@ import (
 	"errors"
 	"honey_server/internal/global"
 	"honey_server/internal/models"
+	"honey_server/internal/service/mq_service"
 	"io"
 	"sync"
 	"time"
@@ -77,6 +78,11 @@ func (s NodeService) Command(stream node_rpc.NodeService_CommandServer) error {
 		global.DB.Model(&model).Update("status", 1)
 	}
 
+	mq_service.SendWsMsg(mq_service.WsMsgType{
+		Type:   4,
+		NodeID: model.ID,
+	}) // 节点上线
+
 	// 启动发送和接收协程（需等待两个协程退出）
 	cmd.wg.Add(2)
 	go cmd.sendLoop()
@@ -100,6 +106,10 @@ func (s NodeService) Command(stream node_rpc.NodeService_CommandServer) error {
 	logrus.Infof("Node %s disconnected", nodeID)
 	// 修改节点状态
 	global.DB.Model(&model).Update("status", 2)
+	mq_service.SendWsMsg(mq_service.WsMsgType{
+		Type:   4,
+		NodeID: model.ID,
+	}) // 节点离线
 	return nil
 }
 

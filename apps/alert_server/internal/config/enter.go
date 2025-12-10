@@ -28,6 +28,7 @@ type DB struct {
 	MaxIdleConns    int    `yaml:"maxIdleConns"`    // 数据库最大空闲连接数
 	MaxOpenConns    int    `yaml:"maxOpenConns"`    // 数据库最大打开连接数
 	ConnMaxLifetime int    `yaml:"connMaxLifetime"` // 数据库连接最大生命周期
+	WsTopic         string `yaml:"wsTopic"`         // WebSocket的topic
 }
 
 // Dsn 生成数据库连接DSN字符串
