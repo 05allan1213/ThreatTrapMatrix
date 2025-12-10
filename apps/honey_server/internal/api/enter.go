@@ -1,6 +1,6 @@
 package api
 
-// File:honey_server/api/user_api/enter.go
+// File:honey_server/api/enter.go
 // Description: 系统Api入口
 
 import (
@@ -8,6 +8,7 @@ import (
 	"honey_server/internal/api/honey_ip_api"
 	"honey_server/internal/api/honey_port_api"
 	"honey_server/internal/api/host_api"
+	"honey_server/internal/api/image_api"
 	"honey_server/internal/api/log_api"
 	"honey_server/internal/api/net_api"
 	"honey_server/internal/api/node_api"
@@ -26,6 +27,7 @@ type Api struct {
 	HostApi        host_api.HostApi
 	HoneyIPApi     honey_ip_api.HoneyIPApi
 	HoneyPortApi   honey_port_api.HoneyPortApi
+	ImageApi       image_api.ImageApi
 }
 
 var App = Api{}
