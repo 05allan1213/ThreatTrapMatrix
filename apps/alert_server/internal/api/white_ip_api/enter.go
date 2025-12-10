@@ -200,3 +200,38 @@ func (WhiteIPApi) RemoveView(c *gin.Context) {
 	msg := fmt.Sprintf("删除成功 共%d个，成功%d个", len(cr.IdList), successCount)
 	response.OkWithMsg(msg, c)
 }
+
+// RemoveByIpRequest 根据IP批量删除白名单IP的请求参数结构体
+type RemoveByIpRequest struct {
+	Ip string `json:"ip" binding:"required"`
+}
+
+// RemoveByIpView 根据IP批量删除白名单IP接口
+func (WhiteIPApi) RemoveByIpView(c *gin.Context) {
+	cr := middleware.GetBind[RemoveByIpRequest](c)
+	log := middleware.GetLog(c)
+
+	log.WithFields(map[string]interface{}{
+		"ip": cr.Ip,
+	}).Info("white IP removal request received")
+
+	var model models.WhiteIPModel
+	err := global.DB.Take(&model, "ip = ?", cr.Ip).Error
+	if err != nil {
+		response.FailWithMsg("白名单ip不存在", c)
+		return
+	}
+
+	result := global.DB.Delete(&model)
+	if result.Error != nil {
+		log.WithFields(map[string]interface{}{
+			"ip":    cr.Ip,
+			"error": result.Error,
+		}).Error("white IP remove error")
+		response.FailWithMsg("删除白名单失败", c)
+		return
+	}
+
+	msg := fmt.Sprintf("删除成功 共%d个，成功%d个", 1, result.RowsAffected)
+	response.OkWithMsg(msg, c)
+}

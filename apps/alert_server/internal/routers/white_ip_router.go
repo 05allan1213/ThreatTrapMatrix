@@ -28,4 +28,7 @@ func WhiteIpRouter(r *gin.RouterGroup) {
 	// DELETE /white_ip: 白名单IP批量删除接口
 	// 绑定JSON请求参数中间件
 	r.DELETE("white_ip", middleware.BindJsonMiddleware[models.IDListRequest], app.RemoveView)
+	// DELETE /white_ip/ip: 白名单IP根据IP删除接口
+	// 绑定JSON请求参数中间件
+	r.DELETE("white_ip/ip", middleware.BindJsonMiddleware[white_ip_api.RemoveByIpRequest], app.RemoveByIpView)
 }
