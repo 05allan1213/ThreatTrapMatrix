@@ -25,6 +25,7 @@ type ListRequest struct {
 	SrcIp           string `form:"srcIp"` // 攻击源IP
 	DestIp          string `form:"destIp"` // 攻击目标IP
 	DestPort        int    `form:"destPort"` // 攻击目标端口
+	ServiceID       int    `form:"serviceID"` // 关联服务ID
 	ServiceName     string `form:"serviceName"` // 关联服务名称
 	Signature       string `form:"signature"` // 攻击类型
 	Level           int8   `form:"level"` // 告警级别
@@ -69,22 +70,27 @@ func (AlertApi) ListView(c *gin.Context) {
 		query = query.Filter(elastic.NewTermQuery("destPort", cr.DestPort))
 	}
 
-	// 4. 服务名称筛选：基于keyword字段精确匹配（避免分词导致的模糊匹配问题）
+	// 4. 关联服务ID筛选：精确匹配（仅当参数不为0时添加条件，0表示不筛选）
+	if cr.ServiceID != 0 {
+		query = query.Filter(elastic.NewTermQuery("serviceID", cr.ServiceID))
+	}
+
+	// 5. 服务名称筛选：基于keyword字段精确匹配（避免分词导致的模糊匹配问题）
 	if cr.ServiceName != "" {
 		query = query.Filter(elastic.NewTermQuery("serviceName.keyword", cr.ServiceName))
 	}
 
-	// 5. 攻击类型筛选：基于match查询实现分词模糊匹配（支持部分关键词查询）
+	// 6. 攻击类型筛选：基于keyword字段精确匹配（避免分词导致的模糊匹配问题）
 	if cr.Signature != "" {
-		query = query.Filter(elastic.NewMatchQuery("signature", cr.Signature))
+		query = query.Filter(elastic.NewTermQuery("signature.keyword", cr.Signature))
 	}
 
-	// 6. 告警级别筛选：精确匹配（仅当参数不为0时添加条件，0表示不筛选）
+	// 7. 告警级别筛选：精确匹配（仅当参数不为0时添加条件，0表示不筛选）
 	if cr.Level != 0 {
 		query = query.Filter(elastic.NewTermQuery("level", cr.Level))
 	}
 
-	// 7. 时间范围筛选：支持开始时间/结束时间单独或组合筛选，自动兼容多时间格式
+	// 8. 时间范围筛选：支持开始时间/结束时间单独或组合筛选，自动兼容多时间格式
 	if cr.StartTime != "" || cr.EndTime != "" {
 		rangeQuery := elastic.NewRangeQuery("timestamp") // 基于告警时间字段筛选
 
