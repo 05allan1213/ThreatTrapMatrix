@@ -27,6 +27,7 @@ func Migrate() {
 		&models.ServiceModel{},
 		&models.UserModel{},
 		&models.WhiteIPModel{},
+		&models.NodeVersionModel{},
 	)
 	if err != nil {
 		logrus.Fatalf("表结构迁移失败 %s", err)

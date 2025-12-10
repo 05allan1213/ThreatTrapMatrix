@@ -23,6 +23,9 @@ func AuthMiddleware(c *gin.Context) {
 	}
 	// 从请求头获取token
 	token := c.GetHeader("token")
+	if token == "" {
+		token = c.Query("token")
+	}
 	// 解析并验证token
 	claims, err := jwts.ParseToken(token)
 	if err != nil {

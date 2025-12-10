@@ -39,6 +39,7 @@ func Run() {
 	ImageRouters(g)       // 图片相关路由
 	IndexRouters(g)       // 首页相关路由
 	SiteRouters(g)        // 站点相关路由
+	NodeVersionRouters(g) // 节点版本相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
