@@ -58,6 +58,6 @@ func InitMQ() *amqp.Channel {
 	if err != nil {
 		logrus.Fatalf("无法打开通道: %v", err)
 	}
-
+	logrus.Infof("%s:%d rabbitMQ连接成功！", cfg.Host, cfg.Port)
 	return ch
 }

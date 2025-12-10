@@ -4,7 +4,7 @@ logger: # 日志器
   level: info # 日志级别
 
 system: # 系统路由
-  grpcManageAddr: "honey.ayp05.com:50001" # gRPC管理服务监听地址
+  grpcManageAddr: "hy.io:50001" # gRPC管理服务监听地址
   network: ens33 # 网卡名称
   uid: dde9b8cc-08b4-4f17-8c8e-209e0504a2eb # 节点唯一标识（UUID）
   evePath: deploy/suricata/logs/eve.json # Suricata日志路径
@@ -15,11 +15,12 @@ filterNetworkList: # 网卡过滤列表
   - mc_ # 过滤前缀为mc_的网卡
   - veth # 过滤前缀为veth的网卡
   - lo # 过滤lo网卡
+  - hy_ # 忽略hy_的网卡
 
 mq: # rabbitMQ
   user: admin # 用户名
   password: password # 密码
-  host: honey.ayp05.com # 主机地址
+  host: hy.io # 主机地址
   port: 5671 # 端口
   createIpExchangeName: createIpExchange # 创建IP的交换机名称
   deleteIpExchangeName: deleteIpExchangeName # 删除IP的交换机名称

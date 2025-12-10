@@ -69,6 +69,6 @@ func (nc *NodeClient) Register() error {
 		return fmt.Errorf("注册请求失败: %v", err)
 	}
 
-	logrus.Infof("节点注册成功")
+	logrus.Infof("%s 节点注册成功", nc.config.System.GrpcManageAddr)
 	return nil
 }
