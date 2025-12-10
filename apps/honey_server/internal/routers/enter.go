@@ -37,6 +37,7 @@ func Run() {
 	HoneyIPRouters(g)     // 诱捕IP相关路由
 	HoneyPortRouters(g)   // 诱捕转发相关路由
 	ImageRouters(g)       // 图片相关路由
+	IndexRouters(g)       // 首页相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr

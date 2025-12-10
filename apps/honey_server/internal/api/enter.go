@@ -9,6 +9,7 @@ import (
 	"honey_server/internal/api/honey_port_api"
 	"honey_server/internal/api/host_api"
 	"honey_server/internal/api/image_api"
+	"honey_server/internal/api/index_api"
 	"honey_server/internal/api/log_api"
 	"honey_server/internal/api/net_api"
 	"honey_server/internal/api/node_api"
@@ -28,6 +29,7 @@ type Api struct {
 	HoneyIPApi     honey_ip_api.HoneyIPApi
 	HoneyPortApi   honey_port_api.HoneyPortApi
 	ImageApi       image_api.ImageApi
+	IndexApi       index_api.IndexApi
 }
 
 var App = Api{}

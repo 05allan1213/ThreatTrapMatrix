@@ -25,6 +25,6 @@ var (
 
 var (
 	Version   = "v1.0.2"
-	Commit    = "a29bb955"
+	Commit    = "55f91b4"
 	BuildTime = "2025-12-10 10:48:58"
 )

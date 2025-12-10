@@ -30,6 +30,7 @@ func Run() {
 	VsNetRouter(g)          // 虚拟服务网络相关路由
 	HostTemplateRouter(g)   // 主机模板相关路由
 	MatrixTemplateRouter(g) // 矩阵模板相关路由
+	IndexRouter(g)          // 首页相关路由
 
 	// 获取HTTP服务监听地址
 	webAddr := system.WebAddr
