@@ -22,6 +22,7 @@ system: # 系统路由
   mode: debug # 运行模式 [debug, release, test]
   webAddr: "10.4.0.1:10000" # web的运行地址
   grpcAddr: ":50001" # grpc的运行地址
+  manageIp: 192.168.5.130
 
 jwt: # JWT
   expires: 8640000 # token过期时间 (100天)
@@ -32,6 +33,8 @@ whiteList: # 路由白名单
   - /honey_server/login # 登录
   - /honey_server/captcha # 验证码
   - /honey_server/site # 站点信息
+  - /honey_server/node_download # 节点下载
+  - /honey_server/node_version/download # 节点版本下载
 
 mq: # rabbitMQ
   user: admin # 用户名

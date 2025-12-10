@@ -102,7 +102,7 @@ load_image() {
     local download_url=$2
 
     info "开始下载${dockerImage}镜像..."
-    if curl -H "X-Version: dev" -fSL "$download_url" -o "${dockerImage}.tar.gz"; then
+    if curl -fSL "$download_url" -o "${dockerImage}.tar.gz"; then
         info "${dockerImage}镜像下载成功..."
         if docker load -i "${dockerImage}.tar.gz"; then
             info "${dockerImage}镜像导入成功"
@@ -117,10 +117,10 @@ load_image() {
 
 # 检查并获取Node镜像
 check_and_get_node_image() {
-    local node_image_id="${NODE_IMAGE_ID}"  # 替换为实际的镜像ID
+    local node_image_id="${NODE_IMAGE_ID}"
     info "检查Node镜像是否存在..."
 
-    if docker images --format "{{.ID}}" | grep -q "^${node_image_id:0:12}"; then
+    if docker images --format "{{.ID}}" | grep ${node_image_id}; then
         info "Node镜像已存在"
         return 0
     else

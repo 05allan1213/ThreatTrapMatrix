@@ -70,7 +70,7 @@ func (NodeApi) RemoveView(c *gin.Context) {
 		}
 
 		// 创建带30秒超时的上下文，防止RPC请求/响应阻塞协程
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel() // 函数退出时释放上下文资源，避免内存泄漏
 
 		// 发送RPC请求到节点的请求通道，带超时控制
