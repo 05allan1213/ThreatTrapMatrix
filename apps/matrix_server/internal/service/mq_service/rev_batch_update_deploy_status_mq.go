@@ -76,5 +76,9 @@ func revBatchUpdateDeployStatusMq(data UpdateDeployStatusRequest) {
 		// 释放子网分布式锁，允许后续操作
 		_, _ = net_lock.UnLock(data.NetID)
 		logrus.Infof("子网%d更新部署完成 解锁", data.NetID)
+		SendWsMsg(WsMsgType{
+			Type:  1,
+			NetID: data.NetID,
+		})
 	}
 }

@@ -47,3 +47,4 @@ mq: # rabbitMQ
   batchUpdateDeployStatusTopic: batchUpdateDeployStatusTopic # 批量更新部署的Topic名称
   batchRemoveDeployExchangeName: batchRemoveDeployExchangeName # 批量删除部署的交换机名称
   batchRemoveDeployStatusTopic: batchRemoveDeployStatusTopic # 批量删除部署的Topic名称
+  wsTopic: wsTopic # websocket的Topic名称

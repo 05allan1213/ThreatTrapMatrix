@@ -102,5 +102,9 @@ func revBatchDeployStatusMq(data DeployStatusRequest) {
 		ok, err := net_lock.UnLock(data.NetID)
 		fmt.Println(ok, err) // 调试用：打印解锁结果
 		logrus.Infof("子网%d部署完成 解锁", data.NetID)
+		SendWsMsg(WsMsgType{
+			Type:  1,
+			NetID: data.NetID,
+		})
 	}
 }

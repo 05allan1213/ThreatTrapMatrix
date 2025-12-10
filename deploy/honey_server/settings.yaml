@@ -45,3 +45,4 @@ mq: # rabbitMQ
   clientCertificate: # 客户端的证书
   clientKey:  # 客户端的私钥
   caCertificate:  # ca的证书
+  wsTopic: wsTopic # WebSocket的Topic
