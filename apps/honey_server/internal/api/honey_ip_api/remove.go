@@ -137,6 +137,12 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 		"ip_count": len(honeyIPList),
 	}).Info("batch deletion initiated successfully") // 批量删除成功启动
 
+	mq_service.SendWsMsg(mq_service.WsMsgType{
+		Type:   1,
+		NetID:  netModel.ID,
+		NodeID: netModel.NodeID,
+	})
+
 	// 返回删除处理中的响应
 	response.OkWithMsg("批量删除中", c)
 }

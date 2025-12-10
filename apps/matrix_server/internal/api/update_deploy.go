@@ -347,6 +347,12 @@ func (Api) UpdateDeployView(c *gin.Context) {
 		"updated_ports": len(data.PortList),
 	}).Info("batch update deployment initiated successfully") // 批量更新部署成功，正在更新部署中
 
-	// 16. 返回成功响应
+	// 16. 发送更新部署MQ消息
+	mq_service.SendWsMsg(mq_service.WsMsgType{
+		Type:   1,
+		NetID:  cr.NetID,
+		NodeID: node.ID,
+	})
+	// 17. 返回成功响应
 	response.OkWithMsg("批量更新部署成功，正在更新部署中", c)
 }

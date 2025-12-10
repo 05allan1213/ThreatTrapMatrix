@@ -154,6 +154,12 @@ func (HoneyIPApi) CreateView(c *gin.Context) {
 		"node_uid":    netModel.NodeModel.Uid,
 	}).Info("honey IP created successfully") // 诱捕IP创建成功
 
+	mq_service.SendWsMsg(mq_service.WsMsgType{
+		Type:   1,
+		NetID:  cr.NetID,
+		NodeID: model.NodeID,
+	})
+
 	// 返回创建成功的诱捕IP ID
 	response.OkWithData(model.ID, c)
 }

@@ -341,5 +341,11 @@ func (Api) DeployView(c *gin.Context) {
 		"net_id":       cr.NetID,
 		"deployed_ips": len(createHoneyIpList),
 	}).Info("batch deployment initiated successfully") // 批量部署成功启动
+
+	mq_service.SendWsMsg(mq_service.WsMsgType{
+		Type:   1,
+		NetID:  cr.NetID,
+		NodeID: node.ID,
+	})
 	response.OkWithMsg("批量部署成功，正在部署中", c)
 }
