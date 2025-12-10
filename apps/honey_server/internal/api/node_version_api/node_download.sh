@@ -384,7 +384,7 @@ services:
   node_server:
     image: node:${NODE_VERSION}
     network_mode: host
-    restart: always
+    restart: on-failure
     environment:
       - TZ=Asia/Shanghai
     cap_add:

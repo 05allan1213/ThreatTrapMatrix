@@ -16,7 +16,7 @@ services:
   node_server:
     image: node_server:v1.0.1
     network_mode: host
-    restart: always
+    restart: on-failure
     environment:
       - TZ=Asia/Shanghai
     cap_add:
