@@ -31,4 +31,7 @@ func HostTemplateRouter(r *gin.RouterGroup) {
 	// PUT /host_template: 主机模板更新接口
 	// 绑定JSON请求参数并处理更新逻辑
 	r.PUT("host_template", middleware.BindJsonMiddleware[host_template_api.UpdateRequest], app.UpdateView)
+	// GET /host_template/:id: 主机模板详情查询接口
+	// 绑定URI参数并处理详情查询逻辑
+	r.GET("host_template/:id", middleware.BindUriMiddleware[models.IDRequest], app.DetailView)
 }
