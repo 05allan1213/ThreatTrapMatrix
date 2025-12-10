@@ -65,7 +65,7 @@ func (NodeNetworkApi) FlushView(c *gin.Context) {
 		TaskID:  fmt.Sprintf("flush-%d", time.Now().UnixNano()), // 生成唯一任务ID
 		NetworkFlushInMessage: &node_rpc.NetworkFlushInMessage{
 			// 刷新过滤虚拟网卡前缀，避免获取诱捕网卡信息
-			FilterNetworkName: []string{"hy-"},
+			FilterNetworkName: []string{"hy_"},
 		},
 	}
 

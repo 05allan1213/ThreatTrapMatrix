@@ -413,6 +413,11 @@ func processScanResult(netModel models.NetModel, scanMsgs []*node_rpc.NetScanOut
 			}).Info("hosts deleted from database") // 主机从数据库删除
 		}
 
+		// 计算增加和删除的个数，如果有变化就同步到子网表中
+		if len(newHosts)-len(deletedHostIDs) != 0 {
+			tx.Model(&netModel).Update("host_count", gorm.Expr("host_count + ?", len(newHosts)-len(deletedHostIDs)))
+		}
+
 		return nil
 	})
 

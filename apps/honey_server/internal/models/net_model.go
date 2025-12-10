@@ -68,3 +68,24 @@ func (model NetModel) BeforeDelete(tx *gorm.DB) error {
 	tx.Model(&nodeNet).Update("status", 2)
 	return nil
 }
+
+func (model NetModel) AfterCreate(tx *gorm.DB) error {
+	var node NodeModel
+	err := tx.Take(&node, model.NodeID).Error
+	if err != nil {
+		logrus.Errorf("节点不存在")
+		return err
+	}
+	tx.Model(&node).Update("net_count", gorm.Expr("net_count + 1"))
+	return nil
+}
+func (model NetModel) AfterDelete(tx *gorm.DB) error {
+	var node NodeModel
+	err := tx.Take(&node, model.NodeID).Error
+	if err != nil {
+		logrus.Errorf("节点不存在")
+		return err
+	}
+	tx.Model(&node).Update("net_count", gorm.Expr("net_count - 1"))
+	return nil
+}

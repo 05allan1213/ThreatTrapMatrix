@@ -22,7 +22,7 @@ var (
 )
 
 var (
-	Version   = "v1.0.2"
+	Version   = "v1.0.3"
 	Commit    = "a29bb955"
-	BuildTime = "2025-12-10 15:35:58"
+	BuildTime = "2025-12-10 15:41:58"
 )
