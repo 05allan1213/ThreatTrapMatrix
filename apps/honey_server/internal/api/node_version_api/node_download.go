@@ -19,8 +19,10 @@ import (
 
 // NodeDownloadRequest 节点下载脚本请求结构体
 type NodeDownloadRequest struct {
-	Version string `form:"version"` // 镜像版本Tag
-	Log     bool   `form:"log"`     // 日志输出开关：控制脚本执行时是否打印详细日志
+	Version   string `form:"version"`   // 镜像版本Tag
+	Log       bool   `form:"log"`       // 日志输出开关：控制脚本执行时是否打印详细日志
+	Network   string `form:"network"`   // 网卡名称
+	Agreement string `form:"agreement"` //  协议
 }
 
 //go:embed node_download.sh
@@ -55,13 +57,13 @@ func (NodeVersionApi) NodeDownloadView(c *gin.Context) {
 		case "NODE_VERSION":
 			return model.Tag
 		case "MANAGE_IP":
-			return "192.168.5.130"
+			return global.Config.System.ManageIp
 		case "AGREEMENT":
-			return "http"
+			return cr.Agreement
 		case "NODE_IMAGE_ID":
 			return model.ImageID
 		case "NET_WORK":
-			return "ens33"
+			return cr.Network
 		}
 		return ""
 	})

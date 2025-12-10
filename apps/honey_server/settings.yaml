@@ -22,6 +22,7 @@ system: # 系统路由
   mode: debug # 运行模式 [debug, release, test]
   webAddr: "10.4.0.1:8080" # web的运行地址
   grpcAddr: "192.168.5.130:50002" # grpc的运行地址
+  manageIp: 192.168.5.130 # 管理IP
 
 jwt: # JWT
   expires: 8640000 # token过期时间 (100天)

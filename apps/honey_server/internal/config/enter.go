@@ -59,6 +59,7 @@ type System struct {
 	WebAddr  string `yaml:"webAddr"`  // Web服务监听地址
 	GrpcAddr string `yaml:"grpcAddr"` // gRPC服务监听地址
 	Mode     string `yaml:"mode"`     // 运行模式 [debug|release|test]
+	ManageIp string `yaml:"manageIp"` // 管理IP
 }
 
 // Jwt 配置结构体
