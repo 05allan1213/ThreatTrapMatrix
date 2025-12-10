@@ -53,6 +53,14 @@ func revBatchRemoveDeployStatusMq(data RemoveDeployStatusRequest) {
 		return
 	}
 
+	// 每20个推送一次
+	if netDeployInfo.CompletedCount%20 == 0 {
+		SendWsMsg(WsMsgType{
+			Type:  1,
+			NetID: data.NetID,
+		})
+	}
+
 	// 查询当前IP对应的诱捕IP记录（预加载关联的端口列表）
 	var model models.HoneyIpModel
 	err = global.DB.Preload("PortList").Take(&model, "net_id = ? and ip = ?", data.NetID, data.IP).Error

@@ -60,6 +60,14 @@ func revBatchUpdateDeployStatusMq(data UpdateDeployStatusRequest) {
 		return
 	}
 
+	// 每20个推送一次
+	if netDeployInfo.CompletedCount%20 == 0 {
+		SendWsMsg(WsMsgType{
+			Type:  1,
+			NetID: data.NetID,
+		})
+	}
+
 	// 遍历端口状态列表，处理端口级绑定失败的情况
 	for _, status := range data.PortList {
 		if status.ErrorMsg != "" {

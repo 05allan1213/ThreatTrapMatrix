@@ -57,6 +57,14 @@ func revBatchDeployStatusMq(data DeployStatusRequest) {
 		return
 	}
 
+	// 每20个推送一次
+	if netDeployInfo.CompletedCount%20 == 0 {
+		SendWsMsg(WsMsgType{
+			Type:  1,
+			NetID: data.NetID,
+		})
+	}
+
 	// 查询当前IP对应的诱捕IP记录
 	var honeyIp models.HoneyIpModel
 	err = global.DB.Take(&honeyIp, "net_id = ? and ip = ?", data.NetID, data.IP).Error
@@ -103,8 +111,9 @@ func revBatchDeployStatusMq(data DeployStatusRequest) {
 		fmt.Println(ok, err) // 调试用：打印解锁结果
 		logrus.Infof("子网%d部署完成 解锁", data.NetID)
 		SendWsMsg(WsMsgType{
-			Type:  1,
-			NetID: data.NetID,
+			Type:   1,
+			NetID:  data.NetID,
+			NodeID: honeyIp.NodeID,
 		})
 	}
 }
