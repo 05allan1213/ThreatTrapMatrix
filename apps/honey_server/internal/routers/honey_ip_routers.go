@@ -7,6 +7,7 @@ import (
 	"honey_server/internal/api"
 	"honey_server/internal/api/honey_ip_api"
 	"honey_server/internal/middleware"
+	"honey_server/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,6 +23,6 @@ func HoneyIPRouters(r *gin.RouterGroup) {
 	// 使用Query参数绑定中间件解析诱捕IP列表请求参数
 	r.GET("honey_ip", middleware.BindQueryMiddleware[honey_ip_api.ListRequest], app.ListView)
 	// DELETE /honey_ip: 诱捕IP删除接口
-	// 使用JSON参数绑定中间件解析诱捕IP删除请求参数
-	r.DELETE("honey_ip", middleware.BindJsonMiddleware[honey_ip_api.RemoveRequest], app.RemoveView)
+	// 使用JSON参数绑定中间件解析通用请求参数
+	r.DELETE("honey_ip", middleware.BindJsonMiddleware[models.IDListRequest], app.RemoveView)
 }
