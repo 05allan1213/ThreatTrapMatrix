@@ -18,7 +18,7 @@ type ErrorIp struct {
 
 // NetDeployInfo 子网部署进度信息结构体
 type NetDeployInfo struct {
-	Type           int8      `json:"type"`           // 部署类型标识（1表示批量部署）
+	Type           int8      `json:"type"`           // 部署类型标识 0 未操作  1 部署 2 更新部署 3 删除部署
 	AllCount       int64     `json:"allCount"`       // 部署任务的总IP数量
 	CompletedCount int64     `json:"completedCount"` // 已完成部署的IP数量
 	ErrorCount     int64     `json:"errorCount"`     // 部署失败的IP数量

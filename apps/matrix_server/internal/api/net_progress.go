@@ -32,11 +32,14 @@ func (Api) NetProgressView(c *gin.Context) {
 	}
 
 	// 从Redis读取子网部署进度信息（忽略读取失败，返回空进度数据）
-	progressInfo, _ := net_progress.Get(cr.Id)
+	progressInfo, err := net_progress.Get(cr.Id)
 	// 组装进度响应数据，计算进度百分比
 	data := NetProgressResponse{
 		NetDeployInfo: progressInfo,
 		Progress:      (float64(progressInfo.CompletedCount) / float64(progressInfo.AllCount)) * 100,
+	}
+	if err == nil {
+		data.Progress = (float64(progressInfo.CompletedCount) / float64(progressInfo.AllCount)) * 100
 	}
 	// 返回进度数据给前端
 	response.OkWithData(data, c)
