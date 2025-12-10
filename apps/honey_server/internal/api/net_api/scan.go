@@ -12,6 +12,7 @@ import (
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
 	"honey_server/internal/service/grpc_service"
+	"honey_server/internal/service/mq_service"
 	"honey_server/internal/utils/response"
 	"sync"
 	"time"
@@ -239,6 +240,13 @@ func (NetApi) ScanView(c *gin.Context) {
 				return
 			}
 		}
+
+		// 发送扫描结果更新消息
+		mq_service.SendWsMsg(mq_service.WsMsgType{
+			Type:   2,
+			NetID:  netModel.ID,
+			NodeID: netModel.NodeID,
+		})
 
 		// 处理有效扫描结果（非超时/非错误场景）
 		if len(netScanMsg) > 0 || ctxAsync.Err() == nil {

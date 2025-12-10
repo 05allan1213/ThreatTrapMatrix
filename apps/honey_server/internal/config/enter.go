@@ -81,6 +81,7 @@ type MQ struct {
 	ClientCertificate    string `yaml:"clientCertificate"`    // 客户端证书
 	ClientKey            string `yaml:"clientKey"`            // 客户端密钥
 	CaCertificate        string `yaml:"caCertificate"`        // CA证书
+	WsTopic              string `yaml:"wsTopic"`              // WebSocket的topic
 }
 
 // Addr 获取rabbitMQ地址

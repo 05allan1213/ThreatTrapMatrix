@@ -119,9 +119,8 @@ func register[T any](exChangeName string, fun func(msg T) error) {
 			d.Ack(false) // 处理成功：手动确认消息（false表示仅确认当前消息）
 			continue
 		}
-
-		// 处理失败：拒绝消息并重新入队（false=不批量拒绝，true=重新入队）
-		d.Nack(false, true)
+		// 处理失败：记录错误日志并确认消息
+		d.Ack(false)
 	}
 }
 

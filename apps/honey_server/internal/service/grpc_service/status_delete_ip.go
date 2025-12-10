@@ -10,6 +10,7 @@ import (
 	"honey_server/internal/global"
 	"honey_server/internal/models"
 	"honey_server/internal/rpc/node_rpc"
+	"honey_server/internal/service/mq_service"
 	"honey_server/internal/service/redis_service/net_lock"
 )
 
@@ -31,5 +32,11 @@ func (NodeService) StatusDeleteIP(ctx context.Context, request *node_rpc.StatusD
 	// 执行数据库批量删除操作（删除查询到的诱捕IP记录）
 	global.DB.Delete(&honeyIPList)
 
-	return pd, nil
+	mq_service.SendWsMsg(mq_service.WsMsgType{
+		LogID:  request.LogID,
+		Type:   1,
+		NetID:  honeyIPList[0].NetID,
+		NodeID: honeyIPList[0].NodeID,
+	})
+	return
 }
