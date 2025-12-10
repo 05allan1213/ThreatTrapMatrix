@@ -5,6 +5,7 @@ package routers
 
 import (
 	"honey_server/internal/api"
+	"honey_server/internal/api/node_version_api"
 	"honey_server/internal/middleware"
 	"honey_server/internal/models"
 
@@ -38,4 +39,9 @@ func NodeVersionRouters(r *gin.RouterGroup) {
 	// 功能：根据URI中的ID删除指定的节点版本记录及关联文件；
 	// 中间件：BindUriMiddleware[models.IDRequest] - 自动绑定URI路径参数（:id）到ID请求结构体，校验ID合法性
 	r.DELETE("node_version/:id", middleware.BindUriMiddleware[models.IDRequest], app.NodeVersionRemoveView)
+
+	// GET /node_download：节点下载脚本接口
+	// 功能：根据节点版本ID下载对应的节点文件；
+	// 中间件：BindQueryMiddleware[node_version_api.NodeDownloadRequest] - 自动绑定URL查询参数到节点下载请求结构体，校验参数合法性
+	r.GET("node_download", middleware.BindQueryMiddleware[node_version_api.NodeDownloadRequest], app.NodeDownloadView)
 }
