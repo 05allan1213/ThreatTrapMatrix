@@ -12,6 +12,8 @@ import (
 	"honey_server/internal/rpc/node_rpc"
 	"honey_server/internal/service/mq_service"
 	"honey_server/internal/service/redis_service/net_lock"
+
+	"gorm.io/gorm"
 )
 
 // StatusDeleteIP 处理节点上报的诱捕IP删除状态请求
@@ -31,6 +33,15 @@ func (NodeService) StatusDeleteIP(ctx context.Context, request *node_rpc.StatusD
 
 	// 执行数据库批量删除操作（删除查询到的诱捕IP记录）
 	global.DB.Delete(&honeyIPList)
+
+	firstHoneyIp := honeyIPList[0]
+
+	var nodeModel models.NodeModel
+	global.DB.Take(&nodeModel, firstHoneyIp.NodeID)
+	global.DB.Model(&nodeModel).Update("honey_ip_count", gorm.Expr("honey_ip_count - ?", len(honeyIPList)))
+	var netModel models.NetModel
+	global.DB.Take(&netModel, firstHoneyIp.NetID)
+	global.DB.Model(&netModel).Update("honey_ip_count", gorm.Expr("honey_ip_count - ?", len(honeyIPList)))
 
 	mq_service.SendWsMsg(mq_service.WsMsgType{
 		LogID:  request.LogID,

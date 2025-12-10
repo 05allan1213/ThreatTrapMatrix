@@ -12,6 +12,8 @@ import (
 	"honey_server/internal/rpc/node_rpc"
 	"honey_server/internal/service/mq_service"
 	"honey_server/internal/service/redis_service/net_lock"
+
+	"gorm.io/gorm"
 )
 
 // StatusCreateIP 处理节点上报的诱捕IP创建状态请求
@@ -49,5 +51,13 @@ func (NodeService) StatusCreateIP(ctx context.Context, request *node_rpc.StatusC
 		NetID:  honeyIPModel.NetID,
 		NodeID: honeyIPModel.NodeID,
 	})
+
+	var nodeModel models.NodeModel
+	global.DB.Take(&nodeModel, honeyIPModel.NodeID)
+	global.DB.Model(&nodeModel).Update("honey_ip_count", gorm.Expr("honey_ip_count + 1"))
+	var netModel models.NetModel
+	global.DB.Take(&netModel, honeyIPModel.NetID)
+	global.DB.Model(&netModel).Update("honey_ip_count", gorm.Expr("honey_ip_count + 1"))
+
 	return
 }

@@ -86,6 +86,9 @@ func (model NetModel) AfterDelete(tx *gorm.DB) error {
 		logrus.Errorf("节点不存在")
 		return err
 	}
-	tx.Model(&node).Update("net_count", gorm.Expr("net_count - 1"))
+	tx.Model(&node).Updates(map[string]any{
+		"net_count":      gorm.Expr("net_count - 1"),
+		"honey_ip_count": gorm.Expr("honey_ip_count - ?", model.HoneyIpCount),
+	})
 	return nil
 }
