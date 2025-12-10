@@ -78,11 +78,12 @@ services:
   honey_server:
     image: honey_server:v1.0.2
     restart: always
-    network_mode: host # 需要开放 50001端口
+    network_mode: host # 需要开放 50001 端口
     volumes:
       - ./honey_server/settings.yaml:/app/settings.yaml
       - ./honey_server/logs:/app/logs
       - ./honey_server/uploads:/app/uploads
+      - ./honey_server/media:/app/media
       - ./honey_web:/app/honey_web
     environment:
       - TZ=Asia/Shanghai

@@ -16,6 +16,7 @@ func main() {
 	core.SetLogDefault()                 // 设置默认日志配置
 	global.Log = core.GetLogger()        // 获取日志实例
 	global.DB = core.GetDB()             // 获取MySQL数据库实例
+	flags.Migrate()                      // 自动建表
 	global.Redis = core.GetRedisClient() // 获取Redis实例
 	global.Queue = core.InitMQ()         // 初始化消息队列
 	mq_service.Run()                     // 注册交换机

@@ -28,6 +28,9 @@ func main() {
 	// 初始化数据库连接
 	global.DB = core.GetDB()
 
+	// 建表
+	flags.Migrate()
+
 	// 创建gRPC客户端连接
 	global.GrpcClient = core.GetGrpcClient()
 

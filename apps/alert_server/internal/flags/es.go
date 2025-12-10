@@ -43,3 +43,24 @@ func EsIndex() {
 	}
 	logrus.Infof("创建索引成功 %v", response)
 }
+
+// AutoCreateIndex 自动创建es告警索引
+func AutoCreateIndex() {
+	index := es_models.AlertModel{}.Index()
+	ok, err := global.ES.IndexExists(index).Do(context.Background())
+	if err != nil {
+		logrus.Errorf("获取索引错误 %s", err)
+		return
+	}
+	if ok {
+		logrus.Infof("存在索引 %s", index)
+		return
+	}
+	logrus.Infof("创建索引 %s", index)
+	response, err := global.ES.CreateIndex(index).Body(es_models.AlertModel{}.Mappings()).Do(context.Background())
+	if err != nil {
+		logrus.Errorf("创建索引错误 %s", err)
+		return
+	}
+	logrus.Infof("创建索引成功 %v", response)
+}

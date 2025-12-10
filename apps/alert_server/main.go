@@ -16,6 +16,7 @@ func main() {
 	global.DB = core.GetDB()             // 获取MySQL数据库实例
 	global.Redis = core.GetRedisClient() // 获取Redis实例
 	global.ES = core.ConnectEs()         // 初始化ElasticSearch客户端
+	flags.AutoCreateIndex()              // 自动创建索引
 	global.Queue = core.InitMQ()         // 初始化消息队列
 	flags.Run()                          // 运行命令行参数
 	mq_service.Run()                     // 启动rabbitMQ服务
