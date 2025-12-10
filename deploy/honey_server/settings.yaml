@@ -46,3 +46,10 @@ mq: # rabbitMQ
   clientKey:  # 客户端的私钥
   caCertificate:  # ca的证书
   wsTopic: wsTopic # WebSocket的Topic
+
+site: # 站点信息
+  title:
+  icon:
+  slogan:
+  logo:
+  path: /app/honey_web/dist/index.html

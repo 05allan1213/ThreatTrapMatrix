@@ -83,6 +83,7 @@ services:
       - ./honey_server/settings.yaml:/app/settings.yaml
       - ./honey_server/logs:/app/logs
       - ./honey_server/uploads:/app/uploads
+      - ./honey_web:/app/honey_web
     environment:
       - TZ=Asia/Shanghai
     depends_on:

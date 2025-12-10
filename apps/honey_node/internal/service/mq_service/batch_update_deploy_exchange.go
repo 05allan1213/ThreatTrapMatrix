@@ -45,6 +45,11 @@ func UpdateDeployTask(req models.BatchUpdateDeployRequest, taskID string) {
 	for _, info := range req.PortList {
 		ipPortMap[info.IP] = append(ipPortMap[info.IP], info)
 	}
+	if len(ipPortMap) == 0 {
+		for _, s := range req.IpList {
+			ipPortMap[s] = []models.PortInfo{}
+		}
+	}
 
 	// 第三步：按IP批量重建新端口转发，并上报更新状态
 	for ip, portList := range ipPortMap {

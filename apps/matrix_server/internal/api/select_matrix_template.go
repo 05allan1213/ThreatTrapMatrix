@@ -83,7 +83,7 @@ func (Api) SelectMatrixTemplateView(c *gin.Context) {
 		for i := 0; i < count && ipIndex < len(cr.IpList); i++ {
 			data = append(data, IpInfo{
 				Ip:             cr.IpList[ipIndex],
-				HostTemplateID: template.HostTemplateID,
+				HostTemplateID: &template.HostTemplateID,
 			})
 			ipIndex++
 		}

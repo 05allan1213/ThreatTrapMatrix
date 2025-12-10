@@ -37,7 +37,7 @@ type HostInfo struct {
 type HoneyInfo struct {
 	Mac            string     `json:"mac"`            // 诱捕IP对应的MAC地址
 	Status         int8       `json:"status"`         // 诱捕IP的部署状态（1部署中/2部署成功/3部署失败/4删除中）
-	HostTemplateID uint       `json:"hostTemplateID"` // 诱捕IP关联的主机模板ID
+	HostTemplateID *uint      `json:"hostTemplateID"` // 诱捕IP关联的主机模板ID
 	PortList       []PortInfo `json:"portList"`       // 诱捕IP关联的端口转发信息列表
 }
 
