@@ -17,7 +17,7 @@ subjectAltName = @alt_names
 
 [alt_names]
 IP.1 = 192.168.5.130
-DNS.1 = ayp05.com
+DNS.1 = honey.ayp05.com
 EOF
 
 # 2. 生成服务器证书请求（包含SAN）

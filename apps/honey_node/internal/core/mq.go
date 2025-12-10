@@ -49,7 +49,7 @@ func InitMQ() *amqp.Channel {
 	}
 
 	// 连接失败时终止程序
-	if err != nil {
+	if err != nil || conn == nil {
 		logrus.Fatalf("无法连接到 RabbitMQ: %v", err)
 	}
 
