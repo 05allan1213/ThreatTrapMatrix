@@ -51,7 +51,7 @@ func (NodeService) StatusBindPort(ctx context.Context, request *node_rpc.StatusB
 				continue
 			}
 			// 更新端口状态为节点上报的错误信息
-			global.DB.Model(model).Update("status", i2.Msg)
+			global.DB.Model(model).Update("error_msg", i2.Msg)
 		}
 	}
 

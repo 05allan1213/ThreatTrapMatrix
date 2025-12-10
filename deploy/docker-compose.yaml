@@ -74,7 +74,7 @@ services:
       - "443:443"
 
   honey_server:
-    image: honey_server:v1.0.1
+    image: honey_server:v1.0.2
     restart: always
     ports:
       - "50001:50001"
@@ -90,7 +90,7 @@ services:
       honey_network:
         ipv4_address: 10.4.0.10
   image_server:
-    image: image_server:v1.0.1
+    image: image_server:v1.0.2
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

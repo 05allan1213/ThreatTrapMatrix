@@ -16,4 +16,5 @@ type HoneyPortModel struct {
 	DstIP        string       `gorm:"size:32" json:"dstIP"`                   // 目标转发ip
 	DstPort      int          `json:"dstPort"`                                // 目标转发端口
 	Status       int8         `json:"status"`                                 // 服务状态
+	ErrorMsg     string       `gorm:"size:256" json:"errorMsg"`               // 错误信息
 }
