@@ -9,6 +9,10 @@ import (
 	"honey_server/internal/models"
 	"honey_server/internal/utils/response"
 	"net/url"
+	"regexp"
+	"strconv"
+
+	_ "embed"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,6 +22,9 @@ type NodeDownloadRequest struct {
 	Version string `form:"version"` // 镜像版本Tag
 	Log     bool   `form:"log"`     // 日志输出开关：控制脚本执行时是否打印详细日志
 }
+
+//go:embed node_download.sh
+var nodeDownloadShell string
 
 // NodeDownloadView 节点下载脚本生成接口
 func (NodeVersionApi) NodeDownloadView(c *gin.Context) {
@@ -38,7 +45,26 @@ func (NodeVersionApi) NodeDownloadView(c *gin.Context) {
 	c.Header("Content-Transfer-Encoding", "binary")                                         // 传输编码：二进制，保证脚本内容完整传输
 
 	// 构建节点下载脚本内容
-	shellContent := "echo 'hello world'"
+	shellContent := nodeDownloadShell
+	reg := regexp.MustCompile(`\{\{.*?\}\}`)
+	shellContent = reg.ReplaceAllStringFunc(shellContent, func(s string) string {
+		name := s[2 : len(s)-2]
+		switch name {
+		case "LOG":
+			return strconv.FormatBool(cr.Log)
+		case "NODE_VERSION":
+			return model.Tag
+		case "MANAGE_IP":
+			return "192.168.5.130"
+		case "AGREEMENT":
+			return "http"
+		case "NODE_IMAGE_ID":
+			return model.ImageID
+		case "NET_WORK":
+			return "ens33"
+		}
+		return ""
+	})
 
 	// 返回脚本内容作为响应体
 	c.Data(0, "text", []byte(shellContent))
