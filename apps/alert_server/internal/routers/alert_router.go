@@ -22,4 +22,7 @@ func AlertRouter(r *gin.RouterGroup) {
 	// DELETE: /alert - 删除告警记录
 	// 绑定JSON请求参数到RemoveRequest结构体，并调用AlertApi的RemoveView方法
 	r.DELETE("alert", middleware.BindJsonMiddleware[alert_api.RemoveRequest], app.RemoveView)
+	// GET: /alert/signature/options - 获取告警签名选项
+	// 调用AlertApi的SignatureOptionsView方法
+	r.GET("signature/options", app.SignatureOptionsView)
 }

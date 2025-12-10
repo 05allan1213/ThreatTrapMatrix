@@ -102,7 +102,7 @@ services:
       honey_network:
         ipv4_address: 10.4.0.11
   alert_server:
-    image: alert_server:v1.0.1
+    image: alert_server:v1.0.2
     restart: always
     volumes:
       - ./alert_server/settings.yaml:/app/settings.yaml
