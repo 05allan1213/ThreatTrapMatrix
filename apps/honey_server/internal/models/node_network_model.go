@@ -17,6 +17,7 @@ type NodeNetworkModel struct {
 	Mask      int8      `json:"mask"`                           // 子网掩码 8-32
 	Gateway   string    `gorm:"size:32" json:"gateway"`         // 网关
 	Status    int8      `json:"status"`                         // 网卡启用状态 1 启用 2 未启用
+	NetID     uint      `json:"netID"`                          // 网络ID 启用才会有
 }
 
 func (n *NodeNetworkModel) BeforeDelete(tx *gorm.DB) error {

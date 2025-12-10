@@ -15,6 +15,7 @@ import (
 // ListRequest 网络列表查询请求参数结构体
 type ListRequest struct {
 	NodeID          uint `form:"nodeID"` // 节点ID
+	NetID           uint `form:"netID"`  // 网络ID
 	models.PageInfo                      // 分页信息嵌套结构体
 }
 
@@ -31,7 +32,10 @@ func (NetApi) ListView(c *gin.Context) {
 	cr := middleware.GetBind[ListRequest](c)
 
 	// 调用通用查询服务获取网络列表，预加载关联的节点模型
-	_list, count, _ := common_service.QueryList(models.NetModel{NodeID: cr.NodeID}, common_service.QueryListRequest{
+	model := models.NetModel{NodeID: cr.NodeID}
+	model.ID = cr.NetID
+
+	_list, count, _ := common_service.QueryList(model, common_service.QueryListRequest{
 		Likes:    []string{"title", "ip"}, // 支持标题和IP的模糊搜索
 		PageInfo: cr.PageInfo,             // 分页参数
 		Sort:     "created_at desc",       // 按创建时间降序排序

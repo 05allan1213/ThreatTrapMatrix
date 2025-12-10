@@ -12,31 +12,35 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// VsListRequest 虚拟服务列表查询请求参数结构体
+// VsListRequest 虚拟服务列表查询请求结构体
 type VsListRequest struct {
-	models.PageInfo        // 嵌套分页参数（页码、页大小）
-	Port            int    `form:"port"` // 筛选条件：服务端口
-	IP              string `form:"ip"` // 筛选条件：容器IP地址
-	Title           string `form:"title"` // 筛选条件：服务名称（支持模糊匹配）
+	models.PageInfo        // 分页信息
+	Port            int    `form:"port"` // 筛选条件：虚拟服务端口
+	IP              string `form:"ip"` // 筛选条件：虚拟服务IP地址
+	Title           string `form:"title"` // 筛选条件：虚拟服务标题（支持模糊搜索）
+	VsID            uint   `form:"vsID"` // 筛选条件：虚拟服务ID（精准匹配）
 }
 
 // VsListView 虚拟服务列表查询接口处理函数
 func (VsApi) VsListView(c *gin.Context) {
-	// 获取并绑定列表查询请求参数（含分页和筛选条件）
+	// 绑定并解析前端提交的查询参数
 	cr := middleware.GetBind[VsListRequest](c)
 
-	// 调用公共查询服务，构建查询条件并执行分页查询
-	list, count, _ := common_service.QueryList(models.ServiceModel{
-		Title: cr.Title, // 名称精确/模糊匹配
-		IP:    cr.IP,    // IP精确匹配
-		Port:  cr.Port,  // 端口精确匹配
-	},
-		common_service.QueryListRequest{
-			Likes:    []string{"title"}, // 指定title字段支持模糊查询
-			PageInfo: cr.PageInfo,       // 分页参数
-			Sort:     "created_at desc", // 排序规则：按创建时间降序
-		})
+	// 构建虚拟服务筛选模型，映射查询参数到模型字段
+	model := models.ServiceModel{
+		Title: cr.Title, // 标题筛选
+		IP:    cr.IP,    // IP地址筛选
+		Port:  cr.Port,  // 端口筛选
+	}
+	model.ID = cr.VsID // 虚拟服务ID精准筛选
 
-	// 返回分页列表数据
+	// 调用通用查询服务获取列表数据
+	list, count, _ := common_service.QueryList(model, common_service.QueryListRequest{
+		Likes:    []string{"title"}, // 模糊搜索字段：title
+		PageInfo: cr.PageInfo,       // 分页参数
+		Sort:     "created_at desc", // 排序规则：按创建时间降序
+	})
+
+	// 返回分页列表数据（列表内容、总条数）
 	response.OkWithList(list, count, c)
 }

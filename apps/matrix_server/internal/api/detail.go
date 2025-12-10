@@ -43,6 +43,7 @@ type HoneyInfo struct {
 
 // PortInfo 诱捕IP的端口详情信息结构体
 type PortInfo struct {
+	ServiceID   uint   `json:"serviceID"`   // 端口关联的虚拟服务ID
 	ServiceName string `json:"serviceName"` // 端口关联的虚拟服务名称
 	Port        int    `json:"port"`        // 端口号
 }
@@ -90,6 +91,7 @@ func (Api) DetailView(c *gin.Context) {
 	// 遍历诱捕IP关联的端口列表，组装端口详情信息
 	for _, model := range honeyIp.PortList {
 		data.HoneyInfo.PortList = append(data.HoneyInfo.PortList, PortInfo{
+			ServiceID:   model.ServiceID,
 			ServiceName: model.ServiceModel.Title,
 			Port:        model.Port,
 		})

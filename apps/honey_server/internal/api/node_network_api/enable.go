@@ -97,7 +97,10 @@ func (NodeNetworkApi) EnableView(c *gin.Context) {
 			"new_status": 1,
 		}).Info("updating network interface status") // 更新网卡状态为已启用
 
-		if err := tx.Model(&model).Update("status", 1).Error; err != nil {
+		if err := tx.Model(&model).Updates(map[string]any{
+			"status": 1,
+			"net_id": net.ID,
+		}).Error; err != nil {
 			log.WithFields(map[string]interface{}{
 				"network_id": cr.Id,
 				"error":      err,
