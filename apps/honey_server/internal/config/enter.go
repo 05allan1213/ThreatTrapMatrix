@@ -14,6 +14,7 @@ type Config struct {
 	Jwt       Jwt      `yaml:"jwt"`       // jwt配置信息
 	WhiteList []string `yaml:"whiteList"` // 路由白名单
 	MQ        MQ       `yaml:"mq"`        // rabbitMQ配置信息
+	Site      Site     `yaml:"site"`      // 站点配置信息
 }
 
 // DB 数据库连接配置结构体
@@ -99,4 +100,13 @@ func (m MQ) Addr() string {
 		m.Host,
 		m.Port,
 	)
+}
+
+// Site 站点配置结构体
+type Site struct {
+	Title  string `yaml:"title" json:"title"`   // 站点名称
+	Icon   string `yaml:"icon" json:"icon"`     // 站点图标
+	Slogan string `yaml:"slogan" json:"slogan"` // 站点标语
+	Logo   string `yaml:"logo" json:"logo"`     // 站点logo
+	Path   string `yaml:"path" json:"-"`        // 站点路径
 }

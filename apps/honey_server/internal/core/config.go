@@ -33,3 +33,10 @@ func ReadConfig() *config.Config {
 
 	return c
 }
+
+// SetConfig 设置并保存配置文件
+func SetConfig(c *config.Config) error {
+	byteData, _ := yaml.Marshal(c)
+	err := os.WriteFile(flags.Options.File, byteData, 0644)
+	return err
+}
