@@ -79,12 +79,12 @@ func (Api) NetIpListView(c *gin.Context) {
 	}
 
 	// 查询子网下已存在的诱捕IP，构建IP映射表用于状态判断
-	var honeIpMap = map[string]bool{}
+	var honeIpMap = map[string]models.HoneyIpModel{}
 	var honeyIpList []models.HoneyIpModel
 	global.DB.Find(&honeyIpList, "net_id = ?", cr.NetID)
 	data.HoneyIpCount = len(honeyIpList)
 	for _, honeyModel := range honeyIpList {
-		honeIpMap[honeyModel.IP] = true
+		honeIpMap[honeyModel.IP] = honeyModel
 	}
 
 	// 计算各类IP总数（与分页无关）
@@ -142,8 +142,20 @@ func (Api) NetIpListView(c *gin.Context) {
 			info.Type = 1
 		}
 		// 判断IP类型：诱捕IP
-		if honeIpMap[p] {
-			info.Type = 2
+		honeyIpModel, ok := honeIpMap[p]
+		if ok {
+			if honeyIpModel.Status == 1 { // 创建中
+				info.Type = 3
+			}
+			if honeyIpModel.Status == 4 { // 删除中
+				info.Type = 4
+			}
+			if honeyIpModel.Status == 3 { // 失败的
+				info.Type = 5
+			}
+			if honeyIpModel.Status == 2 { // 运行中
+				info.Type = 2
+			}
 		}
 		// 判断IP类型：部署中IP
 		if creatingMap[p] {
