@@ -139,13 +139,13 @@ func (hook *MyHook) rotateFiles(timer string) error {
 
 	var err error
 	// 打开普通日志文件（追加模式，不存在则创建）
-	hook.file, err = os.OpenFile(infoFilename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0o600)
+	hook.file, err = os.OpenFile(infoFilename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %v", err)
 	}
 
 	// 打开错误日志文件（追加模式，不存在则创建）
-	hook.errFile, err = os.OpenFile(errFilename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0o600)
+	hook.errFile, err = os.OpenFile(errFilename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open error log file: %v", err)
 	}
