@@ -25,7 +25,7 @@ type NodeVersionApi struct {
 
 // 常量定义：节点镜像上传相关配置
 const (
-	maxFileSize  = 2 << 30               // 镜像文件最大限制：2GB
+	maxFileSize  = 1 << 30               // 镜像文件最大限制：1GB
 	nodeImageDir = "media/node_version/" // 节点镜像文件存储根目录，相对服务运行目录
 )
 
@@ -43,7 +43,7 @@ func (NodeVersionApi) NodeVersionCreateView(c *gin.Context) {
 	log.WithFields(logrus.Fields{
 		"file_size": file.Size,
 		"file_name": file.Filename,
-	}).Info("received image file upload request")
+	}).Info("received image file uploads request")
 
 	// 校验文件大小：不超过1GB
 	if file.Size > maxFileSize {

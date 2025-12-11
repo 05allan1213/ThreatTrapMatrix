@@ -24,12 +24,12 @@ func NodeVersionRouters(r *gin.RouterGroup) {
 	// GET /node_version：节点版本分页列表查询接口
 	// 功能：查询节点版本列表，支持分页；
 	// 中间件：BindQueryMiddleware[models.PageInfo] - 自动绑定URL查询参数到分页结构体，校验参数合法性
-	r.GET("node_version", middleware.BindQueryMiddleware[models.PageInfo], app.NodeVersionListView)
+	r.GET("node_version", middleware.BindQueryMiddleware[node_version_api.ListRequest], app.NodeVersionListView)
 
 	// GET /node_version/download：节点版本文件下载接口
 	// 功能：根据节点版本ID下载对应的版本文件；
 	// 中间件：BindQueryMiddleware[models.IDRequest] - 自动绑定URL查询参数中的ID到ID请求结构体，校验ID合法性
-	r.GET("node_version/download", middleware.BindQueryMiddleware[models.IDRequest], app.NodeVersionDownloadView)
+	r.GET("node_version/download", middleware.BindQueryMiddleware[node_version_api.NodeVersionDownloadRequest], app.NodeVersionDownloadView)
 
 	// GET /node_version/options：节点版本选项接口
 	// 功能：返回节点版本选项列表，用于前端下拉框选择

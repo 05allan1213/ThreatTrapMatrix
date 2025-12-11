@@ -76,7 +76,7 @@ services:
       - "443:443"
 
   honey_server:
-    image: honey_server:v1.0.2
+    image: honey_server:v1.0.1
     restart: always
     network_mode: host # 需要开放 50001 端口
     volumes:
@@ -92,7 +92,7 @@ services:
       - redis
       - rabbitmq
   image_server:
-    image: image_server:v1.0.3
+    image: image_server:v1.0.1
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -106,7 +106,7 @@ services:
       honey_network:
         ipv4_address: 10.4.0.11
   alert_server:
-    image: alert_server:v1.0.2
+    image: alert_server:v1.0.1
     restart: always
     volumes:
       - ./alert_server/settings.yaml:/app/settings.yaml

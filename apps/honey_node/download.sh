@@ -159,9 +159,10 @@ check_and_get_filebeat_image() {
 # 创建目录
 create_directory() {
     info "创建工作目录..."
-    if mkdir -p /opt/honey; then
-        cd /opt/honey || error "无法进入/opt/honey目录"
-        info "工作目录创建成功: /opt/honey"
+    WORK_DIR="$HOME/honey"
+    if mkdir -p "$WORK_DIR"; then
+        cd "$WORK_DIR" || error "无法进入$WORK_DIR目录"
+        info "工作目录创建成功: $WORK_DIR"
         mkdir -p node_server
         touch node_server/gorm.db
         mkdir -p node_server/logs
@@ -170,7 +171,7 @@ create_directory() {
         mkdir -p filebeat
         mkdir -p kafka-certs
     else
-        error "无法创建/opt/honey目录"
+        error "无法创建$WORK_DIR目录"
     fi
 }
 

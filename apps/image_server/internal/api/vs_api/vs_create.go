@@ -212,7 +212,7 @@ func ContainerStatus(model *models.ServiceModel, log *logrus.Entry) {
 	containers, err := docker_service.PrefixContainerStatus(model.ContainerName)
 
 	isUpdate := false // 是否需要更新数据库标记
-	state := ""       // 最新容器状态描述
+	var state string  // 最新容器状态描述
 
 	// 容器查询失败处理
 	if err != nil {

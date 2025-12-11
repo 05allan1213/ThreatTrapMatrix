@@ -11,6 +11,6 @@ import (
 
 func ImageRouters(r *gin.RouterGroup) {
 	var app = api.App.ImageApi
-	// POST /image/upload: 图片上传接口
+	// POST /image/uploads: 图片上传接口
 	r.POST("image/upload", app.ImageUploadView)
 }

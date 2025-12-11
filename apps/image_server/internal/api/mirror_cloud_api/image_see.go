@@ -43,7 +43,7 @@ func (MirrorCloudApi) ImageSeeView(c *gin.Context) {
 	log.WithFields(logrus.Fields{
 		"file_size": file.Size,
 		"file_name": file.Filename,
-	}).Info("received image file upload request") // 收到镜像文件上传请求
+	}).Info("received image file uploads request") // 收到镜像文件上传请求
 
 	// 校验镜像文件大小是否超出限制
 	if file.Size > maxFileSize {
@@ -124,7 +124,7 @@ func (MirrorCloudApi) ImageSeeView(c *gin.Context) {
 
 	log.WithFields(logrus.Fields{
 		"response_data": data,
-	}).Infof("image file upload successfully") // 镜像文件上传成功
+	}).Infof("image file uploads successfully") // 镜像文件上传成功
 
 	// 返回成功响应及镜像元数据
 	response.OkWithData(data, c)
