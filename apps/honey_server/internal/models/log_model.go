@@ -10,7 +10,7 @@ type LogModel struct {
 	Username    string `gorm:"size:32" json:"username"`         // 用户名
 	Pwd         string `gorm:"size:64" json:"pwd"`              // 密码（输入错误）
 	LoginStatus bool   `json:"loginStatus"`                     // 登录状态
-	Title       string `gorm:"size:32" json:"title"`            // 日志别名（操作日志）
+	Title       string `gorm:"size:64" json:"title"`            // 日志别名（操作日志）
 	Level       int8   `json:"level"`                           // 级别（操作日志）
 	Content     string `json:"content"`                         // 操作详情（操作日志）
 	ServiceName string `gorm:"size:32" json:"serviceName"`      // 服务名称（运行日志）

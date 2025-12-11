@@ -3,7 +3,7 @@ package models
 // MatrixTemplateModel 矩阵模板模型
 type MatrixTemplateModel struct {
 	Model
-	Title            string           `gorm:"size:32" json:"title"`                    // 矩阵模板名称
+	Title            string           `gorm:"size:64" json:"title"`                    // 矩阵模板名称
 	HostTemplateList HostTemplateList `gorm:"serializer:json" json:"hostTemplateList"` // 主机模板列表
 }
 
