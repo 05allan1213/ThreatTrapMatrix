@@ -111,7 +111,7 @@ func register[T any](exChangeName string, fun func(msg T) error) {
 	queueName := fmt.Sprintf("%s_%s_queue", exChangeName, cf.System.Uid)
 
 	// 首次初始化时，完成交换器、队列的声明及绑定
-	if !mq.InitMQ {
+	if !mq.InitMQ || true { // 总是声明交换器和队列，确保它们存在
 		// 声明业务交换器
 		registerExchange(exChangeName)
 		// 声明业务队列

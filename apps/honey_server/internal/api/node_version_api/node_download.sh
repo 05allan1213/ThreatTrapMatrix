@@ -245,7 +245,7 @@ outputs:
         - http
 
 af-packet:
-  - interface: ens10
+  - interface: ens33
     cluster-id: 99
     cluster-type: cluster_flow
     defrag: yes
