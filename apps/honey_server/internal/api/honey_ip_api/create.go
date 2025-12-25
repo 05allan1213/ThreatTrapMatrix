@@ -56,6 +56,7 @@ func (HoneyIPApi) CreateView(c *gin.Context) {
 		return
 	}
 
+	// 校验IP是否在可部署IP列表中
 	if !utils.InList(ipRange, cr.IP) {
 		log.WithFields(map[string]interface{}{
 			"net_id":   netModel.ID,
@@ -111,6 +112,8 @@ func (HoneyIPApi) CreateView(c *gin.Context) {
 		response.FailWithMsg("节点离线中", c)
 		return
 	}
+
+	// 锁定网络
 	err = net_lock.Lock(cr.NetID)
 	if err != nil {
 		response.FailWithMsg("当前子网正在操作中", c)

@@ -28,6 +28,7 @@ type NodeClient struct {
 	reconnectTimer  *time.Timer                        // 重连计时器
 	mu              sync.Mutex                         // 状态保护锁
 	isConnected     bool                               // 是否已建立连接的状态标记
+	retryDelay      time.Duration                      // 当前重试延迟时间（指数退避）
 }
 
 // NewNodeClient 创建节点客户端实例
@@ -38,6 +39,7 @@ func NewNodeClient(grpcClient node_rpc.NodeServiceClient,
 		config:          config,
 		cmdResponseChan: make(chan *node_rpc.CmdResponse, 10), // 带缓冲的响应通道，容量10
 		reconnectTimer:  time.NewTimer(0),                     // 初始化重连定时器（初始状态停止）
+		retryDelay:      1 * time.Second,                      // 初始重试延迟1秒
 	}
 }
 
@@ -77,14 +79,16 @@ func (nc *NodeClient) connect() {
 	// 创建双向命令流
 	stream, err := nc.client.Command(ctx)
 	if err != nil {
-		logrus.Errorf("创建命令流失败: %v，将在2秒后重试", err)
-		nc.scheduleReconnect(2 * time.Second)
+		logrus.Errorf("创建命令流失败: %v，将在%v后重试", err, nc.retryDelay)
+		nc.scheduleReconnect(nc.retryDelay)
+		nc.increaseRetryDelay()
 		return
 	}
 
 	// 更新连接状态及流实例
 	nc.stream = stream
 	nc.isConnected = true
+	nc.retryDelay = 1 * time.Second // 连接成功，重置重试延迟
 	logrus.Info("节点命令流连接成功")
 
 	// 启动响应发送和请求接收协程
@@ -139,6 +143,14 @@ func (nc *NodeClient) scheduleReconnect(delay time.Duration) {
 	}()
 }
 
+// increaseRetryDelay 增加重试延迟时间（指数退避算法）
+func (nc *NodeClient) increaseRetryDelay() {
+	nc.retryDelay *= 2
+	if nc.retryDelay > 60*time.Second {
+		nc.retryDelay = 60 * time.Second
+	}
+}
+
 // sendResponses 循环发送命令响应到服务端
 func (nc *NodeClient) sendResponses() {
 	defer nc.wg.Done()
@@ -160,7 +172,8 @@ func (nc *NodeClient) sendResponses() {
 				logrus.Errorf("发送响应失败: %v", err)
 				// 发送失败则断开连接并安排重连
 				nc.disconnect()
-				nc.scheduleReconnect(2 * time.Second)
+				nc.scheduleReconnect(nc.retryDelay)
+				nc.increaseRetryDelay()
 				return
 			}
 
@@ -190,7 +203,8 @@ func (nc *NodeClient) receiveRequests() {
 
 			// 断开连接并触发重连
 			nc.disconnect()
-			nc.scheduleReconnect(2 * time.Second)
+			nc.scheduleReconnect(nc.retryDelay)
+			nc.increaseRetryDelay()
 			return
 		}
 

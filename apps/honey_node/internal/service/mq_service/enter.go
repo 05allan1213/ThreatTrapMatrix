@@ -19,6 +19,12 @@ import (
 // 用于等待所有业务交换器的消费端注册完成，确保首次初始化时所有消费逻辑都已就绪
 var wg = sync.WaitGroup{}
 
+// retryDelay 当前重试延迟时间（指数退避）
+var retryDelay = 1 * time.Second
+
+// retryMutex 保护retryDelay的并发访问
+var retryMutex sync.Mutex
+
 // Run MQ服务启动入口函数
 func Run() {
 	cfg := global.Config.MQ
@@ -207,19 +213,38 @@ func watchHealth() {
 		}
 		// 通道关闭，进入重连流程
 		fmt.Println("通道被关闭, 等待重连")
-		time.Sleep(2 * time.Second) // 重连前延迟，避免频繁重试
+
+		retryMutex.Lock()
+		currentDelay := retryDelay
+		retryMutex.Unlock()
+
+		time.Sleep(currentDelay)
 
 		// 循环重连直到成功
 		for {
 			// 尝试重新初始化MQ连接
 			mq, err := core.InitMQ()
 			if err != nil {
-				logrus.Warnf("mq连接失败, 等待重连 %s", err)
-				time.Sleep(2 * time.Second)
+				retryMutex.Lock()
+				logrus.Warnf("mq连接失败, 等待%v后重连 %s", retryDelay, err)
+				currentDelay = retryDelay
+				retryDelay *= 2
+				if retryDelay > 60*time.Second {
+					retryDelay = 60 * time.Second
+				}
+				retryMutex.Unlock()
+
+				time.Sleep(currentDelay)
 				continue
 			}
 			// 重连成功，更新全局MQ实例
 			global.Queue = mq
+
+			// 重置重试延迟
+			retryMutex.Lock()
+			retryDelay = 1 * time.Second
+			retryMutex.Unlock()
+
 			// 重启MQ服务，恢复所有消费端和监控
 			Run()
 			break // 重连成功，退出循环
