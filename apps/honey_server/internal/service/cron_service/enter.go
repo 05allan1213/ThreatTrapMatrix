@@ -20,6 +20,9 @@ func Run() {
 	// 注册定时任务：每分钟的0秒、每20分钟执行一次SyncVsServicePort函数
 	crontab.AddFunc("0 */20 * * * *", SyncVsServicePort)
 
+	// 注册定时任务：每5分钟扫描并重试超时的诱捕IP创建任务
+	crontab.AddFunc("0 */5 * * * *", RetryStuckHoneyIP)
+
 	// 启动定时任务调度器（非阻塞，后台运行）
 	crontab.Start()
 }
