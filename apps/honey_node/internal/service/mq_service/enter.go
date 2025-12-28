@@ -1,6 +1,6 @@
 package mq_service
 
-// File: honey_node/service/mq_service/mq_service.go
+// File: honey_node/service/mq_service/enter.go
 // Description: MQ服务核心模块，负责RabbitMQ队列/交换器的声明与绑定、业务消费端注册、消息发送、连接健康监控及自动重连，封装不同业务场景的MQ消费逻辑
 
 import (

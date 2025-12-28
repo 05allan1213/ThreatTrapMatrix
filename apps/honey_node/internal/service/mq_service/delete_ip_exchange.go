@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"honey_node/internal/core"
 	"honey_node/internal/global"
+	"honey_node/internal/models"
 	"honey_node/internal/rpc/node_rpc"
 	"honey_node/internal/utils/cmd"
 
@@ -43,6 +44,7 @@ func DeleteIpExChange(req DeleteIPRequest) error {
 	var linkNameList []string
 	for _, info := range req.IpList {
 		// 执行系统命令删除对应的虚拟网络接口（如hy_123）
+		// 不关心返回值：接口不存在也视为成功（幂等）
 		if !info.IsTan {
 			cmd.Cmd(fmt.Sprintf("ip link del %s", info.Network))
 			linkNameList = append(linkNameList, info.Network)
@@ -53,9 +55,9 @@ func DeleteIpExChange(req DeleteIPRequest) error {
 		idList = append(idList, uint32(info.HoneyIPID))
 	}
 
-	// 删除数据库中的数据
+	// 删除本地SQLite数据库中的IP记录（幂等：记录不存在也不报错）
 	if len(linkNameList) > 0 {
-		global.DB.Delete(&linkNameList)
+		global.DB.Where("link_name IN ?", linkNameList).Delete(&models.IpModel{})
 	}
 
 	// 上报删除状态到服务端（通知服务端删除数据库记录）

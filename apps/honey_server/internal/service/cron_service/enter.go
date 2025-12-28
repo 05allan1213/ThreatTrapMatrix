@@ -23,6 +23,9 @@ func Run() {
 	// 注册定时任务：每5分钟扫描并重试超时的诱捕IP创建任务
 	crontab.AddFunc("0 */5 * * * *", RetryStuckHoneyIP)
 
+	// 注册定时任务：每5分钟扫描并重试超时的诱捕IP删除任务
+	crontab.AddFunc("0 */5 * * * *", RetryStuckDeletingHoneyIP)
+
 	// 启动定时任务调度器（非阻塞，后台运行）
 	crontab.Start()
 }

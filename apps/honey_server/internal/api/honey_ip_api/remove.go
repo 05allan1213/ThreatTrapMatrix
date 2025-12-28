@@ -36,6 +36,15 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 		return
 	}
 
+	// 检查是否存在指定的诱捕IP记录（必须在任何[0]访问之前）
+	if len(honeyIPList) == 0 {
+		log.WithFields(map[string]interface{}{
+			"honey_ip_ids": cr.IdList,
+		}).Warn("no honey IPs found") // 未找到诱捕IP
+		response.FailWithMsg("未找到诱捕ip", c)
+		return
+	}
+
 	// 批量删除的子网数量
 	var netMap = map[uint]any{}
 	for _, model := range honeyIPList {
@@ -47,15 +56,6 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 	}
 
 	netModel := honeyIPList[0].NetModel
-
-	// 检查是否存在指定的诱捕IP记录
-	if len(honeyIPList) == 0 {
-		log.WithFields(map[string]interface{}{
-			"honey_ip_ids": cr.IdList,
-		}).Warn("no honey IPs found") // 未找到诱捕IP
-		response.FailWithMsg("未找到诱捕ip", c)
-		return
-	}
 
 	// 检查所有诱捕IP是否属于同一节点
 	nodeUID := honeyIPList[0].NodeModel.Uid
@@ -113,24 +113,24 @@ func (HoneyIPApi) RemoveView(c *gin.Context) {
 			IsTan:     isTan,
 		})
 	}
+
+	// 先更新诱捕IP状态为删除中（确保状态立即可观测）
+	if err := global.DB.Model(&honeyIPList).Update("status", 4).Error; err != nil {
+		log.WithFields(map[string]interface{}{
+			"honey_ip_ids": cr.IdList,
+			"new_status":   4,
+			"error":        err,
+		}).Error("failed to update honey IP status") // 数据库更新诱捕IP状态失败
+		response.FailWithMsg("更新诱捕IP状态失败", c)
+		return
+	}
+
 	log.WithFields(map[string]interface{}{
 		"node_uid": nodeModel.Uid,
 		"ip_count": len(req.IpList),
 	}).Info("sending batch delete request to node") // 发送批量删除请求给节点
 
 	mq_service.SendDeleteIPMsg(nodeModel.Uid, req)
-
-	// 更新诱捕IP状态为删除中
-	if err := global.DB.Model(&honeyIPList).Update("status", 4).Error; err != nil {
-		log.WithFields(map[string]interface{}{
-			"node_uid":   nodeModel.Uid,
-			"ip_count":   len(honeyIPList),
-			"new_status": 4,
-			"error":      err,
-		}).Error("failed to update honey IP status") // 数据库更新诱捕IP状态失败
-		response.FailWithMsg("更新诱捕IP状态失败", c)
-		return
-	}
 
 	log.WithFields(map[string]interface{}{
 		"node_uid": nodeModel.Uid,

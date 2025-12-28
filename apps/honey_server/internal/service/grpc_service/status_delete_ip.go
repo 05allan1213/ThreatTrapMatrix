@@ -5,7 +5,6 @@ package grpc_service
 
 import (
 	"context"
-	"fmt"
 	"honey_server/internal/core"
 	"honey_server/internal/global"
 	"honey_server/internal/models"
@@ -26,9 +25,12 @@ func (NodeService) StatusDeleteIP(ctx context.Context, request *node_rpc.StatusD
 	net_lock.UnLock(uint(request.NetID))
 	global.DB.Find(&honeyIPList, "id in ?", request.HoneyIPIDList)
 
-	// 校验查询结果：若没有找到任何记录，返回错误
+	// 幂等处理：若没有找到任何记录，说明已被删除或重复回调，记录warn但返回成功
 	if len(honeyIPList) == 0 {
-		return nil, fmt.Errorf("诱捕ip不存在 ")
+		log.WithField("net_id", request.NetID).
+			WithField("honey_ip_ids", request.HoneyIPIDList).
+			Warn("诱捕IP记录不存在，可能已删除或重复回调，幂等返回成功")
+		return pd, nil
 	}
 
 	// 执行数据库批量删除操作（删除查询到的诱捕IP记录）
