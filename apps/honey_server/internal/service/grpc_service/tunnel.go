@@ -4,11 +4,13 @@ package grpc_service
 // Description: 节点与服务端之间的TCP隧道实现，使用gRPC进行数据转发
 
 import (
+	"errors"
 	"fmt"
 	"honey_server/internal/rpc/node_rpc"
 	"io"
 	"log"
 	"net"
+	"sync"
 )
 
 // Tunnel 实现node_rpc.NodeServiceServer接口的双向流Tunnel方法
@@ -19,32 +21,49 @@ func (s *NodeService) Tunnel(stream node_rpc.NodeService_TunnelServer) error {
 		return fmt.Errorf("接收初始请求失败: %v", err)
 	}
 
+	// 获取流上下文，用于控制整个隧道生命周期
+	ctx := stream.Context()
+
 	// 建立与目标地址的TCP连接（使用流上下文控制超时/取消）
 	dialer := &net.Dialer{}
-	conn, err := dialer.DialContext(stream.Context(), "tcp", req.Address)
+	targetConn, err := dialer.DialContext(ctx, "tcp", req.Address)
 	if err != nil {
 		return fmt.Errorf("连接目标地址失败: %v", err)
 	}
-	defer conn.Close() // 函数退出时关闭目标连接
+
+	// 定义幂等的连接关闭函数，用于在任意错误或取消时打断阻塞的 targetConn.Read()
+	closeOnce := sync.Once{}
+	closeConn := func() {
+		closeOnce.Do(func() {
+			_ = targetConn.Close()
+		})
+	}
+	defer closeConn() // 函数退出时关闭目标连接
+
+	// 启动 watcher：当上下文取消/超时/对端断流时，主动关闭连接打断阻塞读
+	go func() {
+		<-ctx.Done()
+		closeConn()
+	}()
 
 	// 协程1：处理 gRPC 流 -> TCP 连接 (上行流量)
 	// 读取gRPC客户端（节点）数据并转发到目标TCP连接
 	go func() {
+		defer closeConn() // 上行退出时关闭连接，打断下行的 targetConn.Read()
 		for {
 			// 从gRPC流接收节点发送的数据
 			req, err := stream.Recv()
-			if err == io.EOF {
-				return // 客户端流关闭，退出协程
-			}
 			if err != nil {
-				log.Printf("接收客户端数据失败: %v", err)
+				// 任意接收错误（含 io.EOF）都关闭连接并退出
+				closeConn()
 				return
 			}
 
 			// 将节点数据写入目标TCP连接（转发到目标服务）
-			_, err = conn.Write(req.Chunk)
+			_, err = targetConn.Write(req.Chunk)
 			if err != nil {
-				log.Printf("写入目标连接失败: %v", err)
+				// 写入失败时关闭连接并退出
+				closeConn()
 				return
 			}
 		}
@@ -55,14 +74,18 @@ func (s *NodeService) Tunnel(stream node_rpc.NodeService_TunnelServer) error {
 	buffer := make([]byte, 4096) // 4KB数据缓冲区，平衡IO效率与内存占用
 	for {
 		// 从目标TCP连接读取数据
-		n, err := conn.Read(buffer)
+		n, err := targetConn.Read(buffer)
 		if err != nil {
-			if err == io.EOF {
-				log.Println("目标连接已关闭")
-			} else {
+			// 区分"主动关闭"与"真实IO错误"
+			if ctx.Err() != nil || errors.Is(err, net.ErrClosed) {
+				// 上下文取消或连接被我们主动关闭，正常退出
+				return nil
+			}
+			// 真实IO错误（如目标服务断开），记录并退出
+			if err != io.EOF {
 				log.Printf("从目标连接读取失败: %v", err)
 			}
-			return nil // 目标连接关闭/异常，结束隧道
+			return nil
 		}
 
 		// 将目标数据通过gRPC流发送给节点客户端
@@ -71,8 +94,15 @@ func (s *NodeService) Tunnel(stream node_rpc.NodeService_TunnelServer) error {
 			Address: req.Address, // 目标地址（保持上下文）
 		})
 		if err != nil {
+			// 区分"上下文取消"与"真实发送错误"
+			if ctx.Err() != nil {
+				// 上下文已取消，正常退出
+				return nil
+			}
+			// 真实发送错误，关闭连接并返回错误
 			log.Printf("发送数据到客户端失败: %v", err)
-			return err // 发送失败，返回错误终止隧道
+			closeConn()
+			return err
 		}
 	}
 }

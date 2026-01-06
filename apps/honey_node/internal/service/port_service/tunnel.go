@@ -58,13 +58,26 @@ func Tunnel(localAddr, targetAddr string) (err error) {
 
 // handleConnection 处理单个客户端连接的双向数据转发
 func handleConnection(client node_rpc.NodeServiceClient, localConn net.Conn, targetAddr string) {
-	defer localConn.Close() // 函数退出时关闭本地连接
-
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel() // 确保上下文被取消，释放资源
+
+	var stream node_rpc.NodeService_TunnelClient
+
+	// 定义幂等的关闭函数，用于在任意错误或取消时打断阻塞的 localConn.Read()
+	var closeOnce sync.Once
+	closeAll := func() {
+		closeOnce.Do(func() {
+			_ = localConn.Close() // 关闭本地连接
+			if stream != nil {
+				_ = stream.CloseSend() // 关闭双向流
+			}
+		})
+	}
+	defer closeAll() // 函数退出时关闭连接
+	defer cancel()   // 确保上下文被取消，释放资源
 
 	// 通过RPC创建双向流隧道
-	stream, err := client.Tunnel(ctx)
+	var err error
+	stream, err = client.Tunnel(ctx)
 	if err != nil {
 		logrus.Infof("创建隧道失败: %v", err)
 		return
@@ -83,29 +96,35 @@ func handleConnection(client node_rpc.NodeServiceClient, localConn net.Conn, tar
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	// 启动协程处理RPC服务端到本地连接的数据转发
+	// 启动 watcher：当上下文取消/超时/对端断流时，主动关闭连接打断阻塞读
+	go func() {
+		<-ctx.Done()
+		closeAll()
+	}()
+
+	// 协程1：处理 gRPC 流 -> 本地连接 (下行流量)
+	// 从gRPC服务端接收数据并转发到本地客户端连接
 	go func() {
 		defer wg.Done()
-		defer cancel() // 一旦此goroutine结束，取消上下文
+		defer closeAll() // 下行退出时关闭连接，打断上行的 localConn.Read()
+		defer cancel()   // 取消上下文，通知其他goroutine退出
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			default:
+				// 从gRPC流接收服务端发送的数据
 				resp, err := stream.Recv()
-				if err == io.EOF { // 流关闭时退出
-					return
-				}
 				if err != nil {
-					// 只有在不是context取消的情况下才记录错误
+					// 任意接收错误（含 io.EOF）都退出
 					if ctx.Err() == nil {
 						logrus.Errorf("接收gRPC服务器数据失败: %v", err)
 					}
 					return
 				}
 
-				// 将RPC接收的数据写入本地客户端连接
+				// 将接收的数据写入本地客户端连接
 				_, err = localConn.Write(resp.Chunk)
 				if err != nil {
 					if ctx.Err() == nil {
@@ -117,30 +136,30 @@ func handleConnection(client node_rpc.NodeServiceClient, localConn net.Conn, tar
 		}
 	}()
 
-	// 处理本地连接到RPC服务端的数据转发
+	// 协程2：处理 本地连接 -> gRPC 流 (上行流量)
+	// 从本地客户端连接读取数据并转发到gRPC服务端
 	go func() {
 		defer wg.Done()
-		defer cancel() // 一旦此goroutine结束，取消上下文
+		defer closeAll() // 上行退出时关闭连接，打断下行的 localConn.Read()
+		defer cancel()   // 取消上下文，通知其他goroutine退出
 
-		buffer := make([]byte, 4096) // 4KB缓冲区用于数据读取
+		buffer := make([]byte, 4096) // 4KB缓冲区，平衡IO效率与内存占用
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			default:
+				// 从本地客户端连接读取数据
 				n, err := localConn.Read(buffer)
 				if err != nil {
-					if err == io.EOF {
-						logrus.Infof("本地连接已关闭")
-					} else {
-						if ctx.Err() == nil {
-							logrus.Errorf("从本地连接读取失败: %v", err)
-						}
+					// 区分"主动关闭"与"真实IO错误"
+					if err != io.EOF && ctx.Err() == nil {
+						logrus.Errorf("从本地连接读取失败: %v", err)
 					}
 					return
 				}
 
-				// 将本地读取的数据通过RPC发送到目标服务
+				// 将本地读取的数据通过gRPC流发送到服务端
 				err = stream.Send(&node_rpc.TunnelData{
 					Chunk:   buffer[:n],
 					Address: targetAddr,
@@ -157,8 +176,6 @@ func handleConnection(client node_rpc.NodeServiceClient, localConn net.Conn, tar
 
 	// 等待两个goroutine都完成后，再关闭stream
 	wg.Wait()
-	// 主动关闭RPC发送流
-	stream.CloseSend()
 }
 
 // CloseIpTunnel 关闭指定IP上的所有端口监听及隧道
