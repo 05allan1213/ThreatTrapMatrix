@@ -5,60 +5,106 @@ package port_service
 
 import (
 	"context"
+	"errors"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/rpc/node_rpc"
 	"io"
 	"net"
-	"strings"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
-// tunnelStore 存储端口监听实例的并发安全映射，key为本地监听地址，value为对应的Listener
+// tunnelEntry 封装单个隧道的 listener 和 cancel 函数，用于代际区分
+type tunnelEntry struct {
+	listener net.Listener
+	cancel   context.CancelFunc
+}
+
+// tunnelStore 存储端口监听实例的并发安全映射，key为本地监听地址，value为*tunnelEntry
 var tunnelStore = sync.Map{}
 
 // Tunnel 创建本地TCP监听并建立到目标地址的隧道
 func Tunnel(localAddr, targetAddr string) (err error) {
+	// 检查是否已存在同地址的 listener，如果存在则先关闭旧的（避免竞态）
+	if oldValue, exists := tunnelStore.Load(localAddr); exists {
+		logrus.Warnf("检测到重复启动 %s，先关闭旧 listener", localAddr)
+		oldEntry := oldValue.(*tunnelEntry)
+		_ = oldEntry.listener.Close()
+		oldEntry.cancel() // 取消旧的所有连接
+		// 旧 goroutine 的 defer 会比对指针，不会误删新一代
+	}
+
 	// 创建本地TCP监听
 	listener, err := net.Listen("tcp", localAddr)
 	if err != nil {
 		logrus.Errorf("创建本地监听失败: %v", err)
 		// 删除数据库中对应的记录
-		var model models.PortModel
-		global.DB.Where("local_addr = ?", localAddr).First(&model)
-		if model.ID != 0 {
-			global.DB.Delete(&model)
-		}
+		global.DB.Where("local_addr = ?", localAddr).Delete(&models.PortModel{})
 		return err
 	}
 	logrus.Infof("本地监听启动，地址: %s", localAddr)
 	logrus.Infof("目标地址: %s", targetAddr)
-	tunnelStore.Store(localAddr, listener) // 将监听实例存入全局存储
+
+	// 创建 per-listener 的 context，用于统一中止该地址上的所有连接
+	listenerCtx, listenerCancel := context.WithCancel(context.Background())
+
+	// 封装为 entry 并存储（用于代际区分）
+	entry := &tunnelEntry{
+		listener: listener,
+		cancel:   listenerCancel,
+	}
+	tunnelStore.Store(localAddr, entry)
 
 	// 持续接受客户端连接
 	go func() {
+		defer func() {
+			// 只有当前 entry 还在 store 中时才删除（避免误删新一代）
+			if current, ok := tunnelStore.Load(localAddr); ok && current.(*tunnelEntry) == entry {
+				tunnelStore.Delete(localAddr)
+			}
+		}()
+		defer listenerCancel() // 取消所有子连接
+
+		var acceptBackoff time.Duration // Accept 错误退避时间
+		const maxBackoff = time.Second  // 最大退避时间
+
 		for {
 			clientConn, err := listener.Accept()
 			if err != nil {
-				if strings.Contains(err.Error(), "closed") {
+				// 使用 errors.Is 判断是否为 listener 关闭错误
+				if errors.Is(err, net.ErrClosed) {
 					break
 				}
-				logrus.Errorf("接受客户端连接失败: %v", err)
-				break
+				// 其他错误（如 EMFILE 等临时错误）使用指数退避，避免 CPU/日志自旋
+				if acceptBackoff == 0 {
+					acceptBackoff = 5 * time.Millisecond
+				} else {
+					acceptBackoff *= 2
+					if acceptBackoff > maxBackoff {
+						acceptBackoff = maxBackoff
+					}
+				}
+				logrus.Warnf("接受客户端连接失败，%v 后重试: %v", acceptBackoff, err)
+				time.Sleep(acceptBackoff)
+				continue
 			}
 
+			// 成功 Accept，重置退避时间
+			acceptBackoff = 0
+
 			// 为每个连接创建一个goroutine处理
-			go handleConnection(global.GrpcClient, clientConn, targetAddr)
+			go handleConnection(listenerCtx, global.GrpcClient, clientConn, targetAddr)
 		}
 	}()
 	return nil
 }
 
 // handleConnection 处理单个客户端连接的双向数据转发
-func handleConnection(client node_rpc.NodeServiceClient, localConn net.Conn, targetAddr string) {
-	ctx, cancel := context.WithCancel(context.Background())
+func handleConnection(parentCtx context.Context, client node_rpc.NodeServiceClient, localConn net.Conn, targetAddr string) {
+	ctx, cancel := context.WithCancel(parentCtx)
 
 	var stream node_rpc.NodeService_TunnelClient
 
@@ -183,17 +229,27 @@ func CloseIpTunnel(ip string) {
 	// 遍历所有TunnelStore中的隧道
 	tunnelStore.Range(func(key, value any) bool {
 		localAddr := key.(string)
-		// 判断当前隧道的localAddr是否以指定IP开头
-		if strings.HasPrefix(localAddr, ip) {
-			var model models.PortModel
-			global.DB.Find(&model, "local_addr = ?", localAddr)
-			if model.ID != 0 {
-				global.DB.Delete(&model)
-			}
-			logrus.Infof("清除%s上的全部服务", ip)
-			listener := value.(net.Listener)
-			listener.Close() // 关闭监听实例，终止端口服务
+		// 解析 host:port，精确匹配 IP
+		host, _, err := net.SplitHostPort(localAddr)
+		if err != nil || host != ip {
+			return true // 跳过不匹配的地址
 		}
+
+		logrus.Infof("清除%s上的全部服务: %s", ip, localAddr)
+
+		// 1. 获取 entry 并关闭监听实例，阻断新连接
+		entry := value.(*tunnelEntry)
+		_ = entry.listener.Close()
+
+		// 2. 取消该地址上的所有存量连接
+		entry.cancel()
+
+		// 3. 清理 tunnelStore 和 DB（只有还是同一代才删除，避免误删并发启动的新代）
+		if current, ok := tunnelStore.Load(localAddr); ok && current.(*tunnelEntry) == entry {
+			tunnelStore.Delete(localAddr)
+			global.DB.Where("local_addr = ?", localAddr).Delete(&models.PortModel{})
+		}
+
 		return true
 	})
 }
