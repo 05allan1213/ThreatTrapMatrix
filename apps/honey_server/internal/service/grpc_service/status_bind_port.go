@@ -32,26 +32,31 @@ func (NodeService) StatusBindPort(ctx context.Context, request *node_rpc.StatusB
 
 	// 构建端口号到端口模型的映射
 	var portMap = map[int64]*models.HoneyPortModel{}
-	for _, model := range honeyIPModel.PortList {
-		portMap[int64(model.Port)] = &model
+	for i := range honeyIPModel.PortList {
+		port := honeyIPModel.PortList[i]
+		portMap[int64(port.Port)] = &port
 	}
 
-	// 遍历节点上报的端口状态列表，仅处理携带错误信息的端口（绑定失败）
+	// 遍历节点上报的端口状态列表，更新端口的error_msg（失败时写入错误，成功时清空）
 	for _, i2 := range request.PortInfoList {
+		// 根据端口号查找本地端口模型
+		model, ok := portMap[i2.Port]
+		if !ok {
+			// 端口信息不存在时记录错误日志，跳过当前端口处理
+			log.WithField("port", i2.Port).Errorf("port information does not exist")
+			continue
+		}
+
 		if i2.Msg != "" {
+			// 绑定失败：记录错误日志并更新error_msg
 			log.WithFields(map[string]interface{}{
 				"error": i2.Msg,
 				"port":  i2.Port,
-			}).Error("failed to bind port") // 绑定端口失败
-			// 根据端口号查找本地端口模型
-			model, ok := portMap[i2.Port]
-			if !ok {
-				// 端口信息不存在时记录错误日志，跳过当前端口处理
-				log.WithField("port", i2.Port).Errorf("port information does not exist")
-				continue
-			}
-			// 更新端口状态为节点上报的错误信息
+			}).Error("failed to bind port")
 			global.DB.Model(model).Update("error_msg", i2.Msg)
+		} else {
+			// 绑定成功：清空error_msg（避免残留旧错误信息）
+			global.DB.Model(model).Update("error_msg", "")
 		}
 	}
 
