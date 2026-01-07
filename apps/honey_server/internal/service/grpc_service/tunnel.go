@@ -16,7 +16,7 @@ import (
 // Tunnel 实现node_rpc.NodeServiceServer接口的双向流Tunnel方法
 func (s *NodeService) Tunnel(stream node_rpc.NodeService_TunnelServer) error {
 	// 接收客户端的第一个消息（初始化消息）：获取隧道目标地址
-	req, err := stream.Recv()
+	initReq, err := stream.Recv()
 	if err != nil {
 		return fmt.Errorf("接收初始请求失败: %v", err)
 	}
@@ -26,7 +26,7 @@ func (s *NodeService) Tunnel(stream node_rpc.NodeService_TunnelServer) error {
 
 	// 建立与目标地址的TCP连接（使用流上下文控制超时/取消）
 	dialer := &net.Dialer{}
-	targetConn, err := dialer.DialContext(ctx, "tcp", req.Address)
+	targetConn, err := dialer.DialContext(ctx, "tcp", initReq.Address)
 	if err != nil {
 		return fmt.Errorf("连接目标地址失败: %v", err)
 	}
@@ -90,8 +90,8 @@ func (s *NodeService) Tunnel(stream node_rpc.NodeService_TunnelServer) error {
 
 		// 将目标数据通过gRPC流发送给节点客户端
 		err = stream.Send(&node_rpc.TunnelData{
-			Chunk:   buffer[:n],  // 实际读取的有效数据
-			Address: req.Address, // 目标地址（保持上下文）
+			Chunk:   buffer[:n],      // 实际读取的有效数据
+			Address: initReq.Address, // 目标地址（保持上下文）
 		})
 		if err != nil {
 			// 区分"上下文取消"与"真实发送错误"
