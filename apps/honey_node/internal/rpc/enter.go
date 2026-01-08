@@ -7,7 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -23,7 +23,7 @@ func GetConn(addr string) (conn *grpc.ClientConn) {
 	}
 
 	// CA根证书加载（用于客户端验证服务端证书合法性）
-	caCert, err := ioutil.ReadFile("cert/ca.crt")
+	caCert, err := os.ReadFile("cert/ca.crt")
 	if err != nil {
 		logrus.Fatalf("failed to read CA certificate: %v", err)
 	}

@@ -4,15 +4,15 @@ package flags
 // Description: 用户命令行操作模块，支持通过JSON参数或交互式方式创建用户及查询用户列表
 
 import (
+	"encoding/json"
+	"fmt"
 	"honey_server/internal/global"
 	"honey_server/internal/models"
 	user_service2 "honey_server/internal/service/user_service"
-	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // User 命令行用户操作处理器结构体，封装用户创建与列表查询功能
@@ -51,7 +51,7 @@ func (User) Create(value string) {
 
 		// 输入密码（隐藏输入）
 		fmt.Println("请输入密码")
-		password, err := terminal.ReadPassword(int(os.Stdin.Fd())) // 安全读取密码（不回显）
+		password, err := term.ReadPassword(int(os.Stdin.Fd())) // 安全读取密码（不回显）
 		if err != nil {
 			fmt.Println("读取密码时出错:", err)
 			return
@@ -59,7 +59,7 @@ func (User) Create(value string) {
 
 		// 确认密码
 		fmt.Println("请再次输入密码")
-		rePassword, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+		rePassword, err := term.ReadPassword(int(os.Stdin.Fd()))
 		if err != nil {
 			fmt.Println("读取密码时出错:", err)
 			return

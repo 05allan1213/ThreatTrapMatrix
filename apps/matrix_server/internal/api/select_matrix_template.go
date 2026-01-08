@@ -9,7 +9,6 @@ import (
 	"matrix_server/internal/middleware"
 	"matrix_server/internal/models"
 	"matrix_server/internal/utils/response"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,9 +30,6 @@ func (Api) SelectMatrixTemplateView(c *gin.Context) {
 		response.FailWithMsg("矩阵模板不存在", c)
 		return
 	}
-
-	// 初始化随机数种子，保证模板打乱顺序的随机性
-	rand.Seed(time.Now().UnixNano())
 
 	// 计算矩阵模板下所有主机模板的总权重（为后续按权重分配IP做基础）
 	totalWeight := 0

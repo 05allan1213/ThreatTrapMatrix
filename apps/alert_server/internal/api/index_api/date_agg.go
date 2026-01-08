@@ -31,21 +31,21 @@ func (IndexApi) DateAggView(c *gin.Context) {
 	// 2. 构建时间范围过滤条件：仅聚合当天的告警数据，排除历史日期干扰
 	rangeQuery := elastic.NewRangeQuery("timestamp").
 		Gte(startTime). // 大于等于当天开始时间
-		Lte(endTime) // 小于等于当天结束时间
+		Lte(endTime)    // 小于等于当天结束时间
 
 	// 3. 构建按小时聚合的日期直方图：确保返回完整24小时数据，无数据小时填充0
 	hourlyAgg := elastic.NewDateHistogramAggregation().
-		Field("timestamp"). // 聚合字段：告警时间戳（timestamp）
-		Interval("hour"). // 聚合间隔：每小时聚合一次
-		Format("yyyy-MM-dd HH"). // 聚合结果时间格式：精确到小时
-		MinDocCount(0). // 最小文档数为0：无告警的小时也返回，计数填0
+		Field("timestamp").                      // 聚合字段：告警时间戳（timestamp）
+		FixedInterval("1h").                     // 聚合间隔：每小时聚合一次
+		Format("yyyy-MM-dd HH").                 // 聚合结果时间格式：精确到小时
+		MinDocCount(0).                          // 最小文档数为0：无告警的小时也返回，计数填0
 		ExtendedBounds(today+" 00", today+" 23") // 强制扩展边界：固定返回00-23小时，避免缺失时段
 
 	// 4. 执行ES聚合查询：仅返回聚合结果
 	searchResult, err := global.ES.Search(es_models.AlertModel{}.Index()).
 		Query(elastic.NewBoolQuery().Filter(rangeQuery)). // 应用当天时间范围过滤
-		Aggregation("hourly_counts", hourlyAgg). // 绑定小时聚合配置
-		Size(0). // 聚合查询无需返回原始文档
+		Aggregation("hourly_counts", hourlyAgg).          // 绑定小时聚合配置
+		Size(0).                                          // 聚合查询无需返回原始文档
 		Do(context.Background())
 
 	if err != nil {
