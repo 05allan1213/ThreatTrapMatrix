@@ -75,6 +75,7 @@ func (c *WSConn) isClosed() bool {
 // close 安全关闭WebSocket连接
 func (c *WSConn) close() {
 	c.mu.Lock()
+	// 关闭握手与连接关闭必须与发送写入串行化，避免并发写冲突
 	// 若连接已标记为关闭，直接解锁返回，避免重复操作
 	if c.isClosing {
 		c.mu.Unlock()
@@ -82,7 +83,9 @@ func (c *WSConn) close() {
 	}
 	// 标记连接为关闭状态
 	c.isClosing = true
-	c.mu.Unlock()
+
+	// 发送 CloseMessage 前设置写超时，避免关闭握手阻塞
+	_ = c.conn.SetWriteDeadline(time.Now().Add(3 * time.Second))
 
 	// 发送正常关闭帧，告知客户端连接即将关闭
 	_ = c.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
@@ -90,6 +93,8 @@ func (c *WSConn) close() {
 	time.Sleep(100 * time.Millisecond)
 	// 关闭原生连接
 	_ = c.conn.Close()
+	// 解锁，允许其他连接操作
+	c.mu.Unlock()
 }
 
 // SendMsg 广播消息到所有有效WebSocket连接
