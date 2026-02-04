@@ -4,10 +4,10 @@ package cron_service
 // Description: 虚拟服务健康检查定时任务，同步Docker容器状态与数据库中服务状态
 
 import (
+	"fmt"
 	"image_server/internal/global"
 	"image_server/internal/models"
 	"image_server/internal/service/docker_service"
-	"fmt"
 
 	"github.com/sirupsen/logrus"
 )
@@ -27,8 +27,8 @@ func VsHealth() {
 	global.DB.Find(&list)
 	// 构建容器ID到服务模型的映射（便于快速匹配）
 	var containerMap = map[string]*models.ServiceModel{}
-	for _, model := range list {
-		containerMap[model.ContainerID] = &model
+	for i := range list {
+		containerMap[list[i].ContainerID] = &list[i]
 	}
 
 	// 遍历所有Docker容器，对比服务状态

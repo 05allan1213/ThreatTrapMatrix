@@ -4,6 +4,7 @@ package vs_api
 // Description: 虚拟服务创建接口实现，基于Docker SDK创建容器并完成虚拟服务数据管理
 
 import (
+	"errors"
 	"fmt"
 	"image_server/internal/global"
 	"image_server/internal/middleware"
@@ -11,10 +12,12 @@ import (
 	"image_server/internal/service/docker_service"
 	"image_server/internal/utils/response"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 // VsCreateRequest 虚拟服务创建请求参数结构体
@@ -28,42 +31,89 @@ const (
 )
 
 // getNextAvailableIP 从配置的子网中动态获取下一个可用的IP地址
-func getNextAvailableIP() (string, error) {
-	// 从全局配置中解析子网信息（如10.2.0.0/24）
+func getNextAvailableIP(db *gorm.DB) (string, error) {
 	ip, _, err := net.ParseCIDR(global.Config.VsNet.Net)
 	if err != nil {
 		return "", err
 	}
-	ip4 := ip.To4() // 转换为IPv4地址格式
+	ip4 := ip.To4()
+	if ip4 == nil {
+		return "", fmt.Errorf("子网解析失败")
+	}
 
-	// 查询数据库中已分配的最大IP地址（按IP降序取第一条）
-	var service models.ServiceModel
-	err = global.DB.Order("ip DESC").First(&service).Error
-	if err != nil {
-		if err.Error() == "record not found" {
-			// 无已分配记录，返回子网起始IP（最后一段设为2，如10.2.0.2）
-			ip4[3] = 2
-			return ip4.String(), nil
+	// 读取已分配IP列表，避免并发下只看最大值导致重复
+	var ipList []string
+	if err := db.Model(&models.ServiceModel{}).Pluck("ip", &ipList).Error; err != nil {
+		return "", fmt.Errorf("查询已分配IP失败: %w", err)
+	}
+
+	// 只统计当前子网内的IP，计算最后一段最大值
+	maxLastOctet := byte(1)
+	for _, item := range ipList {
+		serviceIP := net.ParseIP(item)
+		if serviceIP == nil {
+			continue
 		}
-		return "", fmt.Errorf("查询最大IP失败: %w", err)
+		serviceIP4 := serviceIP.To4()
+		if serviceIP4 == nil {
+			continue
+		}
+		if serviceIP4[0] != ip4[0] || serviceIP4[1] != ip4[1] || serviceIP4[2] != ip4[2] {
+			continue
+		}
+		if serviceIP4[3] > maxLastOctet {
+			maxLastOctet = serviceIP4[3]
+		}
 	}
 
-	// 解析数据库中已分配的服务IP
-	serviceIP := net.ParseIP(service.IP)
-	if serviceIP == nil {
-		return "", fmt.Errorf("服务ip解析错误")
-	}
-	serviceIP4 := serviceIP.To4()
-
-	// 检查是否已达到子网IP地址池上限
-	if serviceIP4[3] >= maxIP {
+	if maxLastOctet >= maxIP {
 		return "", fmt.Errorf("IP地址池已满")
 	}
-
-	// 生成新的可用IP地址（最后一段递增）
-	newLastOctet := serviceIP4[3] + 1
-	ip4[3] = newLastOctet
+	ip4[3] = maxLastOctet + 1
+	if ip4[3] < 2 {
+		ip4[3] = 2
+	}
 	return ip4.String(), nil
+}
+
+// reserveServiceRecord 预占IP并落库，依赖唯一索引处理并发冲突
+func reserveServiceRecord(image models.ImageModel, containerName string) (*models.ServiceModel, error) {
+	for i := 0; i < 3; i++ {
+		// 先计算候选IP
+		ip, err := getNextAvailableIP(global.DB)
+		if err != nil {
+			return nil, err
+		}
+		model := models.ServiceModel{
+			Title:         image.Title,
+			ContainerName: containerName,
+			Agreement:     image.Agreement,
+			ImageID:       image.ID,
+			IP:            ip,
+			Port:          image.Port,
+			Status:        0,
+		}
+		// 依赖唯一索引，重复则重试
+		if err := global.DB.Create(&model).Error; err != nil {
+			if isDuplicateKeyError(err) {
+				continue
+			}
+			return nil, err
+		}
+		return &model, nil
+	}
+	return nil, fmt.Errorf("IP地址分配冲突，请重试")
+}
+
+// isDuplicateKeyError 判断是否为数据库唯一索引冲突错误
+func isDuplicateKeyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return true
+	}
+	return strings.Contains(err.Error(), "Duplicate entry")
 }
 
 // VsCreateView 虚拟服务创建接口处理函数
@@ -109,24 +159,29 @@ func (VsApi) VsCreateView(c *gin.Context) {
 		return
 	}
 
-	// 从动态IP地址池获取下一个可用IP
-	ip, err := getNextAvailableIP()
-	if err != nil {
-		log.WithFields(map[string]interface{}{
-			"error": err,
-		}).Error("failed to get next available IP") // 获取下一个可用IP失败
-		response.FailWithMsg("IP地址池已满，无法创建新服务", c)
-		return
-	}
-	log.WithFields(map[string]interface{}{
-		"allocated_ip": ip,
-	}).Info("allocated IP address for new service") // 已为新服务分配IP地址
-
 	// 从全局配置获取Docker网络及容器名称前缀
 	networkName := global.Config.VsNet.Name
 	containerName := global.Config.VsNet.Prefix + image.ImageName // 容器名称（配置前缀+镜像名）
-
 	fullImageName := fmt.Sprintf("%s:%s", image.ImageName, image.Tag)
+
+	// 先预留IP并落库，避免并发分配冲突
+	serviceModel, err := reserveServiceRecord(image, containerName)
+	if err != nil {
+		log.WithFields(map[string]interface{}{
+			"error": err,
+		}).Error("failed to reserve service record")
+		msg := "IP地址分配失败"
+		if strings.Contains(err.Error(), "IP地址池已满") {
+			msg = "IP地址池已满，无法创建新服务"
+		}
+		response.FailWithMsg(msg, c)
+		return
+	}
+	ip := serviceModel.IP
+	log.WithFields(map[string]interface{}{
+		"allocated_ip": ip,
+		"service_id":   serviceModel.ID,
+	}).Info("reserved IP address for new service")
 
 	log.WithFields(map[string]interface{}{
 		"container_name": containerName,
@@ -142,6 +197,13 @@ func (VsApi) VsCreateView(c *gin.Context) {
 			"container_name": containerName,
 			"error":          err,
 		}).Error("failed to create container") // 创建容器失败
+		// 容器创建失败，回滚服务记录
+		if rollbackErr := global.DB.Delete(serviceModel).Error; rollbackErr != nil {
+			log.WithFields(map[string]interface{}{
+				"service_id": serviceModel.ID,
+				"error":      rollbackErr,
+			}).Error("failed to rollback service record")
+		}
 		response.FailWithMsg("创建虚拟服务失败", c)
 		return
 	}
@@ -154,27 +216,35 @@ func (VsApi) VsCreateView(c *gin.Context) {
 		"container_id": containerID,
 	}).Info("container created successfully") // 容器创建成功
 
-	// 组装虚拟服务数据模型
-	serviceModel := models.ServiceModel{
-		Title:         image.Title,     // 虚拟服务名称（复用镜像别名）
-		ContainerName: containerName,   // Docker容器名称（配置前缀+镜像名）
-		Agreement:     image.Agreement, // 通信协议（复用镜像配置）
-		ImageID:       image.ID,        // 关联镜像ID
-		IP:            ip,              // 动态分配的容器IP地址
-		Port:          image.Port,      // 服务端口（复用镜像配置）
-		Status:        1,               // 服务状态：1-运行中
-		ContainerID:   containerID,     // Docker容器ID（12位短ID）
-	}
-
-	// 虚拟服务数据入库
-	if err := global.DB.Create(&serviceModel).Error; err != nil {
+	// 容器创建成功，更新记录状态
+	if err := global.DB.Model(serviceModel).Updates(map[string]interface{}{
+		"status":       1,
+		"container_id": containerID,
+	}).Error; err != nil {
 		log.WithFields(map[string]interface{}{
+			"service_id":   serviceModel.ID,
 			"container_id": containerID,
 			"error":        err,
-		}).Error("failed to save service record to database") // 虚拟服务数据入库失败
+		}).Error("failed to update service record")
+		// 更新失败，清理容器避免孤儿
+		if rmErr := docker_service.RemoveContainerByName(containerName); rmErr != nil {
+			log.WithFields(map[string]interface{}{
+				"container_name": containerName,
+				"error":          rmErr,
+			}).Error("failed to cleanup container")
+		}
+		// 再回滚服务记录
+		if rollbackErr := global.DB.Delete(serviceModel).Error; rollbackErr != nil {
+			log.WithFields(map[string]interface{}{
+				"service_id": serviceModel.ID,
+				"error":      rollbackErr,
+			}).Error("failed to rollback service record")
+		}
 		response.FailWithMsg("创建虚拟服务失败", c)
 		return
 	}
+	serviceModel.Status = 1
+	serviceModel.ContainerID = containerID
 	log.WithFields(map[string]interface{}{
 		"service_id":   serviceModel.ID,
 		"container_id": containerID,
@@ -195,7 +265,7 @@ func (VsApi) VsCreateView(c *gin.Context) {
 			<-delay
 			ContainerStatus(model, log)
 		}
-	}(&serviceModel, log)
+	}(serviceModel, log)
 
 	response.Ok(serviceModel.ID, "创建虚拟服务成功", c)
 }
