@@ -371,6 +371,7 @@ func (Api) DeployView(c *gin.Context) {
 
 	// 推送WebSocket部署通知（类型1：部署）
 	mq_service.SendWsMsg(mq_service.WsMsgType{
+		LogID:  logID,
 		Type:   1,
 		NetID:  cr.NetID,
 		NodeID: node.ID,

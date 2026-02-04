@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -73,8 +74,10 @@ func RevAlertMq() {
 		}
 		logrus.Infof("告警消息入库成功 %s", response.Id)
 
+		logID := uuid.NewString()
 		SendWsMsg(WsMsgType{
-			Type: 3,
+			LogID: logID,
+			Type:  3,
 		})
 	}
 }

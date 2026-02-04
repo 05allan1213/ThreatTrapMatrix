@@ -14,6 +14,7 @@ import (
 
 	"honey_server/internal/rpc/node_rpc"
 
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/metadata"
 )
@@ -79,6 +80,7 @@ func (s NodeService) Command(stream node_rpc.NodeService_CommandServer) error {
 	}
 
 	mq_service.SendWsMsg(mq_service.WsMsgType{
+		LogID:  uuid.NewString(),
 		Type:   4,
 		NodeID: model.ID,
 	}) // 节点上线
@@ -107,6 +109,7 @@ func (s NodeService) Command(stream node_rpc.NodeService_CommandServer) error {
 	// 修改节点状态
 	global.DB.Model(&model).Update("status", 2)
 	mq_service.SendWsMsg(mq_service.WsMsgType{
+		LogID:  uuid.NewString(),
 		Type:   4,
 		NodeID: model.ID,
 	}) // 节点离线

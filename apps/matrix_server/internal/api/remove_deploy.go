@@ -169,6 +169,7 @@ func (Api) RemoveDeployView(c *gin.Context) {
 		"removing_ips": len(batchRemoveData.IPList),
 	}).Info("batch removal initiated successfully") // 批量删除部署启动
 	mq_service.SendWsMsg(mq_service.WsMsgType{
+		LogID:  logID,
 		Type:   1,
 		NetID:  cr.NetID,
 		NodeID: node.ID,

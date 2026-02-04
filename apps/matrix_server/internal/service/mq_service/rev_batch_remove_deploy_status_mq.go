@@ -57,6 +57,7 @@ func revBatchRemoveDeployStatusMq(data RemoveDeployStatusRequest) {
 	// 每20个推送一次
 	if netDeployInfo.CompletedCount%20 == 0 {
 		SendWsMsg(WsMsgType{
+			LogID: data.LogID,
 			Type:  1,
 			NetID: data.NetID,
 		})
@@ -82,6 +83,7 @@ func revBatchRemoveDeployStatusMq(data RemoveDeployStatusRequest) {
 		_, _ = net_lock.UnLock(data.NetID)
 		logrus.Infof("子网%d删除部署完成 解锁", data.NetID)
 		SendWsMsg(WsMsgType{
+			LogID: data.LogID,
 			Type:  1,
 			NetID: data.NetID,
 		})

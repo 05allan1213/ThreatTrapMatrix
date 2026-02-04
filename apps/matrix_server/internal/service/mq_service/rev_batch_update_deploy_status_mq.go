@@ -63,6 +63,7 @@ func revBatchUpdateDeployStatusMq(data UpdateDeployStatusRequest) {
 	// 每20个推送一次
 	if netDeployInfo.CompletedCount%20 == 0 {
 		SendWsMsg(WsMsgType{
+			LogID: data.LogID,
 			Type:  1,
 			NetID: data.NetID,
 		})
@@ -85,6 +86,7 @@ func revBatchUpdateDeployStatusMq(data UpdateDeployStatusRequest) {
 		_, _ = net_lock.UnLock(data.NetID)
 		logrus.Infof("子网%d更新部署完成 解锁", data.NetID)
 		SendWsMsg(WsMsgType{
+			LogID: data.LogID,
 			Type:  1,
 			NetID: data.NetID,
 		})

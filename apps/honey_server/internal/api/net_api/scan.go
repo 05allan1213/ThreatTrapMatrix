@@ -29,6 +29,7 @@ func (NetApi) ScanView(c *gin.Context) {
 	// 获取请求绑定的网络ID参数
 	cr := middleware.GetBind[models.IDRequest](c)
 	log := middleware.GetLog(c)
+	logID := log.Data["logID"].(string)
 
 	log.WithFields(map[string]interface{}{
 		"net_id": cr.Id,
@@ -168,7 +169,7 @@ func (NetApi) ScanView(c *gin.Context) {
 	}, "扫描任务已启动", c)
 
 	// 异步处理扫描结果（独立协程，避免阻塞HTTP响应）
-	go func(nodeUid string, netModel models.NetModel, cmdChan *grpc_service.Command, taskID string) {
+	go func(nodeUid string, netModel models.NetModel, cmdChan *grpc_service.Command, taskID string, logID string) {
 		// 设置5分钟超时上下文，防止协程泄漏
 		ctxAsync, cancelAsync := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancelAsync()
@@ -243,6 +244,7 @@ func (NetApi) ScanView(c *gin.Context) {
 
 		// 发送扫描结果更新消息
 		mq_service.SendWsMsg(mq_service.WsMsgType{
+			LogID:  logID,
 			Type:   2,
 			NetID:  netModel.ID,
 			NodeID: netModel.NodeID,
@@ -253,12 +255,12 @@ func (NetApi) ScanView(c *gin.Context) {
 			log.WithFields(map[string]interface{}{
 				"host_count": len(netScanMsg),
 			}).Info("processing scan results") // 处理扫描结果
-			processScanResult(netModel, netScanMsg, log.Data["logID"].(string))
+			processScanResult(netModel, netScanMsg, logID)
 		} else {
 			log.Warn("no scan results received") // 未接收到扫描结果
 		}
 
-	}(model.NodeModel.Uid, model, cmd, taskID)
+	}(model.NodeModel.Uid, model, cmd, taskID, logID)
 }
 
 // processScanResult 处理子网扫描结果，同步更新数据库中的主机信息
