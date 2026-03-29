@@ -28,7 +28,15 @@ func (NodeService) StatusBindPort(ctx context.Context, request *node_rpc.StatusB
 		return nil, fmt.Errorf("诱捕ip不存在 %d", request.HoneyIPID)
 	}
 
-	net_lock.UnLock(honeyIPModel.NetID)
+	// 在回调处理结束后统一释放子网锁，避免端口状态尚未落库时锁已提前释放
+	defer func() {
+		ok, unlockErr := net_lock.UnLock(honeyIPModel.NetID)
+		if unlockErr != nil {
+			log.WithError(unlockErr).Error("failed to release subnet lock after bind-port callback")
+		} else if !ok {
+			log.WithField("net_id", honeyIPModel.NetID).Warn("subnet lock was not released after bind-port callback")
+		}
+	}()
 
 	// 构建端口号到端口模型的映射
 	var portMap = map[int64]*models.HoneyPortModel{}

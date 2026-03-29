@@ -20,9 +20,19 @@ func (NodeService) StatusDeleteIP(ctx context.Context, request *node_rpc.StatusD
 	pd = new(node_rpc.BaseResponse) // 初始化gRPC响应对象
 	log := core.GetLogger().WithField("logID", request.LogID)
 	log.WithField("request_data", request).Infof("接收批量删除ip回调")
+
+	// 在回调处理结束后统一释放子网锁，避免删除记录前锁已被提前放开
+	defer func() {
+		ok, unlockErr := net_lock.UnLock(uint(request.NetID))
+		if unlockErr != nil {
+			log.WithError(unlockErr).Error("failed to release subnet lock after delete callback")
+		} else if !ok {
+			log.WithField("net_id", request.NetID).Warn("subnet lock was not released after delete callback")
+		}
+	}()
+
 	// 根据节点上报的ID列表查询对应的诱捕IP记录
 	var honeyIPList []models.HoneyIpModel
-	net_lock.UnLock(uint(request.NetID))
 	global.DB.Find(&honeyIPList, "id in ?", request.HoneyIPIDList)
 
 	// 幂等处理：若没有找到任何记录，说明已被删除或重复回调，记录warn但返回成功
@@ -48,8 +58,8 @@ func (NodeService) StatusDeleteIP(ctx context.Context, request *node_rpc.StatusD
 	mq_service.SendWsMsg(mq_service.WsMsgType{
 		LogID:  request.LogID,
 		Type:   1,
-		NetID:  honeyIPList[0].NetID,
-		NodeID: honeyIPList[0].NodeID,
+		NetID:  firstHoneyIp.NetID,
+		NodeID: firstHoneyIp.NodeID,
 	})
 	return
 }

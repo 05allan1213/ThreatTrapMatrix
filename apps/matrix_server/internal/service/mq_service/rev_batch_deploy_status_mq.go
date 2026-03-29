@@ -4,7 +4,6 @@ package mq_service
 // Description: 批量部署状态消息处理模块，实现部署状态回调的核心业务逻辑，包含部署进度更新、存活主机入库、诱捕IP状态更新及部署完成后的分布式锁释放
 
 import (
-	"fmt"
 	"matrix_server/internal/global"
 	"matrix_server/internal/models"
 	"matrix_server/internal/service/redis_service/net_lock"
@@ -45,7 +44,7 @@ func revBatchDeployStatusMq(data DeployStatusRequest) {
 	}
 
 	// 打印子网部署进度日志（已完成数/总数 + 百分比）
-	logrus.Infof("%d当前子网，正在部署%d个，共%d个 进度：%.2f%%", data.NetID,
+	logrus.Infof("%d当前子网，正在部署%d个，共%d个，进度：%.2f%%", data.NetID,
 		netDeployInfo.CompletedCount,
 		netDeployInfo.AllCount,
 		(float64(netDeployInfo.CompletedCount)/float64(netDeployInfo.AllCount))*100,
@@ -58,6 +57,32 @@ func revBatchDeployStatusMq(data DeployStatusRequest) {
 		return
 	}
 
+	// 判定当前回调记账后是否达到最终完成条件，统一由尾部defer负责解锁
+	shouldUnlock := netDeployInfo.CompletedCount == netDeployInfo.AllCount
+	// 记录最终完成通知使用的节点ID，避免中途return导致解锁通知缺少节点信息
+	var completionNodeID uint
+	if shouldUnlock {
+		defer func() {
+			// 统一在函数返回前执行解锁，确保成功/失败/早退分支都能走到最终解锁逻辑
+			ok, unlockErr := net_lock.UnLock(data.NetID)
+			if unlockErr != nil {
+				logrus.Errorf("子网%d部署完成解锁失败: %v", data.NetID, unlockErr)
+			} else if !ok {
+				logrus.Warnf("子网%d部署完成解锁未生效", data.NetID)
+			} else {
+				logrus.Infof("子网%d部署完成 解锁", data.NetID)
+			}
+
+			// 推送最终完成通知，允许前端刷新该子网的最终状态
+			SendWsMsg(WsMsgType{
+				LogID:  data.LogID,
+				Type:   1,
+				NetID:  data.NetID,
+				NodeID: completionNodeID,
+			})
+		}()
+	}
+
 	// 每20个推送一次
 	if netDeployInfo.CompletedCount%20 == 0 {
 		SendWsMsg(WsMsgType{
@@ -68,23 +93,25 @@ func revBatchDeployStatusMq(data DeployStatusRequest) {
 	}
 
 	// 查询当前IP对应的诱捕IP记录
-	var honeyIp models.HoneyIpModel
-	err = global.DB.Take(&honeyIp, "net_id = ? and ip = ?", data.NetID, data.IP).Error
+	var honeyIP models.HoneyIpModel
+	err = global.DB.Take(&honeyIP, "net_id = ? and ip = ?", data.NetID, data.IP).Error
 	if err != nil {
-		logrus.Errorf("honeyIp记录不存在，IP：%s 子网ID：%d", data.IP, data.NetID)
+		logrus.Errorf("honeyIP记录不存在，IP：%s 子网ID：%d", data.IP, data.NetID)
 		return
 	}
+	// 缓存节点ID，供尾部统一解锁通知使用
+	completionNodeID = honeyIP.NodeID
 
 	// 处理存活主机场景：将存活主机信息入库，并删除对应的诱捕IP记录
 	if data.ErrorMsg == "存活主机" {
 		global.DB.Create(&models.HostModel{
-			NodeID: honeyIp.NodeID,
+			NodeID: honeyIP.NodeID,
 			NetID:  data.NetID,
 			IP:     data.IP,
 			Mac:    data.Mac,
 			Manuf:  data.Manuf,
 		})
-		global.DB.Delete(&honeyIp)
+		global.DB.Delete(&honeyIP)
 		return
 	}
 
@@ -101,28 +128,18 @@ func revBatchDeployStatusMq(data DeployStatusRequest) {
 	}
 
 	// 更新诱捕IP记录
-	err = global.DB.Model(&honeyIp).Updates(hp).Error
+	err = global.DB.Model(&honeyIP).Updates(hp).Error
 	if err != nil {
 		logrus.Errorf("记录更新失败 %s，IP：%s 子网ID：%d", err, data.IP, data.NetID)
 	}
 
-	// 判定子网部署完成：已完成数等于总数时释放分布式锁
-	if netDeployInfo.CompletedCount == netDeployInfo.AllCount {
-		// 释放子网分布式锁，允许后续操作
-		ok, err := net_lock.UnLock(data.NetID)
-		fmt.Println(ok, err) // 调试用：打印解锁结果
-		logrus.Infof("子网%d部署完成 解锁", data.NetID)
-		SendWsMsg(WsMsgType{
-			LogID:  data.LogID,
-			Type:   1,
-			NetID:  data.NetID,
-			NodeID: honeyIp.NodeID,
-		})
+	// 子网部署全部完成后，更新节点与子网下的诱捕IP统计数量
+	if shouldUnlock {
 		var nodeModel models.NodeModel
-		global.DB.Take(&nodeModel, honeyIp.NodeID)
+		global.DB.Take(&nodeModel, honeyIP.NodeID)
 		global.DB.Model(&nodeModel).Update("honey_ip_count", gorm.Expr("honey_ip_count + ?", netDeployInfo.AllCount))
 		var netModel models.NetModel
-		global.DB.Take(&netModel, honeyIp.NetID)
+		global.DB.Take(&netModel, honeyIP.NetID)
 		global.DB.Model(&netModel).Update("honey_ip_count", gorm.Expr("honey_ip_count + ?", netDeployInfo.AllCount))
 	}
 }

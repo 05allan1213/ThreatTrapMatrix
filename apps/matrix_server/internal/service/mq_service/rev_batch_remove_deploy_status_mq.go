@@ -41,7 +41,7 @@ func revBatchRemoveDeployStatusMq(data RemoveDeployStatusRequest) {
 	}
 
 	// 打印子网删除部署进度日志（已完成数/总数 + 百分比）
-	logrus.Infof("%d当前子网，正在删除部署%d个，共%d个 进度：%.2f%%", data.NetID,
+	logrus.Infof("%d当前子网，正在删除部署%d个，共%d个，进度：%.2f%%", data.NetID,
 		netDeployInfo.CompletedCount,
 		netDeployInfo.AllCount,
 		(float64(netDeployInfo.CompletedCount)/float64(netDeployInfo.AllCount))*100,
@@ -52,6 +52,29 @@ func revBatchRemoveDeployStatusMq(data RemoveDeployStatusRequest) {
 	if err != nil {
 		logrus.Errorf("设置子网删除部署信息失败 %s，子网ID：%d", err, data.NetID)
 		return
+	}
+
+	// 判定当前回调记账后是否达到最终完成条件，统一由尾部defer负责解锁
+	shouldUnlock := netDeployInfo.CompletedCount == netDeployInfo.AllCount
+	if shouldUnlock {
+		defer func() {
+			// 统一在函数返回前执行解锁，确保删除成功/失败/幂等分支都能释放锁
+			ok, unlockErr := net_lock.UnLock(data.NetID)
+			if unlockErr != nil {
+				logrus.Errorf("子网%d删除部署完成解锁失败: %v", data.NetID, unlockErr)
+			} else if !ok {
+				logrus.Warnf("子网%d删除部署完成解锁未生效", data.NetID)
+			} else {
+				logrus.Infof("子网%d删除部署完成 解锁", data.NetID)
+			}
+
+			// 推送最终完成通知，通知前端刷新该子网状态
+			SendWsMsg(WsMsgType{
+				LogID: data.LogID,
+				Type:  1,
+				NetID: data.NetID,
+			})
+		}()
 	}
 
 	// 每20个推送一次
@@ -77,16 +100,8 @@ func revBatchRemoveDeployStatusMq(data RemoveDeployStatusRequest) {
 		logrus.Infof("删除子网[%d]下诱捕IP：%s", data.NetID, data.IP)
 	}
 
-	// 判定子网删除部署完成：已完成数等于总数时释放分布式锁
-	if netDeployInfo.CompletedCount == netDeployInfo.AllCount {
-		// 释放子网分布式锁，允许后续操作
-		_, _ = net_lock.UnLock(data.NetID)
-		logrus.Infof("子网%d删除部署完成 解锁", data.NetID)
-		SendWsMsg(WsMsgType{
-			LogID: data.LogID,
-			Type:  1,
-			NetID: data.NetID,
-		})
+	// 子网删除全部完成后，更新节点与子网下的诱捕IP统计数量
+	if shouldUnlock && model.ID != 0 {
 		var nodeModel models.NodeModel
 		global.DB.Take(&nodeModel, model.NodeID)
 		global.DB.Model(&nodeModel).Update("honey_ip_count", gorm.Expr("honey_ip_count - ?", netDeployInfo.AllCount))

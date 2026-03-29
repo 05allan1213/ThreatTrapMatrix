@@ -47,7 +47,7 @@ func revBatchUpdateDeployStatusMq(data UpdateDeployStatusRequest) {
 	}
 
 	// 打印子网更新部署进度日志（已完成数/总数 + 百分比）
-	logrus.Infof("%d当前子网，正在更新部署%d个，共%d个 进度：%.2f%%", data.NetID,
+	logrus.Infof("%d当前子网，正在更新部署%d个，共%d个，进度：%.2f%%", data.NetID,
 		netDeployInfo.CompletedCount,
 		netDeployInfo.AllCount,
 		(float64(netDeployInfo.CompletedCount)/float64(netDeployInfo.AllCount))*100,
@@ -58,6 +58,29 @@ func revBatchUpdateDeployStatusMq(data UpdateDeployStatusRequest) {
 	if err != nil {
 		logrus.Errorf("设置子网更新部署信息失败 %s，子网ID：%d", err, data.NetID)
 		return
+	}
+
+	// 判定当前回调记账后是否达到最终完成条件，统一由尾部defer负责解锁
+	shouldUnlock := netDeployInfo.CompletedCount == netDeployInfo.AllCount
+	if shouldUnlock {
+		defer func() {
+			// 统一在函数返回前执行解锁，确保所有分支都能收敛到同一套解锁逻辑
+			ok, unlockErr := net_lock.UnLock(data.NetID)
+			if unlockErr != nil {
+				logrus.Errorf("子网%d更新部署完成解锁失败: %v", data.NetID, unlockErr)
+			} else if !ok {
+				logrus.Warnf("子网%d更新部署完成解锁未生效", data.NetID)
+			} else {
+				logrus.Infof("子网%d更新部署完成 解锁", data.NetID)
+			}
+
+			// 推送最终完成通知，通知前端刷新该子网状态
+			SendWsMsg(WsMsgType{
+				LogID: data.LogID,
+				Type:  1,
+				NetID: data.NetID,
+			})
+		}()
 	}
 
 	// 每20个推送一次
@@ -71,24 +94,14 @@ func revBatchUpdateDeployStatusMq(data UpdateDeployStatusRequest) {
 
 	// 遍历端口状态列表，处理端口级绑定失败的情况
 	for _, status := range data.PortList {
-		if status.ErrorMsg != "" {
-			// 记录端口绑定失败日志（IP+端口+错误信息）
-			logrus.Errorf("端口绑定失败 %s %d %s", data.IP, status.Port, status.ErrorMsg)
-			// 更新端口状态为绑定失败（状态2）
-			var portModel models.HoneyPortModel
-			global.DB.Take(&portModel, "net_id = ? and ip = ? and port = ?", data.NetID, data.IP, status.Port).Update("status", 2)
+		if status.ErrorMsg == "" {
+			continue
 		}
-	}
 
-	// 判定子网更新部署完成：已完成数等于总数时释放分布式锁
-	if netDeployInfo.CompletedCount == netDeployInfo.AllCount {
-		// 释放子网分布式锁，允许后续操作
-		_, _ = net_lock.UnLock(data.NetID)
-		logrus.Infof("子网%d更新部署完成 解锁", data.NetID)
-		SendWsMsg(WsMsgType{
-			LogID: data.LogID,
-			Type:  1,
-			NetID: data.NetID,
-		})
+		// 记录端口绑定失败日志（IP+端口+错误信息）
+		logrus.Errorf("端口绑定失败 %s %d %s", data.IP, status.Port, status.ErrorMsg)
+		// 更新端口状态为绑定失败（状态2）
+		var portModel models.HoneyPortModel
+		global.DB.Take(&portModel, "net_id = ? and ip = ? and port = ?", data.NetID, data.IP, status.Port).Update("status", 2)
 	}
 }

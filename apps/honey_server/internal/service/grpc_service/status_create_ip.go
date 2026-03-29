@@ -28,7 +28,15 @@ func (NodeService) StatusCreateIP(ctx context.Context, request *node_rpc.StatusC
 		return nil, fmt.Errorf("诱捕ip不存在 %d", request.HoneyIPID)
 	}
 
-	net_lock.UnLock(honeyIPModel.NetID)
+	// 在回调处理结束后统一释放子网锁，避免先解锁再落库导致并发穿透
+	defer func() {
+		ok, unlockErr := net_lock.UnLock(honeyIPModel.NetID)
+		if unlockErr != nil {
+			log.WithError(unlockErr).Error("failed to release subnet lock after create callback")
+		} else if !ok {
+			log.WithField("net_id", honeyIPModel.NetID).Warn("subnet lock was not released after create callback")
+		}
+	}()
 
 	// 定义状态：2表示创建成功，3表示创建失败
 	var status int8 = 2
