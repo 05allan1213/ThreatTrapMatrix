@@ -13,10 +13,29 @@ import (
 // taskLockerMap 按TaskID维护进程内互斥锁，避免并发覆盖同一行检查点
 var taskLockerMap sync.Map
 
+// taskExecuteLockerMap 按TaskID维护任务执行锁，避免启动恢复、定时自愈和新任务执行流并发撞车
+var taskExecuteLockerMap sync.Map
+
 // getTaskLocker 获取指定任务的进程内互斥锁
 func getTaskLocker(taskID string) *sync.Mutex {
 	locker, _ := taskLockerMap.LoadOrStore(taskID, &sync.Mutex{})
 	return locker.(*sync.Mutex)
+}
+
+// getTaskExecuteLocker 获取指定任务的执行锁
+func getTaskExecuteLocker(taskID string) *sync.Mutex {
+	locker, _ := taskExecuteLockerMap.LoadOrStore(taskID, &sync.Mutex{})
+	return locker.(*sync.Mutex)
+}
+
+// TryLockTaskExecution 尝试抢占任务执行权，未抢到则说明已有其他执行流在处理该任务
+func TryLockTaskExecution(taskID string) bool {
+	return getTaskExecuteLocker(taskID).TryLock()
+}
+
+// UnlockTaskExecution 释放任务执行锁
+func UnlockTaskExecution(taskID string) {
+	getTaskExecuteLocker(taskID).Unlock()
 }
 
 // GetTask 获取任务并在必要时补建老数据检查点

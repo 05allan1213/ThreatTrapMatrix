@@ -7,6 +7,7 @@ import (
 	"honey_node/internal/global"
 	"honey_node/internal/models"
 	"honey_node/internal/service/mq_service"
+	"honey_node/internal/service/task_checkpoint"
 
 	"github.com/sirupsen/logrus"
 )
@@ -23,24 +24,34 @@ func Run() {
 
 	// 按任务类型分发恢复逻辑，避免只有部署任务能续跑
 	for _, task := range taskList {
-		switch task.Type {
-		case models.TaskTypeBatchDeploy:
-			logrus.Infof("恢复未完成的批量部署任务 %s", task.TaskID)
-			if err := mq_service.ResumeDeployTask(task.TaskID); err != nil {
-				logrus.Errorf("恢复批量部署任务失败 %s %v", task.TaskID, err)
-			}
-		case models.TaskTypeBatchUpdate:
-			logrus.Infof("恢复未完成的批量更新任务 %s", task.TaskID)
-			if err := mq_service.ResumeUpdateTask(task.TaskID); err != nil {
-				logrus.Errorf("恢复批量更新任务失败 %s %v", task.TaskID, err)
-			}
-		case models.TaskTypeBatchRemove:
-			logrus.Infof("恢复未完成的批量删除任务 %s", task.TaskID)
-			if err := mq_service.ResumeRemoveTask(task.TaskID); err != nil {
-				logrus.Errorf("恢复批量删除任务失败 %s %v", task.TaskID, err)
-			}
-		default:
-			logrus.Warnf("未识别的任务类型，跳过恢复 taskID=%s type=%d", task.TaskID, task.Type)
+		// 同一个任务同一时刻只允许一个执行流进入，避免和启动恢复、定时自愈或新任务执行并发撞车
+		if !task_checkpoint.TryLockTaskExecution(task.TaskID) {
+			logrus.Infof("任务正在执行中，跳过本轮恢复 %s", task.TaskID)
+			continue
 		}
+
+		func(task models.TaskModel) {
+			defer task_checkpoint.UnlockTaskExecution(task.TaskID)
+
+			switch task.Type {
+			case models.TaskTypeBatchDeploy:
+				logrus.Infof("恢复未完成的批量部署任务 %s", task.TaskID)
+				if err := mq_service.ResumeDeployTask(task.TaskID); err != nil {
+					logrus.Errorf("恢复批量部署任务失败 %s %v", task.TaskID, err)
+				}
+			case models.TaskTypeBatchUpdate:
+				logrus.Infof("恢复未完成的批量更新任务 %s", task.TaskID)
+				if err := mq_service.ResumeUpdateTask(task.TaskID); err != nil {
+					logrus.Errorf("恢复批量更新任务失败 %s %v", task.TaskID, err)
+				}
+			case models.TaskTypeBatchRemove:
+				logrus.Infof("恢复未完成的批量删除任务 %s", task.TaskID)
+				if err := mq_service.ResumeRemoveTask(task.TaskID); err != nil {
+					logrus.Errorf("恢复批量删除任务失败 %s %v", task.TaskID, err)
+				}
+			default:
+				logrus.Warnf("未识别的任务类型，跳过恢复 taskID=%s type=%d", task.TaskID, task.Type)
+			}
+		}(task)
 	}
 }

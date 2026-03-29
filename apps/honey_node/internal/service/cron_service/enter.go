@@ -23,6 +23,9 @@ func Run() {
 	// 添加定时任务：每5秒执行一次Resource函数（资源采集与上报）
 	crontab.AddFunc("*/5 * * * * *", Resource)
 
+	// 添加定时任务：每1分钟扫描一次本地未完成批量任务，避免任务卡死只能依赖节点重启恢复
+	crontab.AddFunc("0 * * * * *", RetryStuckTask)
+
 	// 启动Cron调度器（非阻塞，后台运行）
 	crontab.Start()
 }

@@ -41,6 +41,13 @@ func RemoveDeployTask(req models.BatchRemoveDeployRequest, taskID string) {
 	log := core.GetLogger().WithField("logID", req.LogID)
 	log.WithField("data", req).Info("批量删除部署开始")
 
+	// 同一个任务同一时刻只允许一个执行流进入，避免和启动恢复、定时自愈并发撞车
+	if !task_checkpoint.TryLockTaskExecution(taskID) {
+		log.WithField("task_id", taskID).Warn("批量删除任务正在执行中，跳过本次执行")
+		return
+	}
+	defer task_checkpoint.UnlockTaskExecution(taskID)
+
 	// 逐IP执行删除，并推进检查点
 	for _, info := range req.IPList {
 		if err := processRemoveTaskItem(taskID, req, info.Ip, info.LinkName, log); err != nil {

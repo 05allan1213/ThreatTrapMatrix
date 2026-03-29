@@ -42,6 +42,13 @@ func DeployTask(req models.BatchDeployRequest, taskID string) {
 	log := core.GetLogger().WithField("logID", req.LogID)
 	log.WithField("data", req).Info("节点开始部署")
 
+	// 同一个任务同一时刻只允许一个执行流进入，避免和启动恢复、定时自愈并发撞车
+	if !task_checkpoint.TryLockTaskExecution(taskID) {
+		log.WithField("task_id", taskID).Warn("批量部署任务正在执行中，跳过本次执行")
+		return
+	}
+	defer task_checkpoint.UnlockTaskExecution(taskID)
+
 	// 控制单批部署并发，避免一次性创建过多网卡和ARP探测把节点打满
 	maxChan := make(chan struct{}, 200)
 	var wait sync.WaitGroup
