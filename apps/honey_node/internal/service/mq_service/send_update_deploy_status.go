@@ -23,6 +23,6 @@ type PortInfo struct {
 }
 
 // SendUpdateDeployStatusMsg 发送更新部署状态MQ消息
-func SendUpdateDeployStatusMsg(data UpdateDeployStatusRequest) {
-	sendQueueMessage(global.Config.MQ.BatchUpdateDeployStatusTopic, data)
+func SendUpdateDeployStatusMsg(data UpdateDeployStatusRequest) error {
+	return sendQueueMessage(global.Config.MQ.BatchUpdateDeployStatusTopic, data)
 }

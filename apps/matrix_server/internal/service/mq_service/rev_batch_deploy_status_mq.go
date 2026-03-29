@@ -34,6 +34,15 @@ func revBatchDeployStatusMq(data DeployStatusRequest) {
 	}
 
 	// 更新部署进度统计：已完成数+1，若有错误则记录错误IP及错误数
+	// 节点补回调场景可能重复上报同一个IP，这里按IP去重，避免进度重复记账
+	if netDeployInfo.HandledIPMap == nil {
+		netDeployInfo.HandledIPMap = make(map[string]bool)
+	}
+	if netDeployInfo.HandledIPMap[data.IP] {
+		logrus.Warnf("子网%d部署回调重复记账，忽略IP[%s]", data.NetID, data.IP)
+		return
+	}
+	netDeployInfo.HandledIPMap[data.IP] = true
 	netDeployInfo.CompletedCount++
 	if data.ErrorMsg != "" {
 		netDeployInfo.ErrorCount++

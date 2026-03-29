@@ -1,7 +1,7 @@
 package net_progress
 
 // File: matrix_server/service/net_progress/enter.go
-// Description: 子网部署进度管理模块，基于Redis实现部署进度信息的序列化存储与读取，包含部署总数、完成数、错误数及错误IP记录等核心数据的管理
+// Description: 子网部署进度管理模块，基于Redis实现部署进度信息的序列化存储与读取，并额外维护回调去重集合
 
 import (
 	"context"
@@ -18,11 +18,12 @@ type ErrorIp struct {
 
 // NetDeployInfo 子网部署进度信息结构体
 type NetDeployInfo struct {
-	Type           int8      `json:"type"`           // 部署类型标识 0 未操作  1 部署 2 更新部署 3 删除部署
-	AllCount       int64     `json:"allCount"`       // 部署任务的总IP数量
-	CompletedCount int64     `json:"completedCount"` // 已完成部署的IP数量
-	ErrorCount     int64     `json:"errorCount"`     // 部署失败的IP数量
-	ErrorIpList    []ErrorIp `json:"errorIpList"`    // 部署失败的IP列表（含错误信息）
+	Type           int8            `json:"type"`           // 部署类型标识 0 未操作 1 部署 2 更新部署 3 删除部署
+	AllCount       int64           `json:"allCount"`       // 部署任务的总IP数量
+	CompletedCount int64           `json:"completedCount"` // 已完成部署的IP数量
+	ErrorCount     int64           `json:"errorCount"`     // 部署失败的IP数量
+	ErrorIpList    []ErrorIp       `json:"errorIpList"`    // 部署失败的IP列表（含错误信息）
+	HandledIPMap   map[string]bool `json:"handledIpMap"`   // 已经记账过的IP集合，用于回调幂等去重
 }
 
 // MarshalBinary 实现BinaryMarshaler接口
@@ -37,18 +38,13 @@ func (n *NetDeployInfo) UnmarshalBinary(data []byte) error {
 
 // Set 存储子网部署进度信息到Redis
 func Set(netID uint, data NetDeployInfo) error {
-	// 构建Redis存储Key（格式：net_deploy_子网ID）
 	key := fmt.Sprintf("net_deploy_%d", netID)
-	// 存入Redis，过期时间-2表示使用Redis默认配置（永不过期）
-	err := global.Redis.Set(context.Background(), key, data, -2).Err()
-	return err
+	return global.Redis.Set(context.Background(), key, data, -2).Err()
 }
 
 // Get 从Redis读取子网部署进度信息
 func Get(netID uint) (data NetDeployInfo, err error) {
-	// 构建Redis读取Key（格式：net_deploy_子网ID）
 	key := fmt.Sprintf("net_deploy_%d", netID)
-	// 从Redis读取数据并解析到NetDeployInfo结构体
 	err = global.Redis.Get(context.Background(), key).Scan(&data)
 	return
 }
