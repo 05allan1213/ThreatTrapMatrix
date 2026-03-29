@@ -19,6 +19,6 @@ type DeployStatusRequest struct {
 }
 
 // SendDeployStatusMsg 发送部署状态消息到MQ队列
-func SendDeployStatusMsg(data DeployStatusRequest) {
-	sendQueueMessage(global.Config.MQ.BatchDeployStatusTopic, data)
+func SendDeployStatusMsg(data DeployStatusRequest) error {
+	return sendQueueMessage(global.Config.MQ.BatchDeployStatusTopic, data)
 }

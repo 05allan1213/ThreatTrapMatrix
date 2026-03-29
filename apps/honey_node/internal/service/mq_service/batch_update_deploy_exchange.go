@@ -1,35 +1,37 @@
 package mq_service
 
 // File: honey_node/service/mq_service/batch_update_deploy_exchange.go
-// Description: 实现节点侧批量更新部署MQ消息消费逻辑，包含任务入库、异步清理旧端口转发、重建新端口转发、更新状态上报及任务状态更新等核心功能
+// Description: 节点侧批量更新部署MQ消息消费模块，负责任务入库、逐IP端口规则更新、状态回传以及重启恢复所需的检查点初始化
 
 import (
 	"honey_node/internal/core"
 	"honey_node/internal/global"
 	"honey_node/internal/models"
-	"honey_node/internal/service/port_service"
+	"honey_node/internal/service/task_checkpoint"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
-// BatchUpdateDeployExChange 节点侧批量更新部署MQ消息处理入口函数
+// BatchUpdateDeployExChange 节点侧批量更新部署MQ消息处理入口
 func BatchUpdateDeployExChange(req models.BatchUpdateDeployRequest) error {
 	// 生成唯一任务ID，用于标识本次批量更新部署任务
 	taskID := uuid.New().String()
-	// 将批量更新部署任务入库，记录任务基础信息及原始更新指令
+
+	// 先将任务落到本地SQLite，并初始化逐IP检查点，便于重启后继续补动作和补回调
 	err := global.DB.Create(&models.TaskModel{
-		TaskID:                taskID, // 任务唯一标识
-		Type:                  2,      // 任务类型：2-批量更新部署
-		BatchUpdateDeployData: &req,   // 批量更新部署原始指令数据
-		Status:                0,      // 任务状态：0-执行中
+		TaskID:                taskID,
+		Type:                  models.TaskTypeBatchUpdate,
+		BatchUpdateDeployData: &req,
+		UpdateItems:           models.BuildUpdateTaskItems(&req),
+		Status:                models.TaskStatusRunning,
 	}).Error
 	if err != nil {
 		logrus.Errorf("任务入库失败 %s", err)
 		return err
 	}
 
-	// 异步执行批量更新部署核心逻辑（非阻塞，避免阻塞MQ消费流程）
+	// 异步执行批量更新，避免阻塞MQ消费流程
 	go UpdateDeployTask(req, taskID)
 	return nil
 }
@@ -38,69 +40,19 @@ func BatchUpdateDeployExChange(req models.BatchUpdateDeployRequest) error {
 func UpdateDeployTask(req models.BatchUpdateDeployRequest, taskID string) {
 	log := core.GetLogger().WithField("logID", req.LogID)
 	log.WithField("data", req).Info("批量更新部署")
-	// 第一步：清理待更新IP的所有旧端口转发（先删后建，保证配置更新的准确性）
-	for _, s := range req.IpList {
-		port_service.CloseIpTunnel(s) // 关闭指定IP的所有端口隧道
-	}
 
-	// 第二步：按IP分组构建新端口转发配置映射表（便于按IP批量处理）
-	var ipPortMap = map[string][]models.PortInfo{}
-	for _, info := range req.PortList {
-		ipPortMap[info.IP] = append(ipPortMap[info.IP], info)
-	}
-	if len(ipPortMap) == 0 {
-		for _, s := range req.IpList {
-			ipPortMap[s] = []models.PortInfo{}
+	// 按IP分组构建目标端口规则，逐IP执行并推进检查点
+	ipPortMap := buildUpdatePortMap(req)
+	for _, ip := range req.IpList {
+		if err := processUpdateTaskItem(taskID, req, ip, ipPortMap[ip], log); err != nil {
+			log.WithError(err).WithField("ip", ip).Error("批量更新执行失败")
 		}
-	}
-
-	// 第三步：按IP批量重建新端口转发，并上报更新状态
-	for ip, portList := range ipPortMap {
-		// 初始化更新状态上报数据（基础字段）
-		res := UpdateDeployStatusRequest{
-			NetID:    req.NetID,
-			IP:       ip,
-			LogID:    req.LogID,
-			ErrorMsg: "",
-		}
-
-		// 为当前IP创建所有新端口转发
-		for _, info := range portList {
-			// 建立端口隧道（本地地址→目标地址）
-			err := port_service.Tunnel(info.LocalAddr(), info.TargetAddr())
-			// 初始化端口状态上报数据
-			pI := PortInfo{
-				Port: info.Port,
-			}
-
-			// 端口隧道创建失败时记录错误信息
-			if err != nil {
-				pI.ErrorMsg = err.Error()
-				log.WithField("error", err.Error()).Error("创建端口转发失败")
-			} else {
-				// 端口隧道创建成功，持久化端口配置到数据库
-				global.DB.Create(&models.PortModel{
-					TargetAddr: info.TargetAddr(),
-					LocalAddr:  info.LocalAddr(),
-				})
-			}
-			// 将当前端口的状态添加到IP的上报列表中
-			res.PortList = append(res.PortList, pI)
-		}
-
-		// 上报当前IP的更新部署状态（包含所有端口的执行结果）
-		SendUpdateDeployStatusMsg(res)
 	}
 
 	log.WithField("ipCount", len(ipPortMap)).Info("批量更新部署结束")
 
-	// 第四步：更新批量更新部署任务状态为执行完成
-	var taskModel models.TaskModel
-	err := global.DB.Take(&taskModel, "task_id = ?", taskID).Error
-	if err != nil {
-		logrus.Errorf("%s 任务不存在", taskID)
-		return
+	// 只有所有逐IP状态都成功回传后，整批任务才会收敛为完成
+	if err := task_checkpoint.CompleteTaskIfReported(taskID); err != nil {
+		logrus.Errorf("%s 更新任务完成状态收敛失败: %v", taskID, err)
 	}
-	// 更新任务状态为1（执行完成）
-	global.DB.Model(&taskModel).Update("status", 1)
 }

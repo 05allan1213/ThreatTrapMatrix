@@ -16,6 +16,6 @@ type RemoveDeployStatusRequest struct {
 }
 
 // SendRemoveDeployStatusMsg 发送单个IP的删除部署状态MQ消息
-func SendRemoveDeployStatusMsg(data RemoveDeployStatusRequest) {
-	sendQueueMessage(global.Config.MQ.BatchRemoveDeployStatusTopic, data)
+func SendRemoveDeployStatusMsg(data RemoveDeployStatusRequest) error {
+	return sendQueueMessage(global.Config.MQ.BatchRemoveDeployStatusTopic, data)
 }
